@@ -118,6 +118,10 @@ public:
             Image im;
             node[ostr.str()] >> im;
             imgs.push_back(im);
+            if (!im.cvMat().data) {
+                LOG_ERR("One of images is missing, can't continue");
+                return;
+            }
         }
 
         setImageList(imgs);

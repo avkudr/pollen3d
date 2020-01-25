@@ -7,26 +7,17 @@ void ConsoleLogger::render(ImGuiWindowFlags flags) {
     if (flags) ImGui::Begin("Console", nullptr, flags);
     else ImGui::BeginChild("Console");
 
-    if (ImGui::BeginPopup("Options"))
+    if (ImGui::BeginPopupContextItem("item context menu"))
     {
         ImGui::Checkbox("Auto-scroll", &AutoScroll);
+        if(ImGui::Button("Clear")) {
+            clear();
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
 
-    if (ImGui::Button("Options")) {
-        ImGui::OpenPopup("Options");
-    }
-    ImGui::SameLine();
-    bool needsClear = ImGui::Button("Clear");
-
-    //ImGui::SameLine();
-    //Filter.Draw("Filter", 150.0f);
-
-    ImGui::Separator();
-    ImGui::BeginChild("scrolling", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-    if (needsClear)
-        clear();
+    ImGui::BeginChild("scrolling", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar); 
 
     if (font) ImGui::PushFont(font);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
@@ -79,6 +70,7 @@ void ConsoleLogger::render(ImGuiWindowFlags flags) {
         ImGui::SetScrollHereY(1.0f);
 
     ImGui::EndChild();
+    ImGui::OpenPopupOnItemClick("item context menu", 1);
 
     if (flags) ImGui::End();
     else ImGui::EndChild();

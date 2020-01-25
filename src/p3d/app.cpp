@@ -14,10 +14,14 @@ void Application::initImGui(){
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigDockingWithShift = true;
+
     io.Fonts->AddFontFromFileTTF("../assets/Ubuntu-R.ttf", 16.0f);
     m_fontMonoSmall = io.Fonts->AddFontFromFileTTF("../assets/UbuntuMono-R.ttf", 16.0f);
     ConsoleLogger::get()->setFont(m_fontMonoSmall);
     m_fontMonoSmall = io.Fonts->AddFontFromFileTTF("../assets/UbuntuMono-R.ttf", 14.0f);
+
+    applyStyle();
 }
 
 void Application::applyStyle() {
@@ -25,46 +29,80 @@ void Application::applyStyle() {
 
     ImGuiStyle& style = ImGui::GetStyle();
     style.Alpha = 1.0f;
-    style.FrameRounding = 6;
-    style.IndentSpacing = 12.0f;
+    style.FrameRounding = 0;
+    style.IndentSpacing = 8.0f;
+    style.WindowMenuButtonPosition = ImGuiDir_Left;
 }
 
-void Application::update(int width, int height){
+void Application::draw(int width, int height){
     ImGui::NewFrame();
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSizeConstraints(ImVec2(width, m_heightTabSection),ImVec2(width, m_heightTabSection));
     _renderTabWidget();
 
-    static bool firstCall = true;
-    ImGui::SetNextWindowBgAlpha(0.5);
-    ImGui::SetNextWindowPos(ImVec2(0, m_heightTabSection),ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(width, height - m_heightTabSection),ImGuiCond_Always);
-    if (ImGui::Begin("Central area",nullptr,ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings)) {
-    //    ImGuiID dockspaceID = ImGui::GetID("ID().c_str()");
-    //    ImGui::DockSpace(dockspaceID);
-
-        ImGui::BeginColumns("columns", 3);//false);
-        if (firstCall) {
-            firstCall = false;
-            ImGui::SetColumnWidth(0,width * 0.2f);
-            ImGui::SetColumnWidth(1,width * 0.5f);
-            ImGui::SetColumnWidth(2,width * 0.3f);
-        }
-
-        _renderLeftWidget();
-
-        ImGui::NextColumn();
-
-        _renderCentralWidget();
-
-        ImGui::NextColumn();
-        ConsoleLogger::get()->render();
-        ImGui::NextColumn();
-        ImGui::EndColumns();
+    ImGui::SetNextWindowPos(ImVec2(0, m_heightTabSection));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(width, height - m_heightTabSection),ImVec2(width, height - m_heightTabSection));
+    ImGuiID dock_id = ImGui::GetID("ID().c_str()");
+    if (ImGui::Begin("CentralArea",nullptr,ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings)) {
+        ImGui::DockSpace(dock_id);
         ImGui::End();
     }
 
+    ImGui::Begin("DataWidget",nullptr, ImGuiWindowFlags_NoTitleBar);
+    _renderLeftWidget();
+    ImGui::End();
+    ImGui::Begin("CentralWidget",nullptr, ImGuiWindowFlags_NoTitleBar);
+    _renderCentralWidget();
+    ImGui::End();
+    ImGui::Begin("Console",nullptr, ImGuiWindowFlags_NoTitleBar);
+    ConsoleLogger::get()->render();
+    ImGui::End();
+
+    if (m_dockingNeedsReset){
+        ImGuiID dock_id = ImGui::GetID("ID().c_str()");
+
+        ImGui::DockBuilderRemoveNode(dock_id); // Clear out existing layout
+        ImGui::DockBuilderAddNode(dock_id); //viewport->Size); // Add empty node
+
+        ImGuiID top_id, bottom_id;
+        ImGuiID left_id, right_id;
+        ImGui::DockBuilderSetNodePos(dock_id, ImVec2(0, m_heightTabSection));
+        ImGui::DockBuilderSetNodeSize(dock_id, ImVec2(width, height - m_heightTabSection));
+        ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Down,0.2f,&bottom_id,&top_id);
+        ImGui::DockBuilderSplitNode(top_id, ImGuiDir_Left,0.3f,&left_id,&right_id);
+        ImGui::DockBuilderDockWindow("Console", bottom_id);
+        ImGui::DockBuilderDockWindow("DataWidget", left_id);
+        ImGui::DockBuilderDockWindow("CentralWidget", right_id);
+
+        auto bottom_node = ImGui::DockBuilderGetNode(bottom_id);
+        bottom_node->HasCloseButton = false;
+
+        auto data_node = ImGui::DockBuilderGetNode(left_id);
+        data_node->HasCloseButton = false;
+
+        auto image_node = ImGui::DockBuilderGetNode(right_id);
+        image_node->HasCloseButton = false;
+
+        ImGui::DockBuilderFinish(dock_id);
+
+        m_dockingNeedsReset = false;
+    }
+
+//        _renderLeftWidget();
+
+//        ImGui::NextColumn();
+
+//        _renderCentralWidget();
+
+//        ImGui::NextColumn();
+ //       ConsoleLogger::get()->render(1);
+//        ImGui::NextColumn();
+//        ImGui::EndColumns();
+//        ImGui::End();
+//    }
+
+    // **** subroutine for async exection of heavy tasks
     if (m_startedHeavyCalculus) {
         static unsigned int counter = 0;
         static std::vector<std::string> chars{"[    ]",
@@ -122,11 +160,12 @@ void Application::_renderTabWidget()
                  ImGuiWindowFlags_NoDocking |
                  ImGuiWindowFlags_NoResize |
                  ImGuiWindowFlags_NoCollapse |
+                 ImGuiWindowFlags_NoTitleBar |
                  ImGuiWindowFlags_MenuBar);
 
     if (ImGui::BeginMenuBar())
     {
-        if (ImGui::BeginMenu("Menu"))
+        if (ImGui::BeginMenu("File"))
         {
             ImGui::MenuItem("Main menu bar");
             ImGui::MenuItem("Console");
@@ -134,6 +173,11 @@ void Application::_renderTabWidget()
             ImGui::MenuItem("Simple layout");
             ImGui::MenuItem("Property editor");
             ImGui::MenuItem("Long text display");
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("View"))
+        {
+            ImGui::MenuItem("Reset docking",nullptr,&m_dockingNeedsReset);
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Examples"))
@@ -468,8 +512,8 @@ void Application::_renderLeftWidget()
 void Application::_renderCentralWidget()
 {
     if (!isOneOf(m_currentTab,{Tab_General,Tab_Image,Tab_Stereo})) {
-        float width  = ImGui::GetWindowWidth();
-        float height = ImGui::GetWindowHeight();
+        float width  = ImGui::GetWindowContentRegionMax().x;
+        float height = ImGui::GetWindowContentRegionMax().y;
         ImGui::BeginChild("Dummy",ImVec2(width,height));
         ImGui::SetCursorPos(ImVec2(width/2.0f,height/2.0f));
         ImGui::Text("Not implemented yet");
@@ -478,7 +522,7 @@ void Application::_renderCentralWidget()
     }
 
     static bool showFeatures = true;
-    int controlBottomBarHeight = 25;
+    int controlBottomBarHeight = 35;
     static float imageOpacity = 1.0f;
     static float featuresSize = 2.5f;
     static ImVec4 col = COLOR_GREEN;
@@ -504,7 +548,6 @@ void Application::_renderCentralWidget()
         m_textureNeedsUpdate = false;
     }
 
-    ImGui::BeginChild("OpenGL Texture Text");
     if (isTextureReady()) {
         float width  = ImGui::GetWindowWidth();
         float height = ImGui::GetWindowHeight() - controlBottomBarHeight;
@@ -575,9 +618,6 @@ void Application::_renderCentralWidget()
     }
 
     ImGui::PopFont();
-
-    ImGui::EndChild();
-
 }
 
 void Application::_processKeyboardInput()

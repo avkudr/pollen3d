@@ -20,7 +20,7 @@ enum p3dImage_
 {
     p3dImage_path = 0,
     p3dImage_descriptors = 1,
-    p3dImage_keypoints = 1,
+    p3dImage_keypoints = 2,
 };
 
 class Image : public Serializable<Image>{

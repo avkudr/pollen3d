@@ -28,7 +28,7 @@ public:
     void run(){
         while(isRunning()){
             preLoop();
-            update(m_width,m_height);
+            draw(m_width,m_height);
             postLoop();
         }
     }
@@ -43,7 +43,7 @@ public:
 
     void initImGui();
     void applyStyle();
-    void update(int width, int height);
+    void draw(int width, int height);
 
 protected:
 
@@ -84,7 +84,8 @@ protected:
 
     int m_width = 1600;
     int m_height = 1000;
-    int m_heightTabSection = 250;
+    int m_heightTabSection = 200;
+    bool m_dockingNeedsReset = true;
 
     ImFont * m_fontMonoSmall = nullptr;
     int m_textureWidth  = 0;
