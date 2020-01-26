@@ -118,6 +118,9 @@ void ProjectManager::saveProject(ProjectData *data, std::string path) {
     data->setProjectPath(path);
     cv::FileStorage fs(path, cv::FileStorage::WRITE);
     if (fs.isOpened()) {
+        fs << "ProjectSettings" << "{";
+        settings.write(fs);
+        fs << "}";
         fs << "ProjectData" << "{";
         data->write(fs);
         fs << "}";
@@ -139,6 +142,7 @@ void ProjectManager::openProject(ProjectData *data, std::string path)
     try {
         cv::FileStorage fs(path, cv::FileStorage::READ);
         if (fs.isOpened()) {
+            settings.read(fs["ProjectSettings"]);
             data->read(fs["ProjectData"]);
             LOG_OK( "Done" );
             fs.release();

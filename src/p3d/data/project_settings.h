@@ -1,17 +1,18 @@
 #pragma once
 
 #include "p3d/core/core.h"
+#include "p3d/core/serialization.h"
 
-struct ProjectSettings{
+struct ProjectSettings : Serializable<ProjectSettings>{
+
+    static int initMeta();
 
     ProjectSettings() {
-        static bool firstCall = true;
-        if (firstCall) {
-            firstCall = false;
-            meta::reflect<ProjectSettings>(p3d_hash(p3dSetting_projectSettings))
-                    .data<&ProjectSettings::matcherCurAlg>(p3d_hash(p3dSetting_matcherCurAlg))
-                    .data<&ProjectSettings::matcherFilterCoef>(p3d_hash(p3dSetting_matcherFilterCoef));
-        }
+
+    }
+
+    ~ProjectSettings() {
+
     }
 
     enum Matcher{

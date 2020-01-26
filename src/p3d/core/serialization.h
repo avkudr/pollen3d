@@ -39,16 +39,19 @@ static void _write(Type & f, std::size_t & id, cv::FileStorage& fs){
 }
 
 template <typename Type>
-static Type _read(std::size_t & id, cv::FileNode& node){
+static void _read(Type & v, std::size_t & id, cv::FileNode& node){
     std::string name = "p" + std::to_string(id);
     Type t;
+    if (node[name].empty()) return;
     node[name] >> t;
-    return t;
+    v = t;
 }
 
-static bool _readBool(std::size_t & id, cv::FileNode& node){
+static void _readBool(bool & v, std::size_t & id, cv::FileNode& node){
     std::string name = "p" + std::to_string(id);
-    return static_cast<int>(node[name]) != 0;
+    if (node[name].empty()) return;
+    bool res = static_cast<int>(node[name]) != 0;
+    v = res;
 }
 
 template <typename Type>
@@ -59,22 +62,24 @@ static void _writeVec(std::vector<Type> & f, std::size_t & id, cv::FileStorage& 
 }
 
 template <typename Type>
-static std::vector<Type> _readVec(std::size_t & id, cv::FileNode& node){
+static void _readVec(std::vector<Type> & out, std::size_t & id, cv::FileNode& node){
     std::string name = "p" + std::to_string(id);
-    std::vector<Type> out;
+    std::vector<Type> temp;
     cv::FileNode n = node[name];
+    if (node[name].empty()) return;
     if (n.type() != cv::FileNode::SEQ)
     {
         std::cout << "not a sequence";
-        return out;
+        return;
     }
 
     for (auto it = n.begin(); it != n.end(); ++it) {
         Type t;
         *it >> t;
-        out.emplace_back(t);
+        temp.emplace_back(t);
     }
-    return out;
+
+    out = temp;
 }
 
 template <typename Type>
@@ -89,22 +94,23 @@ static void _writeVecS(std::vector<Type> & f, std::size_t & id, cv::FileStorage&
 }
 
 template <typename Type>
-static std::vector<Type> _readVecS(std::size_t & id, cv::FileNode& node){
+static void _readVecS(std::vector<Type> & out, std::size_t & id, cv::FileNode& node){
     std::string name = "p" + std::to_string(id);
-    std::vector<Type> out;
+    std::vector<Type> temp;
     cv::FileNode n = node[name];
+    if (node[name].empty()) return;
     if (n.type() != cv::FileNode::SEQ)
     {
         std::cout << "not a sequence";
-        return out;
+        return;
     }
 
     for (auto it = n.begin(); it != n.end(); ++it) {
         Type t;
         t.read(*it);
-        out.emplace_back(t);
+        temp.emplace_back(t);
     }
-    return out;
+    out = temp;
 }
 
 template<typename Type, int SizeX, int SizeY>
@@ -115,15 +121,16 @@ static void _writeEigen(const Eigen::Matrix<Type, SizeX, SizeY> & f, std::size_t
 }
 
 template<typename Type, int SizeX, int SizeY>
-static Eigen::Matrix<Type, SizeX, SizeY> _readEigen(std::size_t & id, cv::FileNode& node){
+static void _readEigen(Eigen::Matrix<Type, SizeX, SizeY> & mat, std::size_t & id, cv::FileNode& node){
     std::string name = "p" + std::to_string(id);
     cv::Mat temp;
+    if (node[name].empty()) return;
     node[name] >> temp;
     Eigen::Matrix<Type, SizeX, SizeY> out;
-    if (temp.empty()) return out;
+    if (temp.empty()) return;
     out.setZero(temp.rows,temp.cols);
     cv::cv2eigen(temp,out);
-    return out;
+    mat = out;
 }
 
 
@@ -170,9 +177,10 @@ public:
             meta::func func = data.type().func(p3d_hashStr("_read"));
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
-                meta::any any = data.get(*ptr);
-                auto v = func.invoke(any,data.id(),nodeL);
-                data.set(*ptr,v);
+                meta::any old = data.get(*ptr);
+                meta::any any = old;
+                func.invoke(any,any,data.id(),nodeL);
+                data.set(*ptr,any);
             } else {
                 std::cout << "not registered for read: " << data.id() << std::endl;
             }

@@ -145,7 +145,7 @@ TEST(META, meta_serializeVecMatches)
         cv::FileStorage fs("test.xml", cv::FileStorage::READ);
         cv::FileNode node = fs["node1"];
         size_t id = meta::resolve<std::vector<Match>>().id();
-        m2 = impl::_readVecS<Match>(id, node);
+        impl::_readVecS<Match>(m2, id, node);
         fs.release();
     }
 
