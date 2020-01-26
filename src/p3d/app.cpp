@@ -5,6 +5,8 @@
 #include "p3d/project_manager.h"
 #include "p3d/commands.h"
 
+#include "fonts/IconsFontAwesome5.h"
+
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 #endif
@@ -17,6 +19,11 @@ void Application::initImGui(){
     io.ConfigDockingWithShift = true;
 
     io.Fonts->AddFontFromFileTTF("../assets/Ubuntu-R.ttf", 16.0f);
+
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
+    io.Fonts->AddFontFromFileTTF( "../3rdparty/fonts/" FONT_ICON_FILE_NAME_FAS, 16.0f, &icons_config, icons_ranges );
+
     m_fontMonoSmall = io.Fonts->AddFontFromFileTTF("../assets/UbuntuMono-R.ttf", 16.0f);
     ConsoleLogger::get()->setFont(m_fontMonoSmall);
     m_fontMonoSmall = io.Fonts->AddFontFromFileTTF("../assets/UbuntuMono-R.ttf", 14.0f);
@@ -240,7 +247,7 @@ void Application::_drawTab_General()
     if (!ImGui::BeginTabItem("General")) return;
 
     int buttonH = 100;
-    if (ImGui::Button("Load\nimages",ImVec2(70, buttonH)))
+    if (ImGui::Button(ICON_FA_UPLOAD"",ImVec2(70, buttonH)))
     {
         auto files = ProjectManager::get()->loadImagesDialog();
         auto f = [&,files]() {
@@ -251,7 +258,7 @@ void Application::_drawTab_General()
         _doHeavyTask(f);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Save\nproject",ImVec2(70, buttonH)))
+    if (ImGui::Button(ICON_FA_SAVE"",ImVec2(70, buttonH)))
     {
         auto f = [&]() {
             ProjectManager::get()->saveProject(&m_projectData,m_projectData.getProjectPath());
@@ -265,7 +272,7 @@ void Application::_drawTab_General()
         ProjectManager::get()->saveProject(&m_projectData, file);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Open\nproject",ImVec2(70, buttonH)))
+    if (ImGui::Button(ICON_FA_FOLDER_OPEN"",ImVec2(70, buttonH)))
     {
         auto file = ProjectManager::get()->openProjectDialog();
         LOG_DBG("Open project: %s", file.c_str());
@@ -469,7 +476,8 @@ void Application::_drawData()
                 auto imPtr = m_projectData.image(n);
                 if (!imPtr) continue;
 
-                if (ImGui::Selectable(imPtr->name().c_str(), m_currentImage == n)) {
+                std::string entry = ICON_FA_IMAGE" " + imPtr->name();
+                if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
                     if (m_currentImage != n) {
                         m_currentImage = n;
                         m_textureNeedsUpdate = true;
@@ -497,7 +505,7 @@ void Application::_drawData()
                 if (!imL) continue;
                 if (!imR) continue;
 
-                std::string entry = imL->name() + " <> " + imR->name();
+                std::string entry = ICON_FA_IMAGES" " + imL->name() + " <> " + imR->name();
                 if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
                     if (m_currentImage != n) {
                         m_currentImage = n;
@@ -518,14 +526,15 @@ void Application::_drawInfo()
     {
         auto im = m_projectData.image(m_currentImage);
         if (!im) return;
-        ImGui::Text("path: %s", im->getPath().c_str());
+        ImGui::Text(ICON_FA_CUBE" path: %s", im->getPath().c_str());
         if (ImGui::IsItemHovered())
         {
             ImGui::BeginTooltip();
             ImGui::TextUnformatted(im->getPath().c_str());
             ImGui::EndTooltip();
         }
-        ImGui::Text("#features: %i", im->getNbFeatures());
+        ImGui::Text(ICON_FA_CUBE" features: %i", im->getNbFeatures());
+        ImGui::Text(ICON_FA_BORDER_ALL" matrix");
         return;
     }
 
@@ -533,7 +542,7 @@ void Application::_drawInfo()
     {
         auto imPair = m_projectData.imagePair(m_currentImage);
         if (!imPair) return;
-        ImGui::Text("#matches: %i", imPair->getNbMatches());
+        ImGui::Text(ICON_FA_CUBE" matches: %i", imPair->getNbMatches());
         return;
     }
 }
