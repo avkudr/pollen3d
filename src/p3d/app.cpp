@@ -713,13 +713,17 @@ void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVe
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
-    auto ptsL = imPair->getInliersLeft();
-    auto ptsR = imPair->getInliersRight();
-    for (int i = 0; i < ptsL.size(); ++i) {
-        float xl = pos.x + float(ptsL[i].x) / float(imL->cvMat().cols) * ratioLeftTotal * size.x;
-        float yl = pos.y + float(ptsL[i].y) / float(imL->cvMat().rows) * size.y;
-        float xr = pos.x + posXr + float(ptsR[i].x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
-        float yr = pos.y + float(ptsR[i].y) / float(imR->cvMat().rows) * size.y;
+    auto ptsL = imL->getKeyPoints();
+    auto ptsR = imR->getKeyPoints();
+    auto matches = imPair->getMatches();
+    for (int i = 0; i < matches.size(); ++i) {
+        const auto & id1 = matches[i].iPtL;
+        const auto & id2 = matches[i].iPtR;
+
+        float xl = pos.x + float(ptsL[id1].pt.x) / float(imL->cvMat().cols) * ratioLeftTotal * size.x;
+        float yl = pos.y + float(ptsL[id1].pt.y) / float(imL->cvMat().rows) * size.y;
+        float xr = pos.x + posXr + float(ptsR[id2].pt.x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
+        float yr = pos.y + float(ptsR[id2].pt.y) / float(imR->cvMat().rows) * size.y;
 
         draw_list->AddLine(ImVec2(xl,yl),ImVec2(xr,yr),
                            IM_COL32(col.x*255,col.y*255,col.z*255,col.w*255),lineWidth);

@@ -22,7 +22,7 @@ int ProjectData::initMeta()
         meta::reflect<ProjectData>(p3d_hashStr("ProjectData"))
             .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(p3d_hash(p3dData_projectPath))
             .data<&ProjectData::set_isDummy>(p3d_hash(p3dData_dummy))
-            .data<&ProjectData::_images>(p3d_hash(p3dData_images));
+            .data<&ProjectData::setImageList,&ProjectData::getImageList>(p3d_hash(p3dData_images));
         firstCall = false;
     }
     return 0;
@@ -31,6 +31,14 @@ int ProjectData::initMeta()
 
 ProjectData::ProjectData() : Serializable(){
     clear();
+}
+
+void ProjectData::setImageList(const std::vector<Image> &imList){
+    if (imList.empty()) return;
+    _images = imList;
+    for (auto i = 0; i < _images.size()-1; ++i) {
+        _imagesPairs.emplace_back(ImagePair(&_images[i],&_images[i+1]));
+    }
 }
 
 void ProjectData::clear()

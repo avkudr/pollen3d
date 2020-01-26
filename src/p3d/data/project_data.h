@@ -21,16 +21,12 @@ using std::string;
 class ProjectData : public Serializable<ProjectData>{
 
 public:
-    ProjectData();
-    void setImageList(std::vector<Image> & imList){
-        if (imList.empty()) return;
-        _images = imList;
-        _imagesPairs.clear();
-        for (auto i = 0; i < _images.size()-1; ++i) {
-            _imagesPairs.emplace_back(ImagePair(&_images[i],&_images[i+1]));
-        }
-    }
     static int initMeta();
+
+    ProjectData();
+
+    const std::vector<Image> & getImageList() const { return _images; }
+    void setImageList(const std::vector<Image> & imList);
 
     void clear();
     size_t nbImages() const { return _images.size(); }
@@ -85,14 +81,6 @@ public:
 
 
     void writeAdditional(cv::FileStorage &fs) override {
-//        if (nbImages() == 0) return;
-//        fs << "imageNumber" << static_cast<int>(nbImages());
-//        for (size_t i = 0; i < nbImages(); i++){
-//            fs << std::string("Image" + std::to_string(i));
-//            fs << "{";
-//            _images[i].write(fs);
-//            fs << "}";
-//        }
 
         for (auto i = 0; i < int(_images.size()) - 1; i++){
             std::ostringstream ostr;
@@ -106,30 +94,6 @@ public:
     }
 
     void readAdditional(const cv::FileNode &node) override {
-//        int imNb = static_cast<int>(node["imageNumber"]);
-//        if (imNb == 0) {
-//            LOG_INFO("Project contains no images");
-//            return;
-//        }
-
-//        std::vector<Image> imgs;
-//        imgs.reserve(static_cast<size_t>(imNb));
-//        for (auto i = 0; i < imNb; i++){
-//            std::ostringstream ostr;
-//            ostr << "Image" << i;
-//            Image im;
-//            node[ostr.str()] >> im;
-//            imgs.push_back(im);
-//            if (!im.cvMat().data) {
-//                LOG_ERR("One of images is missing, can't continue");
-//                return;
-//            }
-//        }
-
-        _imagesPairs.clear();
-        for (auto i = 0; i < int(_images.size())-1; ++i) {
-            _imagesPairs.emplace_back(ImagePair(&_images[i],&_images[i+1]));
-        }
 
         for (auto i = 0; i < int(_images.size()) - 1; i++){
             std::ostringstream ostr;
@@ -139,6 +103,7 @@ public:
             if (i < _imagesPairs.size())
                 _imagesPairs[i] = imPair;
         }
+
     }
 
     bool set_isDummy = true;

@@ -196,7 +196,7 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
     float filterCoef = getSetting(p3dSetting_matcherFilterCoef).cast<float>();
 
     omp_set_num_threads(std::min(nbPairs,utils::nbAvailableThreads()));
-#pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < nbPairs; i++) {
         auto imPair = imList.imagePair(i);
         if (!imPair) continue;
@@ -210,7 +210,7 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
         }
         std::vector<std::vector<cv::DMatch>> poor_matches;
         std::vector<cv::DMatch> matches;
-
+        std::vector<Match> matchesPair;
         const auto & _descriptorsLeftImage  = imL->getDescriptors();
         const auto & _descriptorsRightImage = imR->getDescriptors();
 
@@ -223,36 +223,19 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
             if((poor_matches[im][0].distance < filterCoef*(poor_matches[im][1].distance)) &&
                     ((int) poor_matches[im].size()<=2 && (int) poor_matches[im].size()>0)){
                 matches.push_back(poor_matches[im][0]);
+
+                matchesPair.emplace_back(
+                            Match(
+                                poor_matches[im][0].queryIdx,
+                                poor_matches[im][0].trainIdx,
+                                poor_matches[im][0].distance
+                                ));
             }
         }
 
-        cv::Mat table = cv::Mat::zeros( (int) matches.size(), 2, CV_64F);
-        for (int j = 0; j < (int)matches.size(); j++){
-            table.at<double>(j,0) = matches[j].queryIdx;
-            table.at<double>(j,1) = matches[j].trainIdx;
-        }
+        imPair->setMatches(matchesPair);
 
-        auto getInliers = [table,_keypointsLeftImage,_keypointsRightImage](int imageIdx, std::vector<cv::Point2d> & inliers)
-        {
-            std::vector<cv::KeyPoint> keyPts;
-            if ( imageIdx == 0 ) keyPts = _keypointsLeftImage;
-            if ( imageIdx == 1 ) keyPts = _keypointsRightImage;
-
-            for (int i = 0; i < table.rows ; i++){
-                inliers.push_back( keyPts[table.at<double>(i,imageIdx)].pt );
-            }
-        };
-
-
-        std::vector<cv::Point2d> temp;
-        imPair->_matchesTable = table;
-        getInliers(0,temp);
-        imPair->setInliersLeft(temp);
-        temp.clear();
-        getInliers(1,temp);
-        imPair->setInliersRight(temp);
-
-        LOG_OK("Pair %i, matched %i features", i, table.rows);
+        LOG_OK("Pair %i, matched %i features", i, matchesPair.size());
     }
 }
 

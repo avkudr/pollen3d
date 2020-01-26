@@ -7,7 +7,9 @@ int ImagePair::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         std::cout << "Reflecting: ImagePair" << std::endl;
-        meta::reflect<ImagePair>(p3d_hashStr("ImagePair"));
+        meta::reflect<ImagePair>(p3d_hashStr("ImagePair")).
+                data<&ImagePair::setMatches,&ImagePair::getMatches>(p3d_hash(p3dImagePair_matches));
+
         firstCall = false;
     }
     return 0;
@@ -208,6 +210,7 @@ int Match::initMeta() {
                 .data<&Match::iPtL>(p3d_hash(0))
                 .data<&Match::iPtR>(p3d_hash(1))
                 .data<&Match::distance>(p3d_hash(2));
+
         firstCall = false;
 
         SERIALIZE_TYPE_VECS(Match,"vector_Match");

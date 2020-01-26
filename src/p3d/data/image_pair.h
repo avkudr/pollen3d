@@ -22,6 +22,8 @@ using std::string;
 
 class Match : public Serializable<Match>{
 public:
+    static int initMeta();
+
     Match(){
     }
     Match(int idxPtImageL, int idxPtImageR, float dist = 0.0f) :
@@ -30,7 +32,6 @@ public:
     }
     ~Match(){}
 
-    static int initMeta();
     int iPtL{0};
     int iPtR{0};
     float distance = 0;
@@ -40,13 +41,23 @@ public:
     }
 };
 
+enum p3dImagePair_
+{
+    p3dImagePair_matches = 0,
+};
+
 class ImagePair : public Serializable<ImagePair>{
 public:
+    static int initMeta();
+
     ImagePair();
     ImagePair(Image * imL, Image * imR);
-    ~ImagePair();
+    ~ImagePair() override;
 
-    static int initMeta();
+    bool hasMatches() { return getNbMatches() > 0; }
+    int getNbMatches() { return int(m_matches.size()); }
+    const std::vector<Match> & getMatches() const { return m_matches; }
+    void setMatches(const std::vector<Match> & matches) { m_matches = matches; }
 
     Matcher* _matcher;
     FundMat * F;
@@ -64,39 +75,28 @@ public:
     Image * imL() { return _imL; }
     Image * imR() { return _imR; }
 
-    bool hasMatches() { return !_inliersLeft.empty() && !_inliersRight.empty() && !_matchesTable.empty(); }
-    int getNbMatches() { return static_cast<int>(_inliersLeft.size()); }
-    const std::vector<cv::Point2d> & getInliersLeft()  const { return _inliersLeft; }
-    const std::vector<cv::Point2d> & getInliersRight() const { return _inliersRight; }
-    void setInliersLeft (const std::vector<cv::Point2d> & pts) { _inliersLeft  = pts; }
-    void setInliersRight(const std::vector<cv::Point2d> & pts) { _inliersRight = pts; }
-
     std::vector<cv::Point2d> getInliersLeftImageREFACTOR() { return getInliersREFACTOR(0); }
     std::vector<cv::Point2d> getInliersRightImageREFACTOR() { return getInliersREFACTOR(1); }
     std::vector<cv::Point2d> getInliersREFACTOR(int imageIdx) {return _matcher->getInliers(imageIdx);}
 
     void writeAdditional(cv::FileStorage &fs) override {
-        fs << "matchesTable" << _matchesTable;
-        fs << "inliersLeft" << _inliersLeft;
-        fs << "inliersRight" << _inliersRight;
+//        fs << "matchesTable" << _matchesTable;
+//        fs << "inliersLeft" << _inliersLeft;
+//        fs << "inliersRight" << _inliersRight;
     }
 
     void readAdditional(const cv::FileNode &node) override {
-        node["matchesTable"] >> _matchesTable;
-        node["inliersLeft"] >> _inliersLeft;
-        node["inliersRight"] >> _inliersRight;
+//        node["matchesTable"] >> _matchesTable;
+//        node["inliersLeft"] >> _inliersLeft;
+//        node["inliersRight"] >> _inliersRight;
     }
 
-    cv::Mat _matchesTable;
 
 private:
     Image * _imL = nullptr;
     Image * _imR = nullptr;
 
-    std::vector<cv::Point2d> _inliersLeft;
-    std::vector<cv::Point2d> _inliersRight;
-
-    std::vector<std::pair<int,int>> matches;
+    std::vector<Match> m_matches;
 };
 
 

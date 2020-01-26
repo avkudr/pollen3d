@@ -20,7 +20,7 @@ public:
     Exception();
     /*!
      Full constructor. Normally the constuctor is not called explicitly.
-     Instead, the macros Pollen3D_Error(), Pollen3D_Error_() and Pollen3D_Func() are used.
+     Instead, the macros p3d_Error(), p3d_Error_() and p3d_Func() are used.
     */
     Exception(int _code, const std::string& _err, const std::string& _func, const std::string& _file, int _line);
     virtual ~Exception() noexcept;
@@ -46,23 +46,23 @@ void error( const Exception& exc );
 std::string format( const char* fmt, ... );
 
 #if defined __GNUC__
-    #define Pollen3D_Func __func__
+    #define p3d_Func __func__
 #elif defined _MSC_VER
-    #define Pollen3D_Func __FUNCTION__
+    #define p3d_Func __FUNCTION__
 #else
-    #define Pollen3D_Func ""
+    #define p3d_Func ""
 #endif
 
 #define Pollen3D_StsAssert Exception::ASSERTION_CODE
 
-#define Pollen3D_Error( code, msg ) error( Exception(code, msg, Pollen3D_Func, __FILE__, __LINE__) )
-#define Pollen3D_Error_( code, args ) error( Exception(code, format args, Pollen3D_Func, __FILE__, __LINE__) )
-#define Pollen3D_Assert( expr ) if(!!(expr)) ; else error( Exception(Pollen3D_StsAssert, #expr, Pollen3D_Func, __FILE__, __LINE__) )
+#define p3d_Error( code, msg ) error( Exception(code, msg, p3d_Func, __FILE__, __LINE__) )
+#define p3d_Error_( code, args ) error( Exception(code, format args, p3d_Func, __FILE__, __LINE__) )
+#define p3d_Assert( expr ) if(!!(expr)) ; else error( Exception(Pollen3D_StsAssert, #expr, p3d_Func, __FILE__, __LINE__) )
 
 #ifdef _DEBUG
-#define Pollen3D_DbgAssert(expr) Pollen3D_Assert(expr)
+#define p3d_DbgAssert(expr) p3d_Assert(expr)
 #else
-#define Pollen3D_DbgAssert(expr)
+#define p3d_DbgAssert(expr)
 #endif
 
 static std::hash<int> p3d_hash{};
@@ -83,4 +83,5 @@ enum p3dData_
     p3dData_projectPath = 2001,
     p3dData_dummy       = 2002,
     p3dData_images      = 2003,
+    p3dData_imagePairs  = 2004,
 };
