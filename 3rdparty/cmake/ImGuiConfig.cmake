@@ -25,13 +25,21 @@ set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL QUIET)
 find_package(glfw3 QUIET)
 find_package(GLEW QUIET)
+message(OPENGL_FOUND: ${glfw3_FOUND})
+message(glfw3_FOUND: ${glfw3_FOUND})
+message(GLEW_FOUND: ${GLEW_FOUND})
+
 if (glfw3_FOUND AND OPENGL_FOUND AND GLEW_FOUND)
+	if(APPLE)
+        set(GLEW_INCLUDE_DIR "/glew/2.1.0_1/include")
+        set(GLEW_LIBRARY "/glew/2.1.0_1/lib")
+	endif()
     set(ImGui_FOUND true)
     include_directories(${GLEW_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
     set(ImGui_LIBS
         ${OPENGL_LIBRARIES}
         glfw
-        GLEW
+        GLEW::GLEW
     )
 
     set(SOURCES
@@ -45,5 +53,7 @@ if (glfw3_FOUND AND OPENGL_FOUND AND GLEW_FOUND)
     set(POLLEN3D_OPENGL ON)
     add_compile_definitions(POLLEN3D_OPENGL)
 
+else()
+    message("Can't find any ImGui backend")
 endif()
 

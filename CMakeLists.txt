@@ -24,6 +24,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 option(BUILD_UNIT_TESTS "Build unit tests" ON)
+OPTION(USE_OPENMP "Use OpenMP" ON)
 
 # ----- Threads
 
@@ -31,12 +32,17 @@ option(BUILD_UNIT_TESTS "Build unit tests" ON)
 
 # ----- OpenMP
 
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    message( "OpenMP - FOUND" )
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+if(USE_OPENMP)
+    find_package(OpenMP QUIET)
+    if (OPENMP_FOUND)
+        message( "OpenMP - FOUND" )
+        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+        add_definitions(-DWITH_OPENMP)
+    else()
+        message( "OpenMP - not found" )
+    endif()
 endif()
 
 # ----- Add Eigen --------------------------------------------
@@ -58,7 +64,7 @@ endif()
 
 # ----- Add ImGui --------------------------------------------
 
-find_package(ImGui QUIET)
+find_package(ImGui REQUIRED)
 if (ImGui_FOUND)
     add_definitions(-DWITH_IMMGUI)
     message("ImGui - FOUND")
@@ -141,5 +147,8 @@ else()
 endif()
 
 add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES})
-target_link_libraries( ${PROJECT_NAME} ${ImGui_LIBS} ${OpenCV_LIBS} Eigen3::Eigen OpenMP::OpenMP_CXX)
+target_link_libraries( ${PROJECT_NAME} ${ImGui_LIBS} ${OpenCV_LIBS} Eigen3::Eigen)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
