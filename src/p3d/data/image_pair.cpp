@@ -2,14 +2,16 @@
 
 ImagePair::ImagePair()
 {
-    _imL = NULL;
-    _imR = NULL;
+    _imL = nullptr;
+    _imR = nullptr;
 
     _matcher = NULL;
     F = NULL;
     rectifier = NULL;
     denseMatcher = NULL;
     _properties.clear();
+
+    init();
 }
 
 ImagePair::ImagePair(Image *imL, Image *imR) : _imL(imL), _imR(imR) {
@@ -22,6 +24,8 @@ ImagePair::ImagePair(Image *imL, Image *imR) : _imL(imL), _imR(imR) {
     F->init(&_matcher->_inliersLeft,&_matcher->_inliersRight);
     rectifier->init(imL,imR,F,&_matcher->_inliersLeft,&_matcher->_inliersRight);
     denseMatcher->init( &rectifier->imLrect, &rectifier->imRrect);
+
+    init();
 }
 
 ImagePair::~ImagePair()
@@ -29,7 +33,16 @@ ImagePair::~ImagePair()
 //    if (_matcher) delete _matcher;
 //    if (F) delete F;
 //    if (rectifier) delete rectifier;
-//    if (denseMatcher) delete denseMatcher;
+    //    if (denseMatcher) delete denseMatcher;
+}
+
+void ImagePair::init()
+{
+    static bool firstCall = true;
+    if (firstCall) {
+        meta::reflect<ImagePair>(p3d_hashStr("ImagePair"));
+        firstCall = false;
+    }
 }
 
 cv::Mat ImagePair::getOneStereoImage(cv::Mat im1, cv::Mat im2)
@@ -64,8 +77,8 @@ cv::Mat ImagePair::plotStereoWithMatches()
     cv::Mat imLeftConverted;
     cv::Mat imRightConverted;
 
-    cv::cvtColor( _imL->get(), imLeftConverted, CV_BGR2GRAY);
-    cv::cvtColor( _imR->get(), imRightConverted, CV_BGR2GRAY);
+    cv::cvtColor( _imL->cvMat(), imLeftConverted, CV_BGR2GRAY);
+    cv::cvtColor( _imR->cvMat(), imRightConverted, CV_BGR2GRAY);
 
     /*
     DEFAULT = 0,
@@ -95,8 +108,8 @@ cv::Mat ImagePair::plotStereoWithEpilines()
     cv::Mat img1;
     cv::Mat img2;
 
-    cv::cvtColor(_imL->get(), img1, CV_BGR2GRAY);
-    cv::cvtColor(_imR->get(), img2, CV_BGR2GRAY);
+    cv::cvtColor(_imL->cvMat(), img1, CV_BGR2GRAY);
+    cv::cvtColor(_imR->cvMat(), img2, CV_BGR2GRAY);
 
     outImg = getOneStereoImage(img1, img2);
     cv::Rect rect1(0,0, img1.cols, img1.rows);

@@ -83,16 +83,16 @@ public:
 
 
     void writeAdditional(cv::FileStorage &fs) override {
-        if (nbImages() == 0) return;
-        fs << "imageNumber" << (int)nbImages();
-        for (int i = 0; i < nbImages(); i++){
-            fs << std::string("Image" + std::to_string(i));
-            fs << "{";
-            _images[i].write(fs);
-            fs << "}";
-        }
+//        if (nbImages() == 0) return;
+//        fs << "imageNumber" << static_cast<int>(nbImages());
+//        for (size_t i = 0; i < nbImages(); i++){
+//            fs << std::string("Image" + std::to_string(i));
+//            fs << "{";
+//            _images[i].write(fs);
+//            fs << "}";
+//        }
 
-        for (int i=0; i < _images.size() - 1; i++){
+        for (auto i = 0; i < int(_images.size()) - 1; i++){
             std::ostringstream ostr;
             ostr << "ImagePair" << i;
             fs << ostr.str();
@@ -104,39 +104,40 @@ public:
     }
 
     void readAdditional(const cv::FileNode &node) override {
-        int imNb = (int) node["imageNumber"];
-        if (imNb == 0) {
-            LOG_INFO("Project contains no images");
-            return;
+//        int imNb = static_cast<int>(node["imageNumber"]);
+//        if (imNb == 0) {
+//            LOG_INFO("Project contains no images");
+//            return;
+//        }
+
+//        std::vector<Image> imgs;
+//        imgs.reserve(static_cast<size_t>(imNb));
+//        for (auto i = 0; i < imNb; i++){
+//            std::ostringstream ostr;
+//            ostr << "Image" << i;
+//            Image im;
+//            node[ostr.str()] >> im;
+//            imgs.push_back(im);
+//            if (!im.cvMat().data) {
+//                LOG_ERR("One of images is missing, can't continue");
+//                return;
+//            }
+//        }
+
+        _imagesPairs.clear();
+        for (auto i = 0; i < int(_images.size())-1; ++i) {
+            _imagesPairs.emplace_back(ImagePair(&_images[i],&_images[i+1]));
         }
 
-        std::vector<Image> imgs;
-        imgs.reserve(imNb);
-        for (int i = 0; i < imNb; i++){
+        for (auto i = 0; i < int(_images.size()) - 1; i++){
             std::ostringstream ostr;
-            ostr << "Image" << i;
-            Image im;
-            node[ostr.str()] >> im;
-            imgs.push_back(im);
-            if (!im.cvMat().data) {
-                LOG_ERR("One of images is missing, can't continue");
-                return;
-            }
-        }
-
-        setImageList(imgs);
-
-        for (int i = 0; i < imNb - 1; i++){
-            std::ostringstream ostr;
-            ostr << "ImagePair" << i;
+            ostr << "ImagePair" << int(i);
             ImagePair imPair(&_images[i],&_images[i+1]);
             node[ostr.str()] >> imPair;
-            _imagesPairs.push_back(imPair);
+            if (i < _imagesPairs.size())
+                _imagesPairs[i] = imPair;
         }
     }
-
-//    void write(cv::FileStorage& fs) const;
-//    void read(const cv::FileStorage& fs);
 
     bool set_isDummy = true;
 
@@ -154,21 +155,3 @@ private:
     std::vector<cv::Point3d> _sparsePointCloud;
     cv::Mat _sparsePointCloudMat;
 };
-
-//These write and read functions must be defined for the serialization in FileStorage to work
-[[maybe_unused]]
-static void write(cv::FileStorage& fs, const std::string&, const ProjectData& x)
-{
-    fs << "{";
-    const_cast<ProjectData&>(x).write(fs);
-    fs << "}";
-}
-
-[[maybe_unused]]
-static void read(const cv::FileNode& node, ProjectData& x, const ProjectData& default_value = ProjectData()){
-    if(node.empty())
-        x = default_value;
-    else {
-        x.read(node);
-    }
-}

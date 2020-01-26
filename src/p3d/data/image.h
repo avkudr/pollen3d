@@ -31,7 +31,7 @@ public:
     ~Image(){}
 
     // Interface
-    cv::Mat get(){ return _imageCV; } //original, withInterestPoints...
+    cv::Mat getREFACTOR(){ return _imageCV; } //original, withInterestPoints...
     const cv::Mat & cvMat() const { return _imageCV; } //original, withInterestPoints...
 
     operator cv::Mat(){ return _imageCV; }
@@ -44,13 +44,11 @@ public:
     bool isValid(){
         return _path != "" && !_imageCV.empty();
     }
-    cv::Mat getImageOriginal(){ return _imageCV; } //original, withInterestPoints...
-    cv::Mat getImageWithFeatures();
 
     // Features
 
-    bool isFeaturesExtracted(){ return _kpts.size() > 0; }
-    int getFeaturesNb(){ return (int)_kpts.size();}
+    bool hasFeatures(){ return _kpts.size() > 0; }
+    int getNbFeatures(){ return (int)_kpts.size();}
     cv::Mat getFeaturePositions() const;
     const vector<cv::KeyPoint> & getKeyPoints(){ return _kpts;}
     void setKeyPoints(std::vector<cv::KeyPoint> kpts);
@@ -66,7 +64,7 @@ public:
     }
 
     void readAdditional(const cv::FileNode &node) override {
-        if (_path != "noName") {
+        if (_path != EMPTY_PATH) {
             _imageCV = cv::imread(_path);
             if(! _imageCV.data){
                 LOG_INFO("No such image: %s", _path.c_str());
@@ -78,10 +76,15 @@ public:
         node["im_p" + std::to_string(int(p3dImage_keypoints))  ] >> _kpts;
     }
 
+    inline bool operator==(const Image& i) const{
+        return _path == i._path;
+    }
+
 private:
     void init();
 
-    std::string _path = "noName";
+    std::string EMPTY_PATH = "<not found>";
+    std::string _path = "<not found>";
     cv::Mat _imageCV;
 
 public:
@@ -93,22 +96,3 @@ public:
     cv::Mat getIntrinsic() const {return K.clone();}
     cv::Mat getCameraMatrix() const {return P.clone();}
 };
-
-//These write and read functions must be defined for the serialization in FileStorage to work
-[[maybe_unused]]
-static void write(cv::FileStorage& fs, const std::string&, const Image& x)
-{
-    fs << "{";
-    const_cast<Image&>(x).write(fs);
-    fs << "}";
-}
-
-[[maybe_unused]]
-static void read(const cv::FileNode& node, Image& x, const Image& default_value = Image()){
-    if(node.empty())
-        x = default_value;
-    else {
-        x.read(node);
-    }
-}
-

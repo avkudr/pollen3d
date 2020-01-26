@@ -29,17 +29,3 @@ TEST(PATHS, endsWith)
     ASSERT_TRUE (utils::endsWith(basename,"gz"));
     ASSERT_FALSE(utils::endsWith(basename,"..gz"));
 }
-
-TEST(PATHS, saveOpenProjectString)
-{
-    ProjectData data;
-    std::string path = "dummy_project" + std::string(P3D_PROJECT_EXTENSION);
-    data.setProjectPath(path);
-    ProjectManager::get()->saveProject(&data,path);
-
-    ProjectData data2;
-    ProjectManager::get()->openProject(&data2,path);
-
-    EXPECT_EQ(data.getProjectPath(),data2.getProjectPath());
-}
-

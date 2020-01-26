@@ -19,23 +19,8 @@ Image::Image(const std::string & path)
         LOG_INFO("* Loaded: %s", path.c_str());
         _path = path;
         _imageCV = im.clone();
-        init();
     }
-}
-
-cv::Mat Image::getImageWithFeatures()
-{
-    cv::Mat img;
-    _imageCV.copyTo(img);
-    if ( getFeaturesNb() != 0){
-        cv::cvtColor(img,img,CV_BGR2GRAY);
-        std::vector<cv::KeyPoint> kpts = getKeyPoints();
-        cv::drawKeypoints(img, getKeyPoints(), img, cv::Scalar(255,0,0));
-//        for ( auto i = 0; i < kpts.size(); i++){
-//            cv::circle( img, kpts[i], 2.0, Scalar( 0, 0, 255 ), 1, 8 );
-//        }
-    }
-    return img;
+    init();
 }
 
 cv::Mat Image::getFeaturePositions() const
@@ -59,15 +44,7 @@ void Image::setKeyPoints(std::vector<cv::KeyPoint> kpts){
 
 void Image::init()
 {
-    static bool firstCall = true;
-    if (firstCall) {
-        meta::reflect<Image>(p3d_hashStr("Image"))
-            .data<&Image::setPath,&Image::getPath>(p3d_hash(p3dImage_path));
 
-        //.data<&Image::setDescriptors,&Image::getDescriptors>(p3d_hash(p3dImage_descriptors));
-
-        firstCall = false;
-    }
 }
 
 /*

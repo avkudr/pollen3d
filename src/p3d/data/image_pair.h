@@ -20,15 +20,46 @@
 using std::vector;
 using std::string;
 
+class Match : public Serializable<Match>{
+public:
+    Match(){
+        init();
+    }
+    Match(int idxPtImageL, int idxPtImageR, float dist = 0.0f) :
+        iPtL(idxPtImageL), iPtR(idxPtImageR), distance(dist)
+    {
+        init();
+    }
+    ~Match(){}
+
+    void init() {
+        static bool firstCall = true;
+        if (firstCall) {
+            meta::reflect<Match>(p3d_hashStr("Match"))
+                .data<&Match::iPtL>(p3d_hash(0))
+                .data<&Match::iPtR>(p3d_hash(1))
+                .data<&Match::distance>(p3d_hash(2));
+            firstCall = false;
+
+            SERIALIZE_TYPE_VECS(Match,"vector_Match");
+        }
+    }
+    int iPtL{0};
+    int iPtR{0};
+    float distance = 0;
+
+    inline bool operator==(const Match& a) const{
+        return iPtL == a.iPtL && iPtR == a.iPtR;
+    }
+};
+
 class ImagePair : public Serializable<ImagePair>{
 public:
     ImagePair();
     ImagePair(Image * imL, Image * imR);
     ~ImagePair();
 
-    Image * _imL;
-    Image * _imR;
-
+    void init();
     Matcher* _matcher;
     FundMat * F;
     Rectifier * rectifier;
@@ -45,10 +76,16 @@ public:
     Image * imL() { return _imL; }
     Image * imR() { return _imR; }
 
-public:
-    std::vector<cv::Point2d> getInliersLeftImage() { return getInliers(0); }
-    std::vector<cv::Point2d> getInliersRightImage() { return getInliers(1); }
-    std::vector<cv::Point2d> getInliers(int imageIdx) {return _matcher->getInliers(imageIdx);}
+    bool hasMatches() { return !_inliersLeft.empty() && !_inliersRight.empty() && !_matchesTable.empty(); }
+    int getNbMatches() { return static_cast<int>(_inliersLeft.size()); }
+    const std::vector<cv::Point2d> & getInliersLeft()  const { return _inliersLeft; }
+    const std::vector<cv::Point2d> & getInliersRight() const { return _inliersRight; }
+    void setInliersLeft (const std::vector<cv::Point2d> & pts) { _inliersLeft  = pts; }
+    void setInliersRight(const std::vector<cv::Point2d> & pts) { _inliersRight = pts; }
+
+    std::vector<cv::Point2d> getInliersLeftImageREFACTOR() { return getInliersREFACTOR(0); }
+    std::vector<cv::Point2d> getInliersRightImageREFACTOR() { return getInliersREFACTOR(1); }
+    std::vector<cv::Point2d> getInliersREFACTOR(int imageIdx) {return _matcher->getInliers(imageIdx);}
 
     void writeAdditional(cv::FileStorage &fs) override {
         fs << "matchesTable" << _matchesTable;
@@ -63,8 +100,15 @@ public:
     }
 
     cv::Mat _matchesTable;
+
+private:
+    Image * _imL = nullptr;
+    Image * _imR = nullptr;
+
     std::vector<cv::Point2d> _inliersLeft;
     std::vector<cv::Point2d> _inliersRight;
+
+    std::vector<std::pair<int,int>> matches;
 };
 
 

@@ -21,7 +21,8 @@ ProjectData::ProjectData() : Serializable(){
         firstCall = false;
         meta::reflect<ProjectData>(p3d_hashStr("ProjectData"))
             .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(p3d_hash(p3dData_projectPath))
-            .data<&ProjectData::set_isDummy>(p3d_hash(p3dData_dummy));
+            .data<&ProjectData::set_isDummy>(p3d_hash(p3dData_dummy))
+            .data<&ProjectData::_images>(p3d_hash(p3dData_images));
     }
     //}
 }
@@ -237,11 +238,11 @@ void ProjectData::estimateMeasurementMatrixKLT()
     subPixWinSize = cv::Size(10,10);
     winSize = cv::Size(51,51);
 
-    bool needToInit = (this->getREFACTOR(0)->getFeaturesNb() == 0);
+    bool needToInit = (this->getREFACTOR(0)->getNbFeatures() == 0);
     if( needToInit )
     {
         LOG_INFO("Detecting new points");
-        cv::Mat image0 = this->getREFACTOR(0)->get().clone();
+        cv::Mat image0 = this->getREFACTOR(0)->getREFACTOR().clone();
         std::vector<cv::KeyPoint> kpts0;
         cv::Mat desc0;
 
@@ -262,8 +263,8 @@ void ProjectData::estimateMeasurementMatrixKLT()
     for (int im = 0; im < this->nbImages()-1; im++){
         //cv::imshow("LK Demo", (cv::Mat)(this->get(i)->get()));
 
-        cv::Mat image0 = this->getREFACTOR(im)->get();
-        cv::Mat image1 = this->getREFACTOR(im+1)->get();
+        cv::Mat image0 = this->getREFACTOR(im)->getREFACTOR();
+        cv::Mat image1 = this->getREFACTOR(im+1)->getREFACTOR();
 
         if( !points[0].empty() )
         {

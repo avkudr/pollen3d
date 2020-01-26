@@ -30,7 +30,7 @@ public:
     ClassA() {
         static bool first = true;
         if (first) {
-            meta::reflect<ClassA>(std::size_t(0))
+            meta::reflect<ClassA>(p3d_hashStr("ClassAdebug"))
                 .data<&ClassA::a>(std::size_t(1))
                 .data<&ClassA::a2>(std::size_t(2))
                 .data<&ClassA::b>(std::size_t(10))
@@ -55,22 +55,6 @@ public:
     Eigen::Matrix3f m;
     Eigen::MatrixXf mx;
 };
-
-//These write and read functions must be defined for the serialization in FileStorage to work
-static void write(cv::FileStorage& fs, const std::string&, const ClassA& x)
-{
-    fs << "{";
-    const_cast<ClassA&>(x).write(fs);
-    fs << "}";
-}
-
-static void read(const cv::FileNode& node, ClassA& x, const ClassA& default_value = ClassA()){
-    if(node.empty())
-        x = default_value;
-    else {
-        x.read(node);
-    }
-}
 
 #define EXPECT_TYPE_SERIALIZABLE(x) \
     EXPECT_TRUE(meta::resolve<x>().func(p3d_hashStr("_read"))); \
@@ -118,12 +102,14 @@ TEST(META, meta_serializeReadWrite)
 
     {
         cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
-        fs << "Node1" << a;
+        fs << "Node1" << "{";
+        a.write(fs);
+        fs << "}";
         fs.release();
     }
     {
         cv::FileStorage fs("test.yml", cv::FileStorage::READ);
-        fs["Node1"] >> b;
+        b.read(fs["Node1"]);
         fs.release();
     }
 
@@ -137,10 +123,46 @@ TEST(META, meta_serializeReadWrite)
 
 }
 
+TEST(META, meta_serializeVecMatches)
+{
+    std::vector<Match> m1;
+    m1.emplace_back(Match(0,1,0.5));
+    m1.emplace_back(Match(1,2));
+    m1.emplace_back(Match(2,3));
+
+    {
+        size_t id = meta::resolve<std::vector<Match>>().id();
+        cv::FileStorage fs("test.xml", cv::FileStorage::WRITE);
+        fs << "node1" << "{";
+        impl::_writeVecS<Match>(m1,id,fs);
+        fs << "}";
+        fs.release();
+    }
+
+    std::vector<Match> m2;
+
+    {
+        cv::FileStorage fs("test.xml", cv::FileStorage::READ);
+        cv::FileNode node = fs["node1"];
+        size_t id = meta::resolve<std::vector<Match>>().id();
+        m2 = impl::_readVecS<Match>(id, node);
+        fs.release();
+    }
+
+    EXPECT_EQ(m1.size(), m2.size());
+    for (int i = 0; i < m2.size(); i++)
+        EXPECT_EQ(m1[i], m2[i]);
+}
+
+
 TEST(META, meta_serializeProject)
 {
+    meta::reflect<Image>(p3d_hashStr("Image"))
+        .data<&Image::setPath,&Image::getPath>(p3d_hash(p3dImage_path));
+    SERIALIZE_TYPE_VECS(Image,"vector_Image");
+
     ProjectData data1;
-    std::string path = "dummy_project" + std::string(P3D_PROJECT_EXTENSION);
+    std::string path = "test" + std::string(P3D_PROJECT_EXTENSION);
     data1.setProjectPath(path);
     ProjectManager::get()->saveProject(&data1,path);
 

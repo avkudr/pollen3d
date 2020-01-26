@@ -118,7 +118,9 @@ void ProjectManager::saveProject(ProjectData *data, std::string path) {
     data->setProjectPath(path);
     cv::FileStorage fs(path, cv::FileStorage::WRITE);
     if (fs.isOpened()) {
-        fs << "ProjectData" << *data;
+        fs << "ProjectData" << "{";
+        data->write(fs);
+        fs << "}";
         LOG_OK( "Project %s succesfully saved", path.c_str() );
         fs.release();
     } else {
@@ -137,7 +139,7 @@ void ProjectManager::openProject(ProjectData *data, std::string path)
     try {
         cv::FileStorage fs(path, cv::FileStorage::READ);
         if (fs.isOpened()) {
-            fs["ProjectData"] >> *data;
+            data->read(fs["ProjectData"]);
             LOG_OK( "Done" );
             fs.release();
         } else {
@@ -202,7 +204,7 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
         auto imL = imPair->imL();
         auto imR = imPair->imR();
         if ( imR == nullptr || imR == nullptr ) continue;
-        if ( !imL->isFeaturesExtracted() || !imR->isFeaturesExtracted()) {
+        if ( !imL->hasFeatures() || !imR->hasFeatures()) {
             LOG_ERR("Features must be extracted before matching");
             continue;
         }
@@ -242,9 +244,13 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
         };
 
 
+        std::vector<cv::Point2d> temp;
         imPair->_matchesTable = table;
-        getInliers(0,imPair->_inliersLeft);
-        getInliers(1,imPair->_inliersRight);
+        getInliers(0,temp);
+        imPair->setInliersLeft(temp);
+        temp.clear();
+        getInliers(1,temp);
+        imPair->setInliersRight(temp);
 
         LOG_OK("Pair %i, matched %i features", i, table.rows);
     }

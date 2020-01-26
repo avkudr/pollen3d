@@ -82,4 +82,5 @@ enum p3dData_
     p3dData_projectData = 2000,
     p3dData_projectPath = 2001,
     p3dData_dummy       = 2002,
+    p3dData_images      = 2003,
 };

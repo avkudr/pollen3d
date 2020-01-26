@@ -47,14 +47,17 @@ public:
 
 protected:
 
-    void _renderMenuBar();
-    void _renderTabWidget();
-    void _renderTab_General();
-    void _renderTab_Image();
-    void _renderTab_Stereo();
-    void _renderLeftWidget();
-    void _renderCentralWidget();
+    void _drawMenuBar();
+    void _drawTab();
+    void _drawTab_General();
+    void _drawTab_Image();
+    void _drawTab_Stereo();
+    void _drawLeft();
+    void _drawCentral();
     void _processKeyboardInput();
+
+    void _showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float featuresSize = 2.0f);
+    void _showMatches(const ImVec2 & pos, const ImVec2 & size, const ImVec4 & col, float lineWidth = 1.0f);
 
     template<typename Func>
     void _doHeavyTask(Func f){

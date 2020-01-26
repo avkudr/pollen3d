@@ -41,8 +41,8 @@ void Rectifier::rectify()
     cv::Mat Rl = get2DRotationMatrixLeft();
     cv::Mat Rr = get2DRotationMatrixRight();
 
-    cv::warpAffine(_imL->get(), imLrect, Rl, _imL->get().size());
-    cv::warpAffine(_imR->get(), imRrect, Rr, _imR->get().size());
+    cv::warpAffine(_imL->getREFACTOR(), imLrect, Rl, _imL->getREFACTOR().size());
+    cv::warpAffine(_imR->getREFACTOR(), imRrect, Rr, _imR->getREFACTOR().size());
 
     cv::cvtColor(imLrect, imLrect, CV_BGR2GRAY);
     cv::cvtColor(imRrect, imRrect, CV_BGR2GRAY);
@@ -142,12 +142,12 @@ bool Rectifier::isReady()
 
 cv::Mat Rectifier::get2DRotationMatrixLeft()
 {
-    return cv::getRotationMatrix2D(cv::Point2d(_imL->get().cols/2.0,_imL->get().rows/2.0),angleL*180.0/CV_PI,1);
+    return cv::getRotationMatrix2D(cv::Point2d(_imL->getREFACTOR().cols/2.0,_imL->getREFACTOR().rows/2.0),angleL*180.0/CV_PI,1);
 }
 
 cv::Mat Rectifier::get2DRotationMatrixRight()
 {
-    return cv::getRotationMatrix2D(cv::Point2d(_imR->get().cols/2.0,_imR->get().rows/2.0),angleR*180.0/CV_PI,1);
+    return cv::getRotationMatrix2D(cv::Point2d(_imR->getREFACTOR().cols/2.0,_imR->getREFACTOR().rows/2.0),angleR*180.0/CV_PI,1);
 }
 
 cv::Mat Rectifier::get2DShiftMatrix()

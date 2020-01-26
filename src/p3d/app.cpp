@@ -29,17 +29,19 @@ void Application::applyStyle() {
 
     ImGuiStyle& style = ImGui::GetStyle();
     style.Alpha = 1.0f;
-    style.FrameRounding = 0;
+    style.FrameRounding  = 4;
+    style.WindowRounding = 0;
     style.IndentSpacing = 8.0f;
-    style.WindowMenuButtonPosition = ImGuiDir_Left;
+    style.WindowMenuButtonPosition = ImGuiDir_Right;
 }
 
 void Application::draw(int width, int height){
     ImGui::NewFrame();
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,0);
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSizeConstraints(ImVec2(width, m_heightTabSection),ImVec2(width, m_heightTabSection));
-    _renderTabWidget();
+    _drawTab();
 
     ImGui::SetNextWindowPos(ImVec2(0, m_heightTabSection));
     ImGui::SetNextWindowSizeConstraints(ImVec2(width, height - m_heightTabSection),ImVec2(width, height - m_heightTabSection));
@@ -49,15 +51,17 @@ void Application::draw(int width, int height){
         ImGui::End();
     }
 
-    ImGui::Begin("DataWidget",nullptr, ImGuiWindowFlags_NoTitleBar);
-    _renderLeftWidget();
+    ImGui::Begin("DataWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
+    _drawLeft();
     ImGui::End();
-    ImGui::Begin("CentralWidget",nullptr, ImGuiWindowFlags_NoTitleBar);
-    _renderCentralWidget();
+    ImGui::Begin("CentralWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
+    _drawCentral();
     ImGui::End();
-    ImGui::Begin("Console",nullptr, ImGuiWindowFlags_NoTitleBar);
+    ImGui::Begin("Console",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
     ConsoleLogger::get()->render();
     ImGui::End();
+
+    ImGui::PopStyleVar();
 
     if (m_dockingNeedsReset){
         ImGuiID dock_id = ImGui::GetID("ID().c_str()");
@@ -65,25 +69,19 @@ void Application::draw(int width, int height){
         ImGui::DockBuilderRemoveNode(dock_id); // Clear out existing layout
         ImGui::DockBuilderAddNode(dock_id); //viewport->Size); // Add empty node
 
-        ImGuiID top_id, bottom_id;
-        ImGuiID left_id, right_id;
+        ImGuiID id1, id2;
+        ImGuiID id3, id4;
         ImGui::DockBuilderSetNodePos(dock_id, ImVec2(0, m_heightTabSection));
         ImGui::DockBuilderSetNodeSize(dock_id, ImVec2(width, height - m_heightTabSection));
-        ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Down,0.2f,&bottom_id,&top_id);
-        ImGui::DockBuilderSplitNode(top_id, ImGuiDir_Left,0.3f,&left_id,&right_id);
-        ImGui::DockBuilderDockWindow("Console", bottom_id);
-        ImGui::DockBuilderDockWindow("DataWidget", left_id);
-        ImGui::DockBuilderDockWindow("CentralWidget", right_id);
+        ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Right,0.35f,&id2,&id1);
+        ImGui::DockBuilderSplitNode(id1, ImGuiDir_Left,0.25f,&id3,&id4);
+        ImGui::DockBuilderDockWindow("Console", id2);
+        ImGui::DockBuilderDockWindow("DataWidget", id3);
+        ImGui::DockBuilderDockWindow("CentralWidget", id4);
 
-        auto bottom_node = ImGui::DockBuilderGetNode(bottom_id);
-        bottom_node->HasCloseButton = false;
-
-        auto data_node = ImGui::DockBuilderGetNode(left_id);
-        data_node->HasCloseButton = false;
-
-        auto image_node = ImGui::DockBuilderGetNode(right_id);
-        image_node->HasCloseButton = false;
-
+        ImGui::DockBuilderGetNode(id2)->HasCloseButton = false;
+        ImGui::DockBuilderGetNode(id3)->HasCloseButton = false;
+        ImGui::DockBuilderGetNode(id4)->HasCloseButton = false;
         ImGui::DockBuilderFinish(dock_id);
 
         m_dockingNeedsReset = false;
@@ -150,7 +148,7 @@ void Application::draw(int width, int height){
     ImGui::Render();
 }
 
-void Application::_renderTabWidget()
+void Application::_drawTab()
 {
 
     static bool showImGuiMetrics = false;
@@ -178,6 +176,9 @@ void Application::_renderTabWidget()
         if (ImGui::BeginMenu("View"))
         {
             ImGui::MenuItem("Reset docking",nullptr,&m_dockingNeedsReset);
+            ImGui::Separator();
+            if(ImGui::MenuItem("Style dark")) ImGui::StyleColorsDark();
+            if(ImGui::MenuItem("Style light")) ImGui::StyleColorsLight();
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Examples"))
@@ -204,9 +205,9 @@ void Application::_renderTabWidget()
 
     if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_TabListPopupButton))
     {
-        _renderTab_General();
-        _renderTab_Image();
-        _renderTab_Stereo();
+        _drawTab_General();
+        _drawTab_Image();
+        _drawTab_Stereo();
 
         if (ImGui::BeginTabItem("Multiview"))
         {
@@ -229,7 +230,7 @@ void Application::_renderTabWidget()
     ImGui::End();
 }
 
-void Application::_renderTab_General()
+void Application::_drawTab_General()
 {
     if (!ImGui::BeginTabItem("General")) return;
 
@@ -317,7 +318,7 @@ void Application::_renderTab_General()
     m_currentTab = Tab_General;
 }
 
-void Application::_renderTab_Image()
+void Application::_drawTab_Image()
 {
     if (ImGui::BeginTabItem("Image"))
     {
@@ -352,7 +353,7 @@ void Application::_renderTab_Image()
     }
 }
 
-void Application::_renderTab_Stereo()
+void Application::_drawTab_Stereo()
 {
     if (ImGui::BeginTabItem("Stereo"))
     {
@@ -447,7 +448,7 @@ void Application::_renderTab_Stereo()
     }
 }
 
-void Application::_renderLeftWidget()
+void Application::_drawLeft()
 {
     if (m_currentTab == Tab_General || m_currentTab == Tab_Image) {
 
@@ -509,7 +510,7 @@ void Application::_renderLeftWidget()
     }
 }
 
-void Application::_renderCentralWidget()
+void Application::_drawCentral()
 {
     if (!isOneOf(m_currentTab,{Tab_General,Tab_Image,Tab_Stereo})) {
         float width  = ImGui::GetWindowContentRegionMax().x;
@@ -522,11 +523,11 @@ void Application::_renderCentralWidget()
     }
 
     static bool showFeatures = true;
+    static bool showMatches = true;
     int controlBottomBarHeight = 35;
     static float imageOpacity = 1.0f;
     static float featuresSize = 2.5f;
     static ImVec4 col = COLOR_GREEN;
-
 
     if (m_textureNeedsUpdate) {
         cv::Mat matToBind;
@@ -573,24 +574,22 @@ void Application::_renderCentralWidget()
         textureDisplay(newW, newH);
         ImGui::PopStyleVar();
 
-        if (showFeatures && isOneOf(m_currentTab,{Tab_General,Tab_Image})) {
-            auto im = m_projectData[m_currentImage];
-            if (im && im->isFeaturesExtracted()){
-                const auto & keyPts = im->getKeyPoints();
-                ImVec2 winPos = ImGui::GetWindowPos();
-                ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        ImVec2 winPos = ImGui::GetWindowPos();
+        const float posX = winPos.x + imStartX;
+        const float posY = winPos.y + imStartY;
 
-                for (const auto & kpt : keyPts) {
-                    float x = kpt.pt.x / m_textureWidth * newW;
-                    float y = kpt.pt.y / m_textureHeight * newH;
-
-                    draw_list->AddCircle(ImVec2(winPos.x + imStartX+x, winPos.y + imStartY+y), featuresSize,
-                                         IM_COL32(col.x*255,col.y*255,col.z*255,col.w*255), 6, 2);
-                }
+        if (isOneOf(m_currentTab,{Tab_General,Tab_Image})) {
+            if (showFeatures) _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH),col,featuresSize);
+            if (m_projectData.image(m_currentImage)) {
+                ImGui::SetCursorPosY(25);
+                ImGui::Text("Number of features: %i", m_projectData.image(m_currentImage)->getNbFeatures());
             }
-
-            ImGui::SetCursorPosY(0);
-            ImGui::Text("Size (px): %d x %d", m_textureWidth, m_textureHeight);
+        } else if (m_currentTab == Tab_Stereo) {
+            if (showMatches) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
+            if (m_projectData.imagePair(m_currentImage)) {
+                ImGui::SetCursorPosY(25);
+                ImGui::Text("Number of matches: %i", m_projectData.imagePair(m_currentImage)->getNbMatches());
+            }
         }
     } else {
         ImGui::Text("No image to display");
@@ -610,13 +609,16 @@ void Application::_renderCentralWidget()
         ImGui::Text("--");
         ImGui::SameLine();
         ImGui::SliderFloat("##feature-size",&featuresSize, 1.0f,15.0f, "feat_size:%.1f");
+    } else if (m_currentTab == Tab_Stereo) {
+        ImGui::Text("--");
+        ImGui::SameLine();
+        ImGui::Checkbox("Show matches",&showMatches);
+    }
+    if (showFeatures || showMatches) {
         ImGui::SameLine();
         ImGui::ColorEdit4("MyColor##3", (float*)&col, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel );
         ImGui::SameLine();
-    } else if (m_currentTab == Tab_Stereo) {
-
     }
-
     ImGui::PopFont();
 }
 
@@ -667,4 +669,60 @@ void Application::_processKeyboardInput()
             m_textureNeedsUpdate = true;
         }
     }
+}
+
+void Application::_showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float featuresSize)
+{
+    auto im = m_projectData[m_currentImage];
+    if (im && im->hasFeatures()){
+        const auto & keyPts = im->getKeyPoints();
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+        for (const auto & kpt : keyPts) {
+            float x = pos.x + kpt.pt.x / float(m_textureWidth) * size.x;
+            float y = pos.y + kpt.pt.y / float(m_textureHeight) * size.y;
+
+            draw_list->AddCircle(ImVec2(x, y), featuresSize,
+                                 IM_COL32(col.x*255,col.y*255,col.z*255,col.w*255), 6, 2);
+        }
+    }
+}
+
+void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth)
+{
+    auto imPair = m_projectData.imagePair(m_currentImage);
+    if (!imPair) return;
+    if (!imPair->hasMatches()) return;
+
+    auto imL = imPair->imL();
+    auto imR = imPair->imR();
+    if (!imL) return;
+    if (!imR) return;
+    if (!imL->hasFeatures()) return;
+    if (!imR->hasFeatures()) return;
+
+    // the texture is rendered started in {pos} with the size {size}
+    float ratioLeftTotal = imL->cvMat().cols / float(imL->cvMat().cols + imR->cvMat().cols);
+    float ratioRightTotal = (1.0f - ratioLeftTotal);
+
+    if (imL->cvMat().rows != imR->cvMat().rows) {
+        LOG_ERR("Showing matches is not supported yet for images with different height");
+    }
+
+    const float posXr = ratioLeftTotal * size.x;
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+    auto ptsL = imPair->getInliersLeft();
+    auto ptsR = imPair->getInliersRight();
+    for (int i = 0; i < ptsL.size(); ++i) {
+        float xl = pos.x + float(ptsL[i].x) / float(imL->cvMat().cols) * ratioLeftTotal * size.x;
+        float yl = pos.y + float(ptsL[i].y) / float(imL->cvMat().rows) * size.y;
+        float xr = pos.x + posXr + float(ptsR[i].x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
+        float yr = pos.y + float(ptsR[i].y) / float(imR->cvMat().rows) * size.y;
+
+        draw_list->AddLine(ImVec2(xl,yl),ImVec2(xr,yr),
+                           IM_COL32(col.x*255,col.y*255,col.z*255,col.w*255),lineWidth);
+    }
+
 }
