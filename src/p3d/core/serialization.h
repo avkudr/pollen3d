@@ -120,6 +120,7 @@ static Eigen::Matrix<Type, SizeX, SizeY> _readEigen(std::size_t & id, cv::FileNo
     cv::Mat temp;
     node[name] >> temp;
     Eigen::Matrix<Type, SizeX, SizeY> out;
+    if (temp.empty()) return out;
     out.setZero(temp.rows,temp.cols);
     cv::cv2eigen(temp,out);
     return out;

@@ -10,7 +10,8 @@ int ImagePair::initMeta()
         meta::reflect<ImagePair>(p3d_hashStr("ImagePair"))
                 .data<&ImagePair::setMatches,&ImagePair::getMatches>(p3d_hash(p3dImagePair_matches))
                 .data<&ImagePair::setLeftImage,&ImagePair::imL>(p3d_hash(p3dImagePair_imL))
-                .data<&ImagePair::setRightImage,&ImagePair::imR>(p3d_hash(p3dImagePair_imR));
+                .data<&ImagePair::setRightImage,&ImagePair::imR>(p3d_hash(p3dImagePair_imR))
+                .data<&ImagePair::setFundMat,&ImagePair::getFundMat>(p3d_hash(p3dImagePair_fundMat));
 
         SERIALIZE_TYPE_VECS(ImagePair,"vector_ImagePair");
 
@@ -19,19 +20,9 @@ int ImagePair::initMeta()
     return 0;
 }
 
-ImagePair::ImagePair()
+ImagePair::ImagePair(int imL, int imR) : _imL(imL), _imR(imR)
 {
-    _imL = -1;
-    _imR = -1;
-
-    F = NULL;
-    rectifier = NULL;
-    denseMatcher = NULL;
-    _properties.clear();
-}
-
-ImagePair::ImagePair(int imL, int imR) : _imL(imL), _imR(imR) {
-
+    F.setRandom(3,3);
 }
 
 ImagePair::~ImagePair()
@@ -70,14 +61,15 @@ cv::Mat ImagePair::getOneStereoImage(cv::Mat im1, cv::Mat im2)
 
 cv::Mat ImagePair::plotStereoWithEpilines()
 {
+    return cv::Mat();
+    /*
     cv::Mat outImg;
 
-    if ( this->F->isEmpty() ) {
-        return cv::Mat();
-    }
+    //if ( this->F->isEmpty() ) {
+    //}
 
-    cv::Mat epilines1 = this->F->getEpilinesLeft();
-    cv::Mat epilines2 = this->F->getEpilinesRight();
+//    cv::Mat epilines1 = this->F->getEpilinesLeft();
+//    cv::Mat epilines2 = this->F->getEpilinesRight();
 
     std::vector<cv::Point2d> pts1; // = _matcher->_inliersLeft;
     std::vector<cv::Point2d> pts2; // = _matcher->_inliersRight;
@@ -157,6 +149,7 @@ cv::Mat ImagePair::plotStereoWithEpilines()
     }
 
     return outImg;
+    */
 }
 
 cv::Mat ImagePair::plotStereoRectified()

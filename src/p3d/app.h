@@ -53,12 +53,18 @@ protected:
     void _drawTab_Image();
     void _drawTab_Stereo();
     void _drawData();
-    void _drawInfo();
+    void _drawProperties();
     void _drawCentral();
     void _processKeyboardInput();
 
     void _showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float featuresSize = 2.0f);
     void _showMatches(const ImVec2 & pos, const ImVec2 & size, const ImVec4 & col, float lineWidth = 1.0f);
+
+    template<typename Scalar, int SizeX, int SizeY>
+    void drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &v, const std::string &name);
+
+    template<typename Type>
+    void drawProperty_basic(const Type &v, const std::string &name, const char * fmt);
 
     template<typename Func>
     void _doHeavyTask(Func f){

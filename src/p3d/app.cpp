@@ -62,8 +62,8 @@ void Application::draw(int width, int height){
     ImGui::Begin("DataWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
     _drawData();
     ImGui::End();
-    ImGui::Begin("InfoWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
-    _drawInfo();
+    ImGui::Begin("Properties",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
+    _drawProperties();
     ImGui::End();
     ImGui::Begin("CentralWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
     _drawCentral();
@@ -87,7 +87,7 @@ void Application::draw(int width, int height){
         ImGui::DockBuilderSplitNode(id1, ImGuiDir_Left,0.25f,&id3,&id4);
         ImGui::DockBuilderSplitNode(id3, ImGuiDir_Down,0.5f,&id5,&id6);
         ImGui::DockBuilderDockWindow("Console", id2);
-        ImGui::DockBuilderDockWindow("InfoWidget", id5);
+        ImGui::DockBuilderDockWindow("Properties", id5);
         ImGui::DockBuilderDockWindow("DataWidget", id6);
         ImGui::DockBuilderDockWindow("CentralWidget", id4);
 
@@ -520,21 +520,17 @@ void Application::_drawData()
     }
 }
 
-void Application::_drawInfo()
+void Application::_drawProperties()
 {
+    ImGui::Columns(2, "mycolumns3", true);  // 2 cols with border
+
     if (m_currentTab == Tab_General || m_currentTab == Tab_Image)
     {
         auto im = m_projectData.image(m_currentImage);
         if (!im) return;
-        ImGui::Text(ICON_FA_CUBE" path: %s", im->getPath().c_str());
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::TextUnformatted(im->getPath().c_str());
-            ImGui::EndTooltip();
-        }
-        ImGui::Text(ICON_FA_CUBE" features: %i", im->getNbFeatures());
-        ImGui::Text(ICON_FA_BORDER_ALL" matrix");
+
+        drawProperty_basic(im->getPath().c_str(),"path","%s");
+        drawProperty_basic(im->getNbFeatures(),"features","%i");
         return;
     }
 
@@ -542,9 +538,62 @@ void Application::_drawInfo()
     {
         auto imPair = m_projectData.imagePair(m_currentImage);
         if (!imPair) return;
-        ImGui::Text(ICON_FA_CUBE" matches: %i", imPair->getNbMatches());
+
+        drawProperty_basic(imPair->getNbMatches(),"matches","%i");
+        drawProperty_matrix(imPair->getFundMat(),"fund. matrix");
         return;
     }
+
+    ImGui::Columns(1);
+}
+
+
+template<typename Type>
+void Application::drawProperty_basic(const Type &v, const std::string &name, const char *fmt)
+{
+    bool hovered = false;
+    ImGui::Text("%s %s", ICON_FA_CUBE, name.c_str());
+    if (ImGui::IsItemHovered()) hovered = true;
+    ImGui::NextColumn();
+    ImGui::Text(fmt,v);
+    if (hovered || ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::Text(fmt,v);
+        ImGui::EndTooltip();
+    }
+    ImGui::NextColumn();
+}
+
+template<typename Scalar, int SizeX, int SizeY>
+void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &A, const std::string &name)
+{
+    ImGui::Text("%s %s", ICON_FA_BORDER_ALL, name.c_str());
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        int maxX = 12;
+        int maxY = 12;
+        if (SizeX > maxX || SizeY > maxY) {
+            ImGui::Text("Matrix is too big to display\nshowing only the %ix%i top left corner", maxX, maxY);
+        }
+
+        maxX = std::min(maxX,SizeX);
+        maxY = std::min(maxY,SizeY);
+        ImGui::Indent();
+        for (int i = 0; i < maxX; ++i){
+            for (int j = 0; j < maxY; ++j){
+                ImGui::Text("%.4f",A(i,j));
+                if (j < maxY - 1) ImGui::SameLine();
+            }
+        }
+        ImGui::Unindent();
+
+        ImGui::EndTooltip();
+    }
+    ImGui::NextColumn();
+    ImGui::Text("[%ix%i]", SizeX, SizeY);
+    ImGui::NextColumn();
 }
 
 void Application::_drawCentral()

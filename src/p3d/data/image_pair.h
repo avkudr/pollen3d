@@ -9,6 +9,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
+#include <Eigen/Core>
+
 #include "p3d/core/core.h"
 #include "p3d/data/image.h"
 #include "p3d/core/densematcher.h"
@@ -52,14 +54,16 @@ enum p3dImagePair_
     p3dImagePair_matches = 0,
     p3dImagePair_imL = 1,
     p3dImagePair_imR = 2,
+    p3dImagePair_fundMat = 3,
 };
 
 class ImagePair : public Serializable<ImagePair>{
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     static int initMeta();
 
-    ImagePair();
-    ImagePair(int imL, int imR);
+    ImagePair(int imL = -1, int imR = -1);
     ~ImagePair() override;
 
     bool isValid() { return _imL >= 0 && _imR >= 0;}
@@ -72,7 +76,6 @@ public:
         return m_matches.size() == i.m_matches.size();
     }
 
-    FundMat * F;
     Rectifier * rectifier;
     DenseMatcher * denseMatcher;
 
@@ -89,6 +92,9 @@ public:
     void setLeftImage(int imL) { _imL = imL; }
     void setRightImage(int imR) { _imR = imR; }
 
+    const Eigen::Matrix<double,3,3> & getFundMat() const { return F; }
+    void setFundMat(const Eigen::Matrix<double,3,3> & f) { F = f; }
+
     std::vector<cv::Point2d> getInliersLeftImageREFACTOR() { return getInliersREFACTOR(0); }
     std::vector<cv::Point2d> getInliersRightImageREFACTOR() { return getInliersREFACTOR(1); }
     std::vector<cv::Point2d> getInliersREFACTOR(int imageIdx) {return std::vector<cv::Point2d>();/*_matcher->getInliers(imageIdx);*/}
@@ -98,6 +104,8 @@ private:
     int _imR = -1;
 
     std::vector<Match> m_matches;
+
+    Eigen::Matrix<double,3,3> F;
 };
 
 #endif // IMAGE_PAIR_H
