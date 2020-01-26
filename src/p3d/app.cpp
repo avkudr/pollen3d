@@ -33,6 +33,7 @@ void Application::applyStyle() {
     style.WindowRounding = 0;
     style.IndentSpacing = 8.0f;
     style.WindowMenuButtonPosition = ImGuiDir_Right;
+    style.Colors[ImGuiCol_TitleBg] = style.Colors[ImGuiCol_TitleBgActive];
 }
 
 void Application::draw(int width, int height){
@@ -52,7 +53,10 @@ void Application::draw(int width, int height){
     }
 
     ImGui::Begin("DataWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
-    _drawLeft();
+    _drawData();
+    ImGui::End();
+    ImGui::Begin("InfoWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
+    _drawInfo();
     ImGui::End();
     ImGui::Begin("CentralWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
     _drawCentral();
@@ -69,14 +73,15 @@ void Application::draw(int width, int height){
         ImGui::DockBuilderRemoveNode(dock_id); // Clear out existing layout
         ImGui::DockBuilderAddNode(dock_id); //viewport->Size); // Add empty node
 
-        ImGuiID id1, id2;
-        ImGuiID id3, id4;
+        ImGuiID id1, id2, id3, id4, id5, id6;
         ImGui::DockBuilderSetNodePos(dock_id, ImVec2(0, m_heightTabSection));
         ImGui::DockBuilderSetNodeSize(dock_id, ImVec2(width, height - m_heightTabSection));
         ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Right,0.35f,&id2,&id1);
         ImGui::DockBuilderSplitNode(id1, ImGuiDir_Left,0.25f,&id3,&id4);
+        ImGui::DockBuilderSplitNode(id3, ImGuiDir_Down,0.5f,&id5,&id6);
         ImGui::DockBuilderDockWindow("Console", id2);
-        ImGui::DockBuilderDockWindow("DataWidget", id3);
+        ImGui::DockBuilderDockWindow("InfoWidget", id5);
+        ImGui::DockBuilderDockWindow("DataWidget", id6);
         ImGui::DockBuilderDockWindow("CentralWidget", id4);
 
         ImGui::DockBuilderGetNode(id2)->HasCloseButton = false;
@@ -448,7 +453,7 @@ void Application::_drawTab_Stereo()
     }
 }
 
-void Application::_drawLeft()
+void Application::_drawData()
 {
     if (m_currentTab == Tab_General || m_currentTab == Tab_Image) {
 
@@ -487,13 +492,8 @@ void Application::_drawLeft()
         {
             for (auto n = 0; n < (int)m_projectData.nbImagePairs(); n++)
             {
-                auto imPairPtr = m_projectData.imagePair(n);
-                if (!imPairPtr || !imPairPtr->isValid()) continue;
-
-                auto imIdxL = imPairPtr->imL();
-                auto imIdxR = imPairPtr->imR();
-                auto imL = m_projectData.image(imIdxL);
-                auto imR = m_projectData.image(imIdxR);
+                auto imL = m_projectData.imagePairL(n);
+                auto imR = m_projectData.imagePairR(n);
                 if (!imL) continue;
                 if (!imR) continue;
 
@@ -508,6 +508,32 @@ void Application::_drawLeft()
             }
             ImGui::TreePop();
         }
+        return;
+    }
+}
+
+void Application::_drawInfo()
+{
+    if (m_currentTab == Tab_General || m_currentTab == Tab_Image)
+    {
+        auto im = m_projectData.image(m_currentImage);
+        if (!im) return;
+        ImGui::Text("path: %s", im->getPath().c_str());
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(im->getPath().c_str());
+            ImGui::EndTooltip();
+        }
+        ImGui::Text("#features: %i", im->getNbFeatures());
+        return;
+    }
+
+    if (m_currentTab == Tab_Stereo)
+    {
+        auto imPair = m_projectData.imagePair(m_currentImage);
+        if (!imPair) return;
+        ImGui::Text("#matches: %i", imPair->getNbMatches());
         return;
     }
 }
@@ -585,16 +611,8 @@ void Application::_drawCentral()
 
         if (isOneOf(m_currentTab,{Tab_General,Tab_Image})) {
             if (showFeatures) _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH),col,featuresSize);
-            if (m_projectData.image(m_currentImage)) {
-                ImGui::SetCursorPosY(25);
-                ImGui::Text("Number of features: %i", m_projectData.image(m_currentImage)->getNbFeatures());
-            }
         } else if (m_currentTab == Tab_Stereo) {
             if (showMatches) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
-            if (m_projectData.imagePair(m_currentImage)) {
-                ImGui::SetCursorPosY(25);
-                ImGui::Text("Number of matches: %i", m_projectData.imagePair(m_currentImage)->getNbMatches());
-            }
         }
     } else {
         ImGui::Text("No image to display");

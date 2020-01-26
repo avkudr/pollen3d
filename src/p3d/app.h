@@ -52,7 +52,8 @@ protected:
     void _drawTab_General();
     void _drawTab_Image();
     void _drawTab_Stereo();
-    void _drawLeft();
+    void _drawData();
+    void _drawInfo();
     void _drawCentral();
     void _processKeyboardInput();
 
