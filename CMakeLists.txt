@@ -95,6 +95,7 @@ set(SOURCES
     ./src/p3d/core/core.cpp
     ./src/p3d/core/core.h
     ./src/p3d/core/serialization.h
+    ./src/p3d/core/serialization.cpp
     ./src/p3d/core/densematcher.cpp
     ./src/p3d/core/densematcher.h
     ./src/p3d/core/fundmat.cpp

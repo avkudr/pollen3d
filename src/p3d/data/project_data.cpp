@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -13,18 +12,25 @@
 #include "p3d/core/rectification.h"
 #include "p3d/core/core.h"
 
-ProjectData::ProjectData() : Serializable(){
-    clear();
+int dummyProjectData_ = ProjectData::initMeta();
 
+int ProjectData::initMeta()
+{
     static bool firstCall = true;
     if (firstCall) {
-        firstCall = false;
+        std::cout << "Reflecting: ProjectData" << std::endl;
         meta::reflect<ProjectData>(p3d_hashStr("ProjectData"))
             .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(p3d_hash(p3dData_projectPath))
             .data<&ProjectData::set_isDummy>(p3d_hash(p3dData_dummy))
             .data<&ProjectData::_images>(p3d_hash(p3dData_images));
+        firstCall = false;
     }
-    //}
+    return 0;
+}
+
+
+ProjectData::ProjectData() : Serializable(){
+    clear();
 }
 
 void ProjectData::clear()

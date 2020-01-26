@@ -126,42 +126,7 @@ static Eigen::Matrix<Type, SizeX, SizeY> _readEigen(std::size_t & id, cv::FileNo
 }
 
 
-[[maybe_unused]]
-static void registerTypes() {
-    static bool notRegisteredYet = 1;
-    if (notRegisteredYet) {
-        std::cout << "register MetaTypes: " << notRegisteredYet << std::endl;
-        SERIALIZE_TYPE(float,"float");
-        SERIALIZE_TYPE(double,"double");
-        SERIALIZE_TYPE(int,"int");
-        SERIALIZE_TYPE(std::string,"std::string");
-
-        meta::reflect<bool>(p3d_hashStr("bool"))
-                .func<&impl::_readBool>(p3d_hashStr("_read"))
-                .func<&impl::_write<bool>>(p3d_hashStr("_write"));
-
-        /*
-         * not working :'(
-        meta::reflect<cv::Mat>(p3d_hashStr("bool"))
-                .func<&impl::_readCvMat>(p3d_hashStr("_read"))
-                .func<&impl::_write<cv::Mat>>(p3d_hashStr("_write"));
-        */
-
-        SERIALIZE_TYPE_VEC(float,"vector_float");
-        SERIALIZE_TYPE_VEC(double,"vector_double");
-        SERIALIZE_TYPE_VEC(int,"vector_int");
-        SERIALIZE_TYPE_VEC(std::string,"vector_std::string");
-
-        SERIALIZE_TYPE_EIGEN(  float, 3, 3, "Eigen__float33");
-        SERIALIZE_TYPE_EIGEN(  float, 3, 4, "Eigen__float34");
-        SERIALIZE_TYPE_EIGEN(  float,-1,-1, "Eigen__floatXX");
-
-        SERIALIZE_TYPE_EIGEN( double,3,3, "Eigen_double33");
-//        SERIALIZE_TYPE_EIGEN(double,3,4, "Eigen_double34");
-
-        notRegisteredYet = false;
-    }
-}
+static int registerTypes();
 
 }
 

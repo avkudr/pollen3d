@@ -3,10 +3,25 @@
 #include "p3d/core/core.h"
 #include "p3d/core/utils.h"
 
+int dummyImage_ = Image::initMeta();
+
+int Image::initMeta()
+{
+    static bool firstCall = true;
+    if (firstCall) {
+        std::cout << "Reflecting: Image" << std::endl;
+        meta::reflect<Image>(p3d_hashStr("Image"))
+            .data<&Image::setPath,&Image::getPath>(p3d_hash(p3dImage_path));
+        SERIALIZE_TYPE_VECS(Image,"vector_Image");
+        firstCall = false;
+    }
+    return 0;
+}
+
+
 Image::Image(cv::Mat im)
 {
     _imageCV = im;
-    init();
 }
 
 Image::Image(const std::string & path)
@@ -20,7 +35,6 @@ Image::Image(const std::string & path)
         _path = path;
         _imageCV = im.clone();
     }
-    init();
 }
 
 cv::Mat Image::getFeaturePositions() const
@@ -40,11 +54,6 @@ cv::Mat Image::getFeaturePositions() const
 void Image::setKeyPoints(std::vector<cv::KeyPoint> kpts){
     _kpts.clear();
     _kpts = kpts;
-}
-
-void Image::init()
-{
-
 }
 
 /*

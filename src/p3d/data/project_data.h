@@ -30,6 +30,8 @@ public:
             _imagesPairs.emplace_back(ImagePair(&_images[i],&_images[i+1]));
         }
     }
+    static int initMeta();
+
     void clear();
     size_t nbImages() const { return _images.size(); }
     size_t nbImagePairs() const { return _imagesPairs.size(); }

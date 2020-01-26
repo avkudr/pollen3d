@@ -23,27 +23,14 @@ using std::string;
 class Match : public Serializable<Match>{
 public:
     Match(){
-        init();
     }
     Match(int idxPtImageL, int idxPtImageR, float dist = 0.0f) :
         iPtL(idxPtImageL), iPtR(idxPtImageR), distance(dist)
     {
-        init();
     }
     ~Match(){}
 
-    void init() {
-        static bool firstCall = true;
-        if (firstCall) {
-            meta::reflect<Match>(p3d_hashStr("Match"))
-                .data<&Match::iPtL>(p3d_hash(0))
-                .data<&Match::iPtR>(p3d_hash(1))
-                .data<&Match::distance>(p3d_hash(2));
-            firstCall = false;
-
-            SERIALIZE_TYPE_VECS(Match,"vector_Match");
-        }
-    }
+    static int initMeta();
     int iPtL{0};
     int iPtR{0};
     float distance = 0;
@@ -59,7 +46,8 @@ public:
     ImagePair(Image * imL, Image * imR);
     ~ImagePair();
 
-    void init();
+    static int initMeta();
+
     Matcher* _matcher;
     FundMat * F;
     Rectifier * rectifier;

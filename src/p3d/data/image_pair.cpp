@@ -1,5 +1,18 @@
 #include "image_pair.h"
 
+int dummyImagePair_ = ImagePair::initMeta();
+
+int ImagePair::initMeta()
+{
+    static bool firstCall = true;
+    if (firstCall) {
+        std::cout << "Reflecting: ImagePair" << std::endl;
+        meta::reflect<ImagePair>(p3d_hashStr("ImagePair"));
+        firstCall = false;
+    }
+    return 0;
+}
+
 ImagePair::ImagePair()
 {
     _imL = nullptr;
@@ -10,8 +23,6 @@ ImagePair::ImagePair()
     rectifier = NULL;
     denseMatcher = NULL;
     _properties.clear();
-
-    init();
 }
 
 ImagePair::ImagePair(Image *imL, Image *imR) : _imL(imL), _imR(imR) {
@@ -24,8 +35,6 @@ ImagePair::ImagePair(Image *imL, Image *imR) : _imL(imL), _imR(imR) {
     F->init(&_matcher->_inliersLeft,&_matcher->_inliersRight);
     rectifier->init(imL,imR,F,&_matcher->_inliersLeft,&_matcher->_inliersRight);
     denseMatcher->init( &rectifier->imLrect, &rectifier->imRrect);
-
-    init();
 }
 
 ImagePair::~ImagePair()
@@ -34,15 +43,6 @@ ImagePair::~ImagePair()
 //    if (F) delete F;
 //    if (rectifier) delete rectifier;
     //    if (denseMatcher) delete denseMatcher;
-}
-
-void ImagePair::init()
-{
-    static bool firstCall = true;
-    if (firstCall) {
-        meta::reflect<ImagePair>(p3d_hashStr("ImagePair"));
-        firstCall = false;
-    }
 }
 
 cv::Mat ImagePair::getOneStereoImage(cv::Mat im1, cv::Mat im2)
@@ -199,3 +199,19 @@ void ImagePair::updatessssProperties()
 
 }
 */
+
+int Match::initMeta() {
+    static bool firstCall = true;
+    if (firstCall) {
+        std::cout << "Reflecting: Match" << std::endl;
+        meta::reflect<Match>(p3d_hashStr("Match"))
+                .data<&Match::iPtL>(p3d_hash(0))
+                .data<&Match::iPtR>(p3d_hash(1))
+                .data<&Match::distance>(p3d_hash(2));
+        firstCall = false;
+
+        SERIALIZE_TYPE_VECS(Match,"vector_Match");
+    }
+    return 0;
+}
+int dummyMatch_ = Match::initMeta();

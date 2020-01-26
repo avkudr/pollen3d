@@ -157,10 +157,6 @@ TEST(META, meta_serializeVecMatches)
 
 TEST(META, meta_serializeProject)
 {
-    meta::reflect<Image>(p3d_hashStr("Image"))
-        .data<&Image::setPath,&Image::getPath>(p3d_hash(p3dImage_path));
-    SERIALIZE_TYPE_VECS(Image,"vector_Image");
-
     ProjectData data1;
     std::string path = "test" + std::string(P3D_PROJECT_EXTENSION);
     data1.setProjectPath(path);
