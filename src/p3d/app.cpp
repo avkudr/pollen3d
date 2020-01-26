@@ -461,7 +461,7 @@ void Application::_drawLeft()
         {
             for (int n = 0; n < m_projectData.nbImages(); n++)
             {
-                auto imPtr = m_projectData[n];
+                auto imPtr = m_projectData.image(n);
                 if (!imPtr) continue;
 
                 if (ImGui::Selectable(imPtr->name().c_str(), m_currentImage == n)) {
@@ -488,10 +488,12 @@ void Application::_drawLeft()
             for (auto n = 0; n < (int)m_projectData.nbImagePairs(); n++)
             {
                 auto imPairPtr = m_projectData.imagePair(n);
-                if (!imPairPtr) continue;
+                if (!imPairPtr || !imPairPtr->isValid()) continue;
 
-                auto imL = imPairPtr->imL();
-                auto imR = imPairPtr->imR();
+                auto imIdxL = imPairPtr->imL();
+                auto imIdxR = imPairPtr->imR();
+                auto imL = m_projectData.image(imIdxL);
+                auto imR = m_projectData.image(imIdxR);
                 if (!imL) continue;
                 if (!imR) continue;
 
@@ -535,10 +537,13 @@ void Application::_drawCentral()
             auto imPtr = m_projectData.image(m_currentImage);
             if (imPtr) matToBind = imPtr->cvMat();
         } else if (m_currentTab == Tab_Stereo) {
-            auto imPairPtr = m_projectData.imagePair(m_currentImage);
-            if (imPairPtr) {
-                auto imL = imPairPtr->imL();
-                auto imR = imPairPtr->imR();
+            auto imPair = m_projectData.imagePair(m_currentImage);
+            if (imPair && imPair->isValid()) {
+                auto imIdxL = imPair->imL();
+                auto imIdxR = imPair->imR();
+                auto imL = m_projectData.image(imIdxL);
+                auto imR = m_projectData.image(imIdxR);
+
                 if (imL && imR) {
                     matToBind = utils::concatenateMat({imL->cvMat(),imR->cvMat()},utils::CONCAT_HORIZONTAL);
                 }
@@ -673,7 +678,7 @@ void Application::_processKeyboardInput()
 
 void Application::_showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float featuresSize)
 {
-    auto im = m_projectData[m_currentImage];
+    auto im = m_projectData.image(m_currentImage);
     if (im && im->hasFeatures()){
         const auto & keyPts = im->getKeyPoints();
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -691,11 +696,14 @@ void Application::_showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImV
 void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth)
 {
     auto imPair = m_projectData.imagePair(m_currentImage);
-    if (!imPair) return;
+    if (!imPair || !imPair->isValid()) return;
     if (!imPair->hasMatches()) return;
 
-    auto imL = imPair->imL();
-    auto imR = imPair->imR();
+    auto imIdxL = imPair->imL();
+    auto imIdxR = imPair->imR();
+    auto imL = m_projectData.image(imIdxL);
+    auto imR = m_projectData.image(imIdxR);
+
     if (!imL) return;
     if (!imR) return;
     if (!imL->hasFeatures()) return;

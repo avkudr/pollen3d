@@ -7,7 +7,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
-#include "p3d/core/matching.h"
 #include "p3d/core/fundmat.h"
 #include "p3d/core/rectification.h"
 #include "p3d/core/core.h"
@@ -22,8 +21,7 @@ int ProjectData::initMeta()
         meta::reflect<ProjectData>(p3d_hashStr("ProjectData"))
             .data<&ProjectData::setImagePairs,&ProjectData::getImagePairs>(p3d_hash(p3dData_imagePairs))
             .data<&ProjectData::setImageList,&ProjectData::getImageList>(p3d_hash(p3dData_images))
-            .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(p3d_hash(p3dData_projectPath))
-            .data<&ProjectData::set_isDummy>(p3d_hash(p3dData_dummy));
+            .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(p3d_hash(p3dData_projectPath));
         firstCall = false;
     }
     return 0;
@@ -36,38 +34,38 @@ ProjectData::ProjectData() : Serializable(){
 
 void ProjectData::setImageList(const std::vector<Image> &imList){
     if (imList.empty()) return;
-    _images = imList;
+    m_images = imList;
 
-    _imagesPairs.clear();
-    for (auto i = 0; i < _images.size()-1; ++i) {
-        _imagesPairs.emplace_back(ImagePair(&_images[i],&_images[i+1]));
+    m_imagesPairs.clear();
+    for (auto i = 0; i < m_images.size()-1; ++i) {
+        m_imagesPairs.emplace_back(ImagePair(i,i+1));
     }
 }
 
 void ProjectData::clear()
 {
-    _images.clear();
-    _imagesPairs.clear();
+    m_images.clear();
+    m_imagesPairs.clear();
 }
 
 Image *ProjectData::getREFACTOR(const int index)
 {
-    return &_images[index];
+    return &m_images[index];
 }
 
 ImagePair *ProjectData::getPairREFACTOR(const int index)
 {
-    return &_imagesPairs[index];
+    return &m_imagesPairs[index];
 }
 
 void ProjectData::estimateMeasurementMatrixFull()
 {
-    int nbIm = (int) _images.size();
+    int nbIm = (int) m_images.size();
 
     std::vector<cv::Mat> matchingCols;
     matchingCols.clear();
     for (int i = 0; i < nbIm - 1; i++){
-        matchingCols.push_back(_imagesPairs[i]._matcher->getMatchesAsIdxColumn());
+        //matchingCols.push_back(m_imagesPairs[i]._matcher->getMatchesAsIdxColumn());
     }
 
     cv::Mat table = cv::Mat::zeros(0, nbIm, CV_64F);
@@ -120,8 +118,8 @@ void ProjectData::estimateMeasurementMatrixFull()
             int number = (int) tempTable.at<double>(im,p);
 
             if (number != 0){
-                _measurementMatrixFull.at<double>(3*im    ,p) = _images[im].getKeyPoints()[number].pt.x; //x
-                _measurementMatrixFull.at<double>(3*im + 1,p) = _images[im].getKeyPoints()[number].pt.y; //y
+                _measurementMatrixFull.at<double>(3*im    ,p) = m_images[im].getKeyPoints()[number].pt.x; //x
+                _measurementMatrixFull.at<double>(3*im + 1,p) = m_images[im].getKeyPoints()[number].pt.y; //y
                 _measurementMatrixFull.at<double>(3*im + 2,p) = 1;                          //1
             }
         }
@@ -139,7 +137,7 @@ void ProjectData::estimateMeasurementMatrix()
         this->estimateMeasurementMatrixFull();
     }
 
-    int nbIm = (int) _images.size();
+    int nbIm = (int) m_images.size();
 
     // **** TABLE FILTERING
 
@@ -167,8 +165,8 @@ void ProjectData::estimateMeasurementMatrix()
 
             int number = (int) tableFiltered.at<double>(im,p);
 
-            _measurementMatrix.at<double>(3*im    ,p) = _images[im].getKeyPoints()[number].pt.x; //x
-            _measurementMatrix.at<double>(3*im + 1,p) = _images[im].getKeyPoints()[number].pt.y; //y
+            _measurementMatrix.at<double>(3*im    ,p) = m_images[im].getKeyPoints()[number].pt.x; //x
+            _measurementMatrix.at<double>(3*im + 1,p) = m_images[im].getKeyPoints()[number].pt.y; //y
         }
     }
 
@@ -256,15 +254,15 @@ void ProjectData::estimateMeasurementMatrixKLT()
     this->_measurementMatrix.release();
     this->_measurementMatrix = W.clone();
 
-    for (int i = 0; i < this->_imagesPairs.size(); i++){
+    for (int i = 0; i < this->m_imagesPairs.size(); i++){
         cv::Mat matches = cv::Mat::zeros(0,2,cv::DataType<double>::type);
         for(int p = 0; p < nbPts; p++){
             cv::Mat row = (cv::Mat_<double>(1,2) << p,p);
             matches.push_back(row);
         }
 
-        ImagePair * pair = &this->_imagesPairs[i];
-        pair->_matcher->setMatchesTable(matches);
+        ImagePair * pair = &this->m_imagesPairs[i];
+        //pair->_matcher->setMatchesTable(matches);
     }
     LOG_INFO( "Obtained measurement matrix: %ix%i", W.rows, W.cols );
 }

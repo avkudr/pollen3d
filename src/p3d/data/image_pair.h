@@ -11,7 +11,6 @@
 
 #include "p3d/core/core.h"
 #include "p3d/data/image.h"
-#include "p3d/core/matching.h"
 #include "p3d/core/densematcher.h"
 #include "p3d/core/fundmat.h"
 #include "p3d/core/rectification.h"
@@ -19,6 +18,13 @@
 
 using std::vector;
 using std::string;
+
+enum p3dMatch_
+{
+    p3dMatch_iPtL = 0,
+    p3dMatch_iPtR = 1,
+    p3dMatch_distance = 2,
+};
 
 class Match : public Serializable<Match>{
 public:
@@ -44,6 +50,8 @@ public:
 enum p3dImagePair_
 {
     p3dImagePair_matches = 0,
+    p3dImagePair_imL = 1,
+    p3dImagePair_imR = 2,
 };
 
 class ImagePair : public Serializable<ImagePair>{
@@ -51,9 +59,10 @@ public:
     static int initMeta();
 
     ImagePair();
-    ImagePair(Image * imL, Image * imR);
+    ImagePair(int imL, int imR);
     ~ImagePair() override;
 
+    bool isValid() { return _imL >= 0 && _imR >= 0;}
     bool hasMatches() { return getNbMatches() > 0; }
     int getNbMatches() { return int(m_matches.size()); }
     const std::vector<Match> & getMatches() const { return m_matches; }
@@ -63,31 +72,30 @@ public:
         return m_matches.size() == i.m_matches.size();
     }
 
-    Matcher* _matcher;
     FundMat * F;
     Rectifier * rectifier;
     DenseMatcher * denseMatcher;
 
     cv::Mat getOneStereoImage(cv::Mat im1, cv::Mat im2);
-    cv::Mat plotStereoWithMatches();
+
     cv::Mat plotStereoWithEpilines();
     cv::Mat plotStereoRectified();
 
     vector<Property*> _properties;
     //void updatePsssroperties();
 
-    Image * imL() { return _imL; }
-    Image * imR() { return _imR; }
-    void setLeftImage(Image * imL) { LOG_WARN("TO DO: Replace pointers with indices"); _imL = imL; }
-    void setRightImage(Image * imR) { LOG_WARN("TO DO: Replace pointers with indices"); _imR = imR; }
+    int imL() { return _imL; }
+    int imR() { return _imR; }
+    void setLeftImage(int imL) { _imL = imL; }
+    void setRightImage(int imR) { _imR = imR; }
 
     std::vector<cv::Point2d> getInliersLeftImageREFACTOR() { return getInliersREFACTOR(0); }
     std::vector<cv::Point2d> getInliersRightImageREFACTOR() { return getInliersREFACTOR(1); }
-    std::vector<cv::Point2d> getInliersREFACTOR(int imageIdx) {return _matcher->getInliers(imageIdx);}
+    std::vector<cv::Point2d> getInliersREFACTOR(int imageIdx) {return std::vector<cv::Point2d>();/*_matcher->getInliers(imageIdx);*/}
 
 private:
-    Image * _imL = nullptr;
-    Image * _imR = nullptr;
+    int _imL = -1;
+    int _imR = -1;
 
     std::vector<Match> m_matches;
 };

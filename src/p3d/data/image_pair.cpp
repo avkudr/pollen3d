@@ -7,8 +7,10 @@ int ImagePair::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         std::cout << "Reflecting: ImagePair" << std::endl;
-        meta::reflect<ImagePair>(p3d_hashStr("ImagePair")).
-                data<&ImagePair::setMatches,&ImagePair::getMatches>(p3d_hash(p3dImagePair_matches));
+        meta::reflect<ImagePair>(p3d_hashStr("ImagePair"))
+                .data<&ImagePair::setMatches,&ImagePair::getMatches>(p3d_hash(p3dImagePair_matches))
+                .data<&ImagePair::setLeftImage,&ImagePair::imL>(p3d_hash(p3dImagePair_imL))
+                .data<&ImagePair::setRightImage,&ImagePair::imR>(p3d_hash(p3dImagePair_imR));
 
         SERIALIZE_TYPE_VECS(ImagePair,"vector_ImagePair");
 
@@ -19,26 +21,17 @@ int ImagePair::initMeta()
 
 ImagePair::ImagePair()
 {
-    _imL = nullptr;
-    _imR = nullptr;
+    _imL = -1;
+    _imR = -1;
 
-    _matcher = NULL;
     F = NULL;
     rectifier = NULL;
     denseMatcher = NULL;
     _properties.clear();
 }
 
-ImagePair::ImagePair(Image *imL, Image *imR) : _imL(imL), _imR(imR) {
-    _matcher = new Matcher(Matcher::METHOD_BruteForceL1);
-    F = new FundMat();
-    rectifier = new Rectifier();
-    denseMatcher = new DenseMatcher();
+ImagePair::ImagePair(int imL, int imR) : _imL(imL), _imR(imR) {
 
-    _matcher->init(imL->_desc,imR->_desc, imL->_kpts, imR->_kpts);
-    F->init(&_matcher->_inliersLeft,&_matcher->_inliersRight);
-    rectifier->init(imL,imR,F,&_matcher->_inliersLeft,&_matcher->_inliersRight);
-    denseMatcher->init( &rectifier->imLrect, &rectifier->imRrect);
 }
 
 ImagePair::~ImagePair()
@@ -75,26 +68,6 @@ cv::Mat ImagePair::getOneStereoImage(cv::Mat im1, cv::Mat im2)
     return outImg;
 }
 
-cv::Mat ImagePair::plotStereoWithMatches()
-{
-    cv::Mat image;
-    cv::Mat imLeftConverted;
-    cv::Mat imRightConverted;
-
-    cv::cvtColor( _imL->cvMat(), imLeftConverted, CV_BGR2GRAY);
-    cv::cvtColor( _imR->cvMat(), imRightConverted, CV_BGR2GRAY);
-
-    /*
-    DEFAULT = 0,
-    DRAW_OVER_OUTIMG = 1,
-    NOT_DRAW_SINGLE_POINTS = 2,
-    DRAW_RICH_KEYPOINTS = 4
-    */
-    cv::drawMatches( imLeftConverted, _imL->getKeyPoints(), imRightConverted, _imR->getKeyPoints(), _matcher->getMatchesAsDMatchVector(), image,
-                     cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector< char >(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-    return image;
-}
-
 cv::Mat ImagePair::plotStereoWithEpilines()
 {
     cv::Mat outImg;
@@ -106,16 +79,16 @@ cv::Mat ImagePair::plotStereoWithEpilines()
     cv::Mat epilines1 = this->F->getEpilinesLeft();
     cv::Mat epilines2 = this->F->getEpilinesRight();
 
-    std::vector<cv::Point2d> pts1 = _matcher->_inliersLeft;
-    std::vector<cv::Point2d> pts2 = _matcher->_inliersRight;
+    std::vector<cv::Point2d> pts1; // = _matcher->_inliersLeft;
+    std::vector<cv::Point2d> pts2; // = _matcher->_inliersRight;
 
     cv::Mat img1;
     cv::Mat img2;
 
-    cv::cvtColor(_imL->cvMat(), img1, CV_BGR2GRAY);
-    cv::cvtColor(_imR->cvMat(), img2, CV_BGR2GRAY);
+//    cv::cvtColor(_imL->cvMat(), img1, CV_BGR2GRAY);
+//    cv::cvtColor(_imR->cvMat(), img2, CV_BGR2GRAY);
 
-    outImg = getOneStereoImage(img1, img2);
+//    outImg = getOneStereoImage(img1, img2);
     cv::Rect rect1(0,0, img1.cols, img1.rows);
     cv::Rect rect2(img1.cols, 0, img2.cols, img2.rows);
 
@@ -191,27 +164,14 @@ cv::Mat ImagePair::plotStereoRectified()
     return getOneStereoImage(rectifier->imLrect,rectifier->imRrect);
 }
 
-/*
-void ImagePair::updatessssProperties()
-{
-
-    _properties.clear();
-    _properties.push_back(new CVMatProperty(&_matcher->_matchesTable, "Matches"));
-    _properties.push_back(new FundMatProperty(F, "FundMat"));
-    _properties.push_back(new FundMatErrorProperty(F));
-    _properties.push_back(new CVMatProperty(&denseMatcher->_dispValues, "Disparity"));
-
-}
-*/
-
 int Match::initMeta() {
     static bool firstCall = true;
     if (firstCall) {
         std::cout << "Reflecting: Match" << std::endl;
         meta::reflect<Match>(p3d_hashStr("Match"))
-                .data<&Match::iPtL>(p3d_hash(0))
-                .data<&Match::iPtR>(p3d_hash(1))
-                .data<&Match::distance>(p3d_hash(2));
+                .data<&Match::iPtL>(p3d_hash(p3dMatch_iPtL))
+                .data<&Match::iPtR>(p3d_hash(p3dMatch_iPtR))
+                .data<&Match::distance>(p3d_hash(p3dMatch_distance));
 
         firstCall = false;
 

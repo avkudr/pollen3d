@@ -102,8 +102,6 @@ set(SOURCES
     ./src/p3d/core/fundmat.h
     ./src/p3d/core/imageproperties.cpp
     ./src/p3d/core/imageproperties.h
-    ./src/p3d/core/matching.cpp
-    ./src/p3d/core/matching.h
     ./src/p3d/core/rectification.cpp
     ./src/p3d/core/rectification.h
     ./src/p3d/core/robust_estim.hpp

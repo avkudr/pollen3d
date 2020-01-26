@@ -199,10 +199,13 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
 #pragma omp parallel for
     for (int i = 0; i < nbPairs; i++) {
         auto imPair = imList.imagePair(i);
-        if (!imPair) continue;
+        if (!imPair || !imPair->isValid()) continue;
 
-        auto imL = imPair->imL();
-        auto imR = imPair->imR();
+        auto imIdxL = imPair->imL();
+        auto imIdxR = imPair->imR();
+        auto imL = imList.image(imIdxL);
+        auto imR = imList.image(imIdxR);
+
         if ( imR == nullptr || imR == nullptr ) continue;
         if ( !imL->hasFeatures() || !imR->hasFeatures()) {
             LOG_ERR("Features must be extracted before matching");
@@ -214,8 +217,6 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
         const auto & _descriptorsLeftImage  = imL->getDescriptors();
         const auto & _descriptorsRightImage = imR->getDescriptors();
 
-        const auto & _keypointsLeftImage  = imL->getKeyPoints();
-        const auto & _keypointsRightImage = imR->getKeyPoints();
         cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-L1");
         matcher->knnMatch(_descriptorsLeftImage, _descriptorsRightImage, poor_matches, 2); // 2  best matches
 

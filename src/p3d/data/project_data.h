@@ -25,27 +25,21 @@ public:
 
     ProjectData();
 
-    const std::vector<Image> & getImageList() const { return _images; }
+    const std::vector<Image> & getImageList() const { return m_images; }
     void setImageList(const std::vector<Image> & imList);
-    const std::vector<ImagePair> & getImagePairs() const { return _imagesPairs; }
+    const std::vector<ImagePair> & getImagePairs() const { return m_imagesPairs; }
     void setImagePairs(const std::vector<ImagePair> & imPairs) {
-        if (_images.size() - 1 != imPairs.size()) {
-            LOG_ERR("Can't load imagePairs: %i != %i", _images.size() - 1, imPairs.size());
+        if (m_images.size() - 1 != imPairs.size()) {
+            LOG_ERR("Can't load imagePairs: %i != %i", m_images.size() - 1, imPairs.size());
             return;
         }
-
-        for (int i = 0; i < imPairs.size(); i++ ) {
-            auto ptL = _imagesPairs[i].imL();
-            auto ptR = _imagesPairs[i].imR();
-            _imagesPairs[i] = imPairs[i];
-            _imagesPairs[i].setLeftImage(ptL);
-            _imagesPairs[i].setRightImage(ptR);
-        }
+        m_imagesPairs.clear();
+        m_imagesPairs = imPairs;
     }
 
     void clear();
-    size_t nbImages() const { return _images.size(); }
-    size_t nbImagePairs() const { return _imagesPairs.size(); }
+    size_t nbImages() const { return m_images.size(); }
+    size_t nbImagePairs() const { return m_imagesPairs.size(); }
 
     bool empty() const { return nbImages() == 0; }
 
@@ -70,8 +64,8 @@ public:
     std::vector<cv::Mat> getCameraMatricesInArray() const {
         if (!_Pm.empty()){
             std::vector<cv::Mat> P;
-            for (size_t i = 0; i < _images.size(); i++){
-                P.push_back(_images[i].getCameraMatrix().clone());
+            for (size_t i = 0; i < m_images.size(); i++){
+                P.push_back(m_images[i].getCameraMatrix().clone());
             }
             return P;
         }
@@ -82,52 +76,31 @@ public:
     vector<Property*> _properties;
 
     Image * image(const std::size_t idx) {
-        if (idx < 0 && idx >= _images.size()) return nullptr;
-        return &_images[idx];
-    }
-    Image * operator[](const std::size_t idx) {
-        return image(idx);
+        if (idx < 0 && idx >= m_images.size()) return nullptr;
+        return &m_images[idx];
     }
 
     ImagePair * imagePair(const std::size_t idx) {
-        if (idx < 0 && idx >= _imagesPairs.size()) return nullptr;
-        return &_imagesPairs[idx];
+        if (idx >= m_imagesPairs.size()) return nullptr;
+        return &m_imagesPairs[idx];
     }
 
-
-//    void writeAdditional(cv::FileStorage &fs) override {
-
-//        for (auto i = 0; i < int(_images.size()) - 1; i++){
-//            std::ostringstream ostr;
-//            ostr << "ImagePair" << i;
-//            fs << ostr.str();
-//            fs << "{";
-//            _imagesPairs[i].write(fs);
-//            fs << "}";
-//        }
-
-//    }
-
-//    void readAdditional(const cv::FileNode &node) override {
-
-//        for (auto i = 0; i < int(_images.size()) - 1; i++){
-//            std::ostringstream ostr;
-//            ostr << "ImagePair" << int(i);
-//            ImagePair imPair(&_images[i],&_images[i+1]);
-//            node[ostr.str()] >> imPair;
-//            if (i < _imagesPairs.size())
-//                _imagesPairs[i] = imPair;
-//        }
-
-//    }
-
-    bool set_isDummy = true;
+    Image * imagePairL(const std::size_t idx) { return imagePairImage(idx,true); }
+    Image * imagePairR(const std::size_t idx) { return imagePairImage(idx,false); }
 
 private:
-    std::vector<Image> _images;
-    std::vector<ImagePair> _imagesPairs;
 
+    Image * imagePairImage(const std::size_t idx, bool left) {
+        if (idx >= m_imagesPairs.size()) return nullptr;
+        int idxImage = left ? m_imagesPairs[idx].imL() : m_imagesPairs[idx].imR();
+        if (idxImage >= m_images.size()) return nullptr;
+        return &m_images[idxImage];
+    }
+
+    std::vector<Image> m_images;
+    std::vector<ImagePair> m_imagesPairs;
     std::string m_projectPath = "";
+
 
     cv::Mat _measurementMatrix;
     cv::Mat _measurementMatrixFull;
