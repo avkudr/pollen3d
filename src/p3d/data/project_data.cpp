@@ -20,9 +20,10 @@ int ProjectData::initMeta()
     if (firstCall) {
         std::cout << "Reflecting: ProjectData" << std::endl;
         meta::reflect<ProjectData>(p3d_hashStr("ProjectData"))
+            .data<&ProjectData::setImagePairs,&ProjectData::getImagePairs>(p3d_hash(p3dData_imagePairs))
+            .data<&ProjectData::setImageList,&ProjectData::getImageList>(p3d_hash(p3dData_images))
             .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(p3d_hash(p3dData_projectPath))
-            .data<&ProjectData::set_isDummy>(p3d_hash(p3dData_dummy))
-            .data<&ProjectData::setImageList,&ProjectData::getImageList>(p3d_hash(p3dData_images));
+            .data<&ProjectData::set_isDummy>(p3d_hash(p3dData_dummy));
         firstCall = false;
     }
     return 0;
@@ -36,6 +37,8 @@ ProjectData::ProjectData() : Serializable(){
 void ProjectData::setImageList(const std::vector<Image> &imList){
     if (imList.empty()) return;
     _images = imList;
+
+    _imagesPairs.clear();
     for (auto i = 0; i < _images.size()-1; ++i) {
         _imagesPairs.emplace_back(ImagePair(&_images[i],&_images[i+1]));
     }
@@ -56,76 +59,6 @@ ImagePair *ProjectData::getPairREFACTOR(const int index)
 {
     return &_imagesPairs[index];
 }
-
-/*
-
-void ProjectData::write(cv::FileStorage &fs) const                        //Write serialization for this class
-{
-    LOG_DBG("...saving project");
-
-    int nbImages = static_cast<int>(_images.size());
-
-    fs << "p" + std::to_string(p3dData_projectPath) << getProjectPath();
-    fs << "imageNumber" << nbImages;
-
-    meta::resolve<ProjectData>().data([&](meta::data data){
-        data.type().construct();
-    });
-
-    for (int i = 0; i < nbImages; i++){
-        fs << std::string("Image" + std::to_string(i));
-        fs << "{";
-        _images[i].write(fs);
-        fs << "}";
-    }
-
-//    for (int i=0; i < _images.size() - 1; i++){
-//        std::ostringstream ostr;
-//        ostr << "ImagePair" << i;
-//        fs << ostr.str();
-//        fs << "{";
-//        _imagesPairs[i].write(fs);
-//        fs << "}";
-//    }
-
-//    fs << "MatchesTable" << _matchesTableFull;
-//    fs << "FullMeasurementMatrix" << _measurementMatrixFull;
-//    fs << "MeasurementMatrix" << _measurementMatrix;
-    //_optimizationProblem->write(fs);
-}
-
-void ProjectData::read(const cv::FileStorage &fs)                          //Read serialization for this class
-{
-    int imNb = (int) fs["imageNumber"];
-    std::string projectPath = fs["projectPath"];
-    setProjectPath(projectPath);
-
-    LOG_INFO("PRO_LOAD, im #%i", imNb);
-
-    for (int i = 0; i < imNb; i++){
-        std::ostringstream ostr;
-        ostr << "Image" << i;
-        Image im;
-        fs[ostr.str()] >> im;
-        _images.push_back(im);
-    }
-
-//    for (int i = 0; i < imNb - 1; i++){
-//        std::ostringstream ostr;
-//        ostr << "ImagePair" << i;
-//        ImagePair imPair(&_images[i],&_images[i+1]);
-//        fs[ostr.str()] >> imPair;
-//        _imagesPairs.push_back(imPair);
-//    }
-
-//    fs["MatchesTable"] >> _matchesTableFull;
-//    fs["FullMeasurementMatrix"] >> _measurementMatrixFull;
-//    fs["MeasurementMatrix"] >> _measurementMatrix;
-//    updateCameraMatrices();
-    //_optimizationProblem->read(fs);
-
-}
-*/
 
 void ProjectData::estimateMeasurementMatrixFull()
 {

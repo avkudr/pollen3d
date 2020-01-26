@@ -196,7 +196,7 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
     float filterCoef = getSetting(p3dSetting_matcherFilterCoef).cast<float>();
 
     omp_set_num_threads(std::min(nbPairs,utils::nbAvailableThreads()));
-    //#pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < nbPairs; i++) {
         auto imPair = imList.imagePair(i);
         if (!imPair) continue;

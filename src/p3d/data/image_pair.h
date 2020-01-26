@@ -59,6 +59,10 @@ public:
     const std::vector<Match> & getMatches() const { return m_matches; }
     void setMatches(const std::vector<Match> & matches) { m_matches = matches; }
 
+    inline bool operator==(const ImagePair& i) const{
+        return m_matches.size() == i.m_matches.size();
+    }
+
     Matcher* _matcher;
     FundMat * F;
     Rectifier * rectifier;
@@ -74,23 +78,12 @@ public:
 
     Image * imL() { return _imL; }
     Image * imR() { return _imR; }
+    void setLeftImage(Image * imL) { LOG_WARN("TO DO: Replace pointers with indices"); _imL = imL; }
+    void setRightImage(Image * imR) { LOG_WARN("TO DO: Replace pointers with indices"); _imR = imR; }
 
     std::vector<cv::Point2d> getInliersLeftImageREFACTOR() { return getInliersREFACTOR(0); }
     std::vector<cv::Point2d> getInliersRightImageREFACTOR() { return getInliersREFACTOR(1); }
     std::vector<cv::Point2d> getInliersREFACTOR(int imageIdx) {return _matcher->getInliers(imageIdx);}
-
-    void writeAdditional(cv::FileStorage &fs) override {
-//        fs << "matchesTable" << _matchesTable;
-//        fs << "inliersLeft" << _inliersLeft;
-//        fs << "inliersRight" << _inliersRight;
-    }
-
-    void readAdditional(const cv::FileNode &node) override {
-//        node["matchesTable"] >> _matchesTable;
-//        node["inliersLeft"] >> _inliersLeft;
-//        node["inliersRight"] >> _inliersRight;
-    }
-
 
 private:
     Image * _imL = nullptr;
@@ -98,24 +91,5 @@ private:
 
     std::vector<Match> m_matches;
 };
-
-
-//These write and read functions must be defined for the serialization in FileStorage to work
-[[maybe_unused]]
-static void write(cv::FileStorage& fs, const std::string&, const ImagePair& x)
-{
-    fs << "{";
-    const_cast<ImagePair&>(x).write(fs);
-    fs << "}";
-}
-
-[[maybe_unused]]
-static void read(const cv::FileNode& node, ImagePair& x, const ImagePair& default_value = ImagePair()){
-    if(node.empty())
-        x = default_value;
-    else {
-        x.read(node);
-    }
-}
 
 #endif // IMAGE_PAIR_H

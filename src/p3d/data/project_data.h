@@ -27,6 +27,21 @@ public:
 
     const std::vector<Image> & getImageList() const { return _images; }
     void setImageList(const std::vector<Image> & imList);
+    const std::vector<ImagePair> & getImagePairs() const { return _imagesPairs; }
+    void setImagePairs(const std::vector<ImagePair> & imPairs) {
+        if (_images.size() - 1 != imPairs.size()) {
+            LOG_ERR("Can't load imagePairs: %i != %i", _images.size() - 1, imPairs.size());
+            return;
+        }
+
+        for (int i = 0; i < imPairs.size(); i++ ) {
+            auto ptL = _imagesPairs[i].imL();
+            auto ptR = _imagesPairs[i].imR();
+            _imagesPairs[i] = imPairs[i];
+            _imagesPairs[i].setLeftImage(ptL);
+            _imagesPairs[i].setRightImage(ptR);
+        }
+    }
 
     void clear();
     size_t nbImages() const { return _images.size(); }
@@ -80,31 +95,31 @@ public:
     }
 
 
-    void writeAdditional(cv::FileStorage &fs) override {
+//    void writeAdditional(cv::FileStorage &fs) override {
 
-        for (auto i = 0; i < int(_images.size()) - 1; i++){
-            std::ostringstream ostr;
-            ostr << "ImagePair" << i;
-            fs << ostr.str();
-            fs << "{";
-            _imagesPairs[i].write(fs);
-            fs << "}";
-        }
+//        for (auto i = 0; i < int(_images.size()) - 1; i++){
+//            std::ostringstream ostr;
+//            ostr << "ImagePair" << i;
+//            fs << ostr.str();
+//            fs << "{";
+//            _imagesPairs[i].write(fs);
+//            fs << "}";
+//        }
 
-    }
+//    }
 
-    void readAdditional(const cv::FileNode &node) override {
+//    void readAdditional(const cv::FileNode &node) override {
 
-        for (auto i = 0; i < int(_images.size()) - 1; i++){
-            std::ostringstream ostr;
-            ostr << "ImagePair" << int(i);
-            ImagePair imPair(&_images[i],&_images[i+1]);
-            node[ostr.str()] >> imPair;
-            if (i < _imagesPairs.size())
-                _imagesPairs[i] = imPair;
-        }
+//        for (auto i = 0; i < int(_images.size()) - 1; i++){
+//            std::ostringstream ostr;
+//            ostr << "ImagePair" << int(i);
+//            ImagePair imPair(&_images[i],&_images[i+1]);
+//            node[ostr.str()] >> imPair;
+//            if (i < _imagesPairs.size())
+//                _imagesPairs[i] = imPair;
+//        }
 
-    }
+//    }
 
     bool set_isDummy = true;
 

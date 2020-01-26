@@ -10,6 +10,8 @@ int ImagePair::initMeta()
         meta::reflect<ImagePair>(p3d_hashStr("ImagePair")).
                 data<&ImagePair::setMatches,&ImagePair::getMatches>(p3d_hash(p3dImagePair_matches));
 
+        SERIALIZE_TYPE_VECS(ImagePair,"vector_ImagePair");
+
         firstCall = false;
     }
     return 0;

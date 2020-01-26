@@ -25,6 +25,8 @@ enum p3dImage_
 
 class Image : public Serializable<Image>{
 public:
+    static int initMeta();
+
     Image(){}
     Image(cv::Mat im);
     Image(const std::string &path);
@@ -80,7 +82,6 @@ public:
         return _path == i._path;
     }
 
-    static int initMeta();
 private:
 
     std::string EMPTY_PATH = "<not found>";
