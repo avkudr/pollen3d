@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
 
 #include <string>
 #include <iostream>

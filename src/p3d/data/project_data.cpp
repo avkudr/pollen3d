@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include <opencv2/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -215,7 +216,7 @@ void ProjectData::estimateMeasurementMatrixKLT()
         {
             std::vector<uchar> status;
             std::vector<float> err;
-            cv::calcOpticalFlowPyrLK(image0, image1, points[im], points[im+1], status, err, winSize, 3, termcrit, 0, 0.04);
+            //cv::calcOpticalFlowPyrLK(image0, image1, points[im], points[im+1], status, err, winSize, 3, termcrit, 0, 0.04);
             for( auto k = 0; k < points[0].size(); k++ )
             {
                 if( !status[k] ){

@@ -161,9 +161,10 @@ void ProjectManager::extractFeatures(ProjectData &imList, std::vector<int> imIds
         for (int i = 0; i < imList.nbImages(); ++i) imIds.push_back(i);
 
     int nbImgs = imIds.size();
-
+#ifdef WITH_OPENMP
     omp_set_num_threads(std::min(nbImgs,utils::nbAvailableThreads()));
-#pragma omp parallel for
+    #pragma omp parallel for
+#endif
     for (int i = 0; i < nbImgs; i++) {
         Image * im = imList.image(imIds[i]);
         if (!im) continue;
@@ -199,8 +200,10 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
 
     float filterCoef = getSetting(p3dSetting_matcherFilterCoef).cast<float>();
 
-    omp_set_num_threads(std::min(nbPairs,utils::nbAvailableThreads()));
-#pragma omp parallel for
+#ifdef WITH_OPENMP
+    omp_set_num_threads(std::min(nbImgs,utils::nbAvailableThreads()));
+    #pragma omp parallel for
+#endif
     for (int i = 0; i < nbPairs; i++) {
         auto imPair = imList.imagePair(i);
         if (!imPair || !imPair->isValid()) continue;

@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-#include <opencv2/core/core.hpp>
+#include <opencv2/core.hpp>
 
 #include "p3d/core/fundmat.h"
 #include "p3d/core/utils.h"

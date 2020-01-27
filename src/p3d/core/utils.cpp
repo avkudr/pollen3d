@@ -143,8 +143,11 @@ std::vector<std::string> utils::split(const std::string &str, const std::string 
 }
 
 int utils::nbAvailableThreads(){
+#ifdef WITH_OPENMP
 #ifdef WIN32
     return omp_get_num_procs();
 #endif
     return omp_get_num_procs();
+#endif
+    return 1;
 }

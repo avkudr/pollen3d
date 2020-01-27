@@ -4,6 +4,11 @@
 
 #include "p3d/console_logger.h"
 
+#ifdef __APPLE__
+#define P3D_GLSL_VERSION "#version 120"
+#else
+#define P3D_GLSL_VERSION 
+#endif
 
 void ApplicationOpenGL::init() {
     IMGUI_CHECKVERSION();
@@ -19,6 +24,7 @@ void ApplicationOpenGL::init() {
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
     bool err = gl3wInit() != 0;
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
+    glewExperimental = GL_TRUE;
     bool err = glewInit() != GLEW_OK;
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
     bool err = gladLoadGL() == 0;
@@ -36,7 +42,7 @@ void ApplicationOpenGL::init() {
     initImGui();
 
     ImGui_ImplGlfw_InitForOpenGL(m_window, true);
-    ImGui_ImplOpenGL3_Init();
+    ImGui_ImplOpenGL3_Init(P3D_GLSL_VERSION);
 }
 
 void ApplicationOpenGL::destroy() {
@@ -90,9 +96,11 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
         LOG_ERR("TextureDisplay: conversion failed");
     }
 
-    if(m_textureId)
+    if(m_textureId) {
         glDeleteTextures(1,&m_textureId);
-    m_textureId = 0;
+        m_textureId = 0;
+    }
+    int error = glGetError();
 
     glGenTextures(1, &m_textureId);
     glBindTexture(GL_TEXTURE_2D, m_textureId);
@@ -119,7 +127,7 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
         m_textureHeight = mat.rows;
         LOG_DBG("Texture bind");
     } else {
-        LOG_ERR("Texture bind: error");
+        LOG_ERR("glError: %i", error);
     }
 
 }

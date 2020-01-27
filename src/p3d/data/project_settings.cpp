@@ -11,4 +11,5 @@ int ProjectSettings::initMeta()
                 .data<&ProjectSettings::matcherCurAlg>(p3d_hash(p3dSetting_matcherCurAlg))
                 .data<&ProjectSettings::matcherFilterCoef>(p3d_hash(p3dSetting_matcherFilterCoef));
     }
+    return firstCall;
 }

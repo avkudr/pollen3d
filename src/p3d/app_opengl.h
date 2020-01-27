@@ -46,5 +46,5 @@ public:
 private:
     GLFWwindow* m_window = nullptr;
 
-    GLuint m_textureId  = 0;
+    GLuint m_textureId = 0;
 };

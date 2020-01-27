@@ -53,10 +53,8 @@ find_package (Eigen3 REQUIRED NO_MODULE)
 
 find_package(OpenCV 3.0 QUIET)
 if (OpenCV_FOUND)
-    include_directories(
-        SYSTEM
-        ${OpenCV_INCLUDE_DIRS}
-    )
+    include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
+    message( "OpenCV - FOUND" )
 else()
     message( "OpenCV not found" )
     error( "OpenCV not found" )
@@ -66,7 +64,7 @@ endif()
 
 find_package(ImGui REQUIRED)
 if (ImGui_FOUND)
-    add_definitions(-DWITH_IMMGUI)
+    add_definitions(-DWITH_IMGUI)
     message("ImGui - FOUND")
 else()
     message("ImGui - not found")
@@ -146,9 +144,10 @@ else()
     message("Tests: NO")
 endif()
 
-add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES})
-target_link_libraries( ${PROJECT_NAME} ${ImGui_LIBS} ${OpenCV_LIBS} Eigen3::Eigen)
+set(TARGET_LIBS ${ImGui_LIBS} Eigen3::Eigen ${OpenCV_LIBS})
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
+    set(TARGET_LIBS ${TARGET_LIBS} OpenMP::OpenMP_CXX)
 endif()
 
+add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES})
+target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})

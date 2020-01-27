@@ -30,18 +30,18 @@ message(glfw3_FOUND: ${glfw3_FOUND})
 message(GLEW_FOUND: ${GLEW_FOUND})
 
 if (glfw3_FOUND AND OPENGL_FOUND AND GLEW_FOUND)
-	if(APPLE)
-        set(GLEW_INCLUDE_DIR "/glew/2.1.0_1/include")
-        set(GLEW_LIBRARY "/glew/2.1.0_1/lib")
-	endif()
+    if(APPLE)
+        find_path(GLEW_INCLUDE_DIR GL/glew.h)
+    endif()
     set(ImGui_FOUND true)
     include_directories(${GLEW_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
     set(ImGui_LIBS
         ${OPENGL_LIBRARIES}
         glfw
-        GLEW::GLEW
+        GLEW
     )
 
+    add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW)
     set(SOURCES
         ${SOURCES}
         ${ImGui_DIR}/examples/imgui_impl_glfw.h

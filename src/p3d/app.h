@@ -3,10 +3,10 @@
 #include <future>
 #include <string>
 
+#include <opencv2/core.hpp>
+
 #include "imgui.h"
 #include "imgui_internal.h"
-
-#include "opencv2/core.hpp"
 
 #include "p3d/console_logger.h"
 #include "p3d/data/project_data.h"
