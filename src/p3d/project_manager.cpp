@@ -201,7 +201,7 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
     float filterCoef = getSetting(p3dSetting_matcherFilterCoef).cast<float>();
 
 #ifdef WITH_OPENMP
-    omp_set_num_threads(std::min(nbImgs,utils::nbAvailableThreads()));
+    omp_set_num_threads(std::min(int(imList.nbImagePairs()),utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
     for (int i = 0; i < nbPairs; i++) {

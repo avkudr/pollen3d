@@ -4,10 +4,7 @@ project( pollen3d )
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake/)
-
-#set(CMAKE_BUILD_TYPE Debug)
-
+set(CMAKE_BUILD_TYPE Debug)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -17,14 +14,18 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("Compiling in Debug")
+    message(STATUS "Compiling in Debug")
     add_compile_definitions(POLLEN3D_DEBUG)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    message("Compiling in Release")
+    message(STATUS "Compiling in Release")
 endif()
 
-option(BUILD_UNIT_TESTS "Build unit tests" ON)
+OPTION(BUILD_UNIT_TESTS "Build unit tests" OFF)
 OPTION(USE_OPENMP "Use OpenMP" ON)
+
+# ----- Looking for modules
+
+set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake/)
 
 # ----- Threads
 
@@ -35,29 +36,37 @@ OPTION(USE_OPENMP "Use OpenMP" ON)
 if(USE_OPENMP)
     find_package(OpenMP QUIET)
     if (OPENMP_FOUND)
-        message( "OpenMP - FOUND" )
+        message( STATUS "OpenMP - FOUND" )
         set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
         add_definitions(-DWITH_OPENMP)
     else()
-        message( "OpenMP - not found" )
+        message( STATUS "OpenMP - not found" )
     endif()
 endif()
 
 # ----- Add Eigen --------------------------------------------
 
-find_package (Eigen3 REQUIRED NO_MODULE)
+set( EIGEN3_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/eigen-3.3.7)
+if( NOT EIGEN3_INCLUDE_DIR )
+    message( FATAL_ERROR "Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of your Eigen3 installation.")
+endif()
+include_directories ( "${EIGEN3_INCLUDE_DIR}" )
 
 # ----- Add OpenCV -------------------------------------------
 
-find_package(OpenCV 3.0 QUIET)
+if (WIN32)
+set( OpenCV_DIR E:/dependances/opencv-3.4.9/build/install/x64/vc16/lib )
+endif()
+
+find_package(OpenCV 3.0 REQUIRED)
 if (OpenCV_FOUND)
     include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
-    message( "OpenCV - FOUND" )
+	link_directories(${OpenCV_DIR})
+    message( STATUS "OpenCV - FOUND")
 else()
-    message( "OpenCV not found" )
-    error( "OpenCV not found" )
+    message( FATAL_ERROR "OpenCV not found" )
 endif()
 
 # ----- Add ImGui --------------------------------------------
@@ -65,9 +74,9 @@ endif()
 find_package(ImGui REQUIRED)
 if (ImGui_FOUND)
     add_definitions(-DWITH_IMGUI)
-    message("ImGui - FOUND")
+    message( STATUS "ImGui - FOUND")
 else()
-    message("ImGui - not found")
+    message( STATUS "ImGui - not found")
 endif()
 
 # ----- Add file dialogs --------------------------------------------
@@ -120,6 +129,17 @@ set(SOURCES
     ./src/p3d/data/image_pair.cpp
     ./src/p3d/data/image_pair.h
 )
+
+# Add source files
+#file(GLOB_RECURSE SOURCE_FILES 
+#	${CMAKE_SOURCE_DIR}/src/*.c
+#	${CMAKE_SOURCE_DIR}/src/*.cpp)
+	
+# Add header files
+#file(GLOB_RECURSE HEADER_FILES 
+#	${CMAKE_SOURCE_DIR}/src/*.h
+#	${CMAKE_SOURCE_DIR}/src/*.hpp)
+
 if(POLLEN3D_OPENGL)
     message("OpenGL - FOUND")
     set(SOURCES
@@ -144,7 +164,10 @@ else()
     message("Tests: NO")
 endif()
 
-set(TARGET_LIBS ${ImGui_LIBS} Eigen3::Eigen ${OpenCV_LIBS})
+set(TARGET_LIBS ${ImGui_LIBS} ${OpenCV_LIBS})
+if(Eigen_FOUND)
+    set(TARGET_LIBS ${TARGET_LIBS} Eigen3::Eigen)
+endif()
 if(OpenMP_CXX_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} OpenMP::OpenMP_CXX)
 endif()

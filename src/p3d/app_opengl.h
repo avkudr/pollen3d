@@ -13,6 +13,7 @@
 #include <GLFW/glfw3.h>
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
 #include <glad/glad.h>  // Initialize with gladLoadGL()
+#include <GLFW/glfw3.h>
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLBINDING)
 #define GLFW_INCLUDE_NONE         // GLFW including OpenGL headers causes ambiguity or multiple definition errors.
 #include <glbinding/glbinding.h>  // Initialize with glbinding::initialize()
