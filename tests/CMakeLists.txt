@@ -20,7 +20,7 @@ add_executable(pollen3d_tests
 
 # Link test executable against gtest & gtest_main
 target_link_libraries(pollen3d_tests ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
-target_link_libraries(pollen3d_tests ${ImGui_LIBS} ${OpenCV_LIBS} Eigen3::Eigen ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(pollen3d_tests ${TARGET_LIBS})
 
 add_test(
     NAME pollen3d_tests

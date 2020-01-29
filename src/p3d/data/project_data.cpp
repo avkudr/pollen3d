@@ -19,10 +19,11 @@ int ProjectData::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         std::cout << "Reflecting: ProjectData" << std::endl;
-        meta::reflect<ProjectData>(p3d_hashStr("ProjectData"))
-            .data<&ProjectData::setImagePairs,&ProjectData::getImagePairs>(p3d_hash(p3dData_imagePairs))
-            .data<&ProjectData::setImageList,&ProjectData::getImageList>(p3d_hash(p3dData_images))
-            .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(p3d_hash(p3dData_projectPath));
+        entt::meta<ProjectData>()
+            .type("ProjectData"_hs)
+            .data<&ProjectData::setImagePairs,&ProjectData::getImagePairs>(P3D_ID_TYPE(p3dData_imagePairs))
+            .data<&ProjectData::setImageList,&ProjectData::getImageList>(P3D_ID_TYPE(p3dData_images))
+            .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(P3D_ID_TYPE(p3dData_projectPath));
         firstCall = false;
     }
     return 0;

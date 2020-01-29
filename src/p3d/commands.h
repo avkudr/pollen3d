@@ -24,7 +24,8 @@ protected:
 };
 
 /*
-meta::reflect<A>(hash("A"))
+entt::meta<A>.
+    .type(hash("A"))
     .data<&A::setValue,&A::getValue>(hash("value"))
     .data<&A::setF,&A::getF>(hash("F"));
 */
@@ -32,13 +33,13 @@ template <typename T>
 class CommandSetProperty : public Command
 {
 public:
-    CommandSetProperty(T * instance, const int &propId, meta::any v) :
+    CommandSetProperty(T * instance, const int &propId, entt::meta_any v) :
         m_propId(propId),m_to(v),m_instance(instance)
     {
         if (instance == nullptr) return;
         if (v.data() == nullptr) return;
 
-        m_data = meta::resolve<T>().data(p3d_hash(m_propId));
+        m_data = entt::resolve<T>().data(P3D_ID_TYPE(m_propId));
         if (!m_data) {
             LOG_WARN("Property <%i> doesn't exist", propId);
             return;
@@ -68,9 +69,9 @@ public:
 private:
     T * m_instance;
     int m_propId;
-    meta::any m_to;
-    meta::any m_from;
-    meta::data m_data;
+    entt::meta_any m_to;
+    entt::meta_any m_from;
+    entt::meta_data m_data;
 };
 
 class CommandManager{

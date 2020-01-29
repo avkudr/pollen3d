@@ -10,9 +10,10 @@ int Image::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         std::cout << "Reflecting: Image" << std::endl;
-        meta::reflect<Image>(p3d_hashStr("Image"))
-            .data<&Image::setPath,&Image::getPath>(p3d_hash(p3dImage_path));
-        SERIALIZE_TYPE_VECS(Image,"vector_Image");
+        entt::meta<Image>()
+            .type("Image"_hs)
+            .data<&Image::setPath,&Image::getPath>(P3D_ID_TYPE(p3dImage_path));
+        SERIALIZE_TYPE_VECS(Image,"vector_Image"_hs);
         firstCall = false;
     }
     return 0;

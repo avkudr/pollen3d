@@ -11,6 +11,11 @@
 #include "meta/meta.hpp"
 #include "meta/factory.hpp"
 
+#ifdef ENTT_ID_TYPE
+#define P3D_ID_TYPE ENTT_ID_TYPE
+#else
+#define P3D_ID_TYPE std::size_t
+#endif
 class Exception : public std::exception
 {
 public:
@@ -64,9 +69,6 @@ std::string format( const char* fmt, ... );
 #else
 #define p3d_DbgAssert(expr)
 #endif
-
-static std::hash<int> p3d_hash{};
-static std::hash<std::string_view> p3d_hashStr{};
 
 typedef int p3dSetting;
 enum p3dSetting_

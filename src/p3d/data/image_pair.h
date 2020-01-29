@@ -23,9 +23,9 @@ using std::string;
 
 enum p3dMatch_
 {
-    p3dMatch_iPtL = 0,
-    p3dMatch_iPtR = 1,
-    p3dMatch_distance = 2,
+    p3dMatch_iPtL = 100,
+    p3dMatch_iPtR = 101,
+    p3dMatch_distance = 102,
 };
 
 class Match : public Serializable<Match>{

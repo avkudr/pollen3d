@@ -18,15 +18,16 @@ void Application::initImGui(){
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigDockingWithShift = true;
 
-    io.Fonts->AddFontFromFileTTF("../3rdparty/fonts/Ubuntu-R.ttf", 16.0f);
+    std::string pathToFonts = "../../3rdparty/fonts/";
+    io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "Ubuntu-R.ttf").c_str(), 16.0f);
 
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
     ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
-    io.Fonts->AddFontFromFileTTF( "../3rdparty/fonts/" FONT_ICON_FILE_NAME_FAS, 16.0f, &icons_config, icons_ranges );
+    io.Fonts->AddFontFromFileTTF( std::string(pathToFonts + FONT_ICON_FILE_NAME_FAS).c_str(), 16.0f, &icons_config, icons_ranges );
 
-    m_fontMonoSmall = io.Fonts->AddFontFromFileTTF("../3rdparty/fonts/UbuntuMono-R.ttf", 16.0f);
+    m_fontMonoSmall = io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "UbuntuMono-R.ttf").c_str(), 16.0f);
     ConsoleLogger::get()->setFont(m_fontMonoSmall);
-    m_fontMonoSmall = io.Fonts->AddFontFromFileTTF("../3rdparty/fonts/UbuntuMono-R.ttf", 14.0f);
+    m_fontMonoSmall = io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "UbuntuMono-R.ttf").c_str(), 14.0f);
 
     applyStyle();
 }

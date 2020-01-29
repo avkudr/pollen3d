@@ -247,12 +247,12 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
     }
 }
 
-meta::any ProjectManager::getSetting(const p3dSetting &name) {
-    auto data = meta::resolve<ProjectSettings>().data(p3d_hash(name));
-    if (!data) return meta::any{nullptr};
+entt::meta_any ProjectManager::getSetting(const p3dSetting &name) {
+    auto data = entt::resolve<ProjectSettings>().data(P3D_ID_TYPE(name));
+    if (!data) return entt::meta_any{nullptr};
     return data.get(settings);
 }
 
-void ProjectManager::setSetting(const p3dSetting &name, meta::any value) {
+void ProjectManager::setSetting(const p3dSetting &name, entt::meta_any value) {
     CommandManager::get()->executeCommand(new CommandSetProperty(&settings,name,value));
 }

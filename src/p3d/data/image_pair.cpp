@@ -7,13 +7,14 @@ int ImagePair::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         std::cout << "Reflecting: ImagePair" << std::endl;
-        meta::reflect<ImagePair>(p3d_hashStr("ImagePair"))
-                .data<&ImagePair::setMatches,&ImagePair::getMatches>(p3d_hash(p3dImagePair_matches))
-                .data<&ImagePair::setLeftImage,&ImagePair::imL>(p3d_hash(p3dImagePair_imL))
-                .data<&ImagePair::setRightImage,&ImagePair::imR>(p3d_hash(p3dImagePair_imR))
-                .data<&ImagePair::setFundMat,&ImagePair::getFundMat>(p3d_hash(p3dImagePair_fundMat));
+        entt::meta<ImagePair>()
+                .type("ImagePair"_hs)
+                .data<&ImagePair::setMatches,&ImagePair::getMatches>(P3D_ID_TYPE(p3dImagePair_matches))
+                .data<&ImagePair::setLeftImage,&ImagePair::imL>(P3D_ID_TYPE(p3dImagePair_imL))
+                .data<&ImagePair::setRightImage,&ImagePair::imR>(P3D_ID_TYPE(p3dImagePair_imR))
+                .data<&ImagePair::setFundMat,&ImagePair::getFundMat>(P3D_ID_TYPE(p3dImagePair_fundMat));
 
-        SERIALIZE_TYPE_VECS(ImagePair,"vector_ImagePair");
+        SERIALIZE_TYPE_VECS(ImagePair,"vector_ImagePair"_hs);
 
         firstCall = false;
     }
@@ -161,14 +162,15 @@ int Match::initMeta() {
     static bool firstCall = true;
     if (firstCall) {
         std::cout << "Reflecting: Match" << std::endl;
-        meta::reflect<Match>(p3d_hashStr("Match"))
-                .data<&Match::iPtL>(p3d_hash(p3dMatch_iPtL))
-                .data<&Match::iPtR>(p3d_hash(p3dMatch_iPtR))
-                .data<&Match::distance>(p3d_hash(p3dMatch_distance));
+        entt::meta<Match>()
+                .type("Match"_hs)
+                .data<&Match::iPtL>(P3D_ID_TYPE(p3dMatch_iPtL))
+                .data<&Match::iPtR>(P3D_ID_TYPE(p3dMatch_iPtR))
+                .data<&Match::distance>(P3D_ID_TYPE(p3dMatch_distance));
 
         firstCall = false;
 
-        SERIALIZE_TYPE_VECS(Match,"vector_Match");
+        SERIALIZE_TYPE_VECS(Match,"vector_Match"_hs);
     }
     return 0;
 }

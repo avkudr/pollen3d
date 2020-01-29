@@ -7,9 +7,10 @@ int ProjectSettings::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         firstCall = false;
-        meta::reflect<ProjectSettings>(p3d_hash(p3dSetting_projectSettings))
-                .data<&ProjectSettings::matcherCurAlg>(p3d_hash(p3dSetting_matcherCurAlg))
-                .data<&ProjectSettings::matcherFilterCoef>(p3d_hash(p3dSetting_matcherFilterCoef));
+        entt::meta<ProjectSettings>()
+                .type(P3D_ID_TYPE(p3dSetting_projectSettings))
+                .data<&ProjectSettings::matcherCurAlg>(P3D_ID_TYPE(p3dSetting_matcherCurAlg))
+                .data<&ProjectSettings::matcherFilterCoef>(P3D_ID_TYPE(p3dSetting_matcherFilterCoef));
     }
     return firstCall;
 }

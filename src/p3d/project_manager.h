@@ -32,9 +32,9 @@ public:
     void extractFeatures(ProjectData & imList, std::vector<int> imIds = {});
     void matchFeatures(ProjectData & imList, std::vector<int> imPairsIds = {});
 
-    meta::any getSetting(const p3dSetting & name);
+    entt::meta_any getSetting(const p3dSetting & name);
 
-    void setSetting(const p3dSetting & name, meta::any value);
+    void setSetting(const p3dSetting & name, entt::meta_any value);
 
 private:
     ProjectManager() {}

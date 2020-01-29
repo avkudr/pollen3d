@@ -5,7 +5,6 @@
 #include <opencv2/core.hpp>
 #include <opencv2/core/eigen.hpp>
 
-
 #include "p3d/core/core.h"
 
 namespace impl {
@@ -14,40 +13,46 @@ template <typename Type>
 class Serializable;
 
 #define SERIALIZE_TYPE(x,name) \
-    meta::reflect<x>(p3d_hashStr(name)) \
-            .func<&impl::_read<x>>(p3d_hashStr("_read")) \
-            .func<&impl::_write<x>>(p3d_hashStr("_write"))
+    entt::meta<x>() \
+            .type(name) \
+            .func<&impl::_read<x>>("_read"_hs) \
+            .func<&impl::_write<x>>("_write"_hs)
 
 #define SERIALIZE_TYPE_VEC(x,name) \
-    meta::reflect<std::vector<x>>(p3d_hashStr(name)) \
-            .func<&impl::_readVec<x>>(p3d_hashStr("_read")) \
-            .func<&impl::_writeVec<x>>(p3d_hashStr("_write"))
+    entt::meta<std::vector<x>>() \
+            .type(name) \
+            .func<&impl::_readVec<x>>("_read"_hs) \
+            .func<&impl::_writeVec<x>>("_write"_hs)
 
 #define SERIALIZE_TYPE_VECS(x,name) \
-    meta::reflect<std::vector<x>>(p3d_hashStr(name)) \
-            .func<&impl::_readVecS<x>>(p3d_hashStr("_read")) \
-            .func<&impl::_writeVecS<x>>(p3d_hashStr("_write"))
+    entt::meta<std::vector<x>>() \
+            .type(name) \
+            .func<&impl::_readVecS<x>>("_read"_hs) \
+            .func<&impl::_writeVecS<x>>("_write"_hs)
 
-#define SERIALIZE_TYPE_EIGEN(type,x,y,name) \
-    meta::reflect<Eigen::Matrix<type,x,y>>(p3d_hashStr(name)) \
-            .func<&impl::_readEigen<type,x,y>>(p3d_hashStr("_read")) \
-            .func<&impl::_writeEigen<type,x,y>>(p3d_hashStr("_write"))
+#define SERIALIZE_TYPE_EIGEN(Scalar,x,y,name) \
+    entt::meta<Eigen::Matrix<Scalar,x,y>>() \
+            .type(name) \
+            .func<&impl::_readEigen<Scalar,x,y>>("_read"_hs) \
+            .func<&impl::_writeEigen<Scalar,x,y>>("_write"_hs)
 
 template <typename Type>
-static void _write(Type & f, std::size_t & id, cv::FileStorage& fs){
+static void _write(cv::FileStorage& fs, P3D_ID_TYPE & id, Type & f){
     fs << "p" + std::to_string(id) << f;
 }
 
 template <typename Type>
-static void _read(Type & v, std::size_t & id, cv::FileNode& node){
+static void _read(cv::FileNode& node, P3D_ID_TYPE & id, Type & v){
     std::string name = "p" + std::to_string(id);
     Type t;
-    if (node[name].empty()) return;
+    if (node[name].empty()) {
+        return;
+    }
     node[name] >> t;
     v = t;
 }
 
-static void _readBool(bool & v, std::size_t & id, cv::FileNode& node){
+static void _readBool(cv::FileNode& node, P3D_ID_TYPE & id, bool & v){
     std::string name = "p" + std::to_string(id);
     if (node[name].empty()) return;
     bool res = static_cast<int>(node[name]) != 0;
@@ -55,14 +60,14 @@ static void _readBool(bool & v, std::size_t & id, cv::FileNode& node){
 }
 
 template <typename Type>
-static void _writeVec(std::vector<Type> & f, std::size_t & id, cv::FileStorage& fs){
+static void _writeVec(cv::FileStorage& fs, P3D_ID_TYPE & id, std::vector<Type> & f){
     fs << "p" + std::to_string(id) << "[";
     for (auto i = 0; i < f.size(); ++i) fs << f[i];
     fs << "]";
 }
 
 template <typename Type>
-static void _readVec(std::vector<Type> & out, std::size_t & id, cv::FileNode& node){
+static void _readVec(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Type> & out){
     std::string name = "p" + std::to_string(id);
     std::vector<Type> temp;
     cv::FileNode n = node[name];
@@ -83,7 +88,7 @@ static void _readVec(std::vector<Type> & out, std::size_t & id, cv::FileNode& no
 }
 
 template <typename Type>
-static void _writeVecS(std::vector<Type> & f, std::size_t & id, cv::FileStorage& fs){
+static void _writeVecS(cv::FileStorage& fs, P3D_ID_TYPE & id, std::vector<Type> & f){
     fs << "p" + std::to_string(id) << "[";
     for (auto i = 0; i < f.size(); ++i) {
         fs << "{";
@@ -94,7 +99,7 @@ static void _writeVecS(std::vector<Type> & f, std::size_t & id, cv::FileStorage&
 }
 
 template <typename Type>
-static void _readVecS(std::vector<Type> & out, std::size_t & id, cv::FileNode& node){
+static void _readVecS(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Type> & out){
     std::string name = "p" + std::to_string(id);
     std::vector<Type> temp;
     cv::FileNode n = node[name];
@@ -114,14 +119,14 @@ static void _readVecS(std::vector<Type> & out, std::size_t & id, cv::FileNode& n
 }
 
 template<typename Type, int SizeX, int SizeY>
-static void _writeEigen(const Eigen::Matrix<Type, SizeX, SizeY> & f, std::size_t & id, cv::FileStorage& fs){
+static void _writeEigen(cv::FileStorage& fs, P3D_ID_TYPE & id, const Eigen::Matrix<Type, SizeX, SizeY> & f){
     cv::Mat temp;
     cv::eigen2cv(f,temp);
     fs << "p" + std::to_string(id) << temp;
 }
 
 template<typename Type, int SizeX, int SizeY>
-static void _readEigen(Eigen::Matrix<Type, SizeX, SizeY> & mat, std::size_t & id, cv::FileNode& node){
+static void _readEigen(cv::FileNode& node, P3D_ID_TYPE & id, Eigen::Matrix<Type, SizeX, SizeY> & mat){
     std::string name = "p" + std::to_string(id);
     cv::Mat temp;
     if (node[name].empty()) return;
@@ -150,16 +155,17 @@ public:
     void write(cv::FileStorage& fs) {
 
         // **** first we write all registered properies
-        std::string nodeName = "class" + std::to_string(meta::resolve<T>().id());
+
+        std::string nodeName = "class" + std::to_string(entt::resolve<T>().identifier());
         fs << nodeName << "{";
-        meta::resolve<T>().data([&](meta::data data) {
-            meta::func func = data.type().func(p3d_hashStr("_write"));
+        entt::resolve<T>().data([&](entt::meta_data data) {
+            entt::meta_func func = data.type().func("_write"_hs);
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
-                meta::any any = data.get(*ptr);
-                func.invoke(any,any,data.id(),fs);
+                entt::meta_any any = data.get(*ptr);
+                func.invoke(any,std::ref(fs),data.identifier(),any);
             } else {
-                std::cout << "not registered for write: " << data.id() << std::endl;
+                std::cout << "not registered for write: " << data.identifier() << std::endl;
             }
         });
 
@@ -170,19 +176,19 @@ public:
 
     void read(const cv::FileNode& node) {
         // **** first we read all registered properies
-        std::string nodeName = "class" + std::to_string(meta::resolve<T>().id());
+        std::string nodeName = "class" + std::to_string(entt::resolve<T>().identifier());
         cv::FileNode nodeL = node[nodeName];
 
-        meta::resolve<T>().data([&](meta::data data) {
-            meta::func func = data.type().func(p3d_hashStr("_read"));
+        entt::resolve<T>().data([&](entt::meta_data data) {
+            entt::meta_func func = data.type().func("_read"_hs);
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
-                meta::any old = data.get(*ptr);
-                meta::any any = old;
-                func.invoke(any,any,data.id(),nodeL);
+                entt::meta_any old = data.get(*ptr);
+                entt::meta_any any = *old;
+                func.invoke(ptr,nodeL,data.identifier(),any);
                 data.set(*ptr,any);
             } else {
-                std::cout << "not registered for read: " << data.id() << std::endl;
+                std::cout << "not registered for read: " << data.identifier() << std::endl;
             }
         });
 

@@ -9,8 +9,12 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin)
+
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -22,6 +26,8 @@ endif()
 
 OPTION(BUILD_UNIT_TESTS "Build unit tests" OFF)
 OPTION(USE_OPENMP "Use OpenMP" ON)
+
+set(ASSETS_FONTS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fonts CACHE STRING "Path to the folder with fonts")
 
 # ----- Looking for modules
 
@@ -57,13 +63,13 @@ include_directories ( "${EIGEN3_INCLUDE_DIR}" )
 # ----- Add OpenCV -------------------------------------------
 
 if (WIN32)
-set( OpenCV_DIR E:/dependances/opencv-3.4.9/build/install/x64/vc16/lib )
+set( OpenCV_DIR E:/dependances/opencv-3.4.9/build/install )
 endif()
 
 find_package(OpenCV 3.0 REQUIRED)
 if (OpenCV_FOUND)
     include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
-	link_directories(${OpenCV_DIR})
+    link_directories(${OpenCV_DIR})
     message( STATUS "OpenCV - FOUND")
 else()
     message( FATAL_ERROR "OpenCV not found" )
@@ -154,15 +160,8 @@ else()
 
 endif()
 
-include_directories(./3rdparty/meta/src/)
+include_directories(./3rdparty/entt/src/entt/)
 include_directories(./src/)
-
-if (BUILD_UNIT_TESTS)
-    message("Tests: YES")
-    include(${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
-else()
-    message("Tests: NO")
-endif()
 
 set(TARGET_LIBS ${ImGui_LIBS} ${OpenCV_LIBS})
 if(Eigen_FOUND)
@@ -170,6 +169,13 @@ if(Eigen_FOUND)
 endif()
 if(OpenMP_CXX_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} OpenMP::OpenMP_CXX)
+endif()
+
+if (BUILD_UNIT_TESTS)
+    message("Tests: YES")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
+else()
+    message("Tests: NO")
 endif()
 
 add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES})
