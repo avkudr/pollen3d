@@ -23,6 +23,13 @@
 
 struct FundMatAlgorithms{
     static Mat3 findFundMatGS(const std::vector<Vec2> & pts1,const std::vector<Vec2> & pts2);
+    static Mat3 findFundMatCeres(const std::vector<Vec2> & pts1,const std::vector<Vec2> & pts2);
+
+    template<typename T>
+    static void epiporalDistances(const T a, const T b, const T c, const T d, const T e,
+                               const T qxL, const T qyL, const T qxR, const T qyR,
+                               T * errorL, T * errorR);
+    static Vec2 epiporalDistancesF(const Mat3 & F, const Vec2 & qL, const Vec2 & qR);
 };
 
 class FundMat : public cv::Matx33d

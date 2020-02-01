@@ -59,6 +59,7 @@ protected:
 
     void _showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float featuresSize = 2.0f);
     void _showMatches(const ImVec2 & pos, const ImVec2 & size, const ImVec4 & col, float lineWidth = 1.0f);
+    void _showEpilines(const ImVec2 & pos, const ImVec2 & size, const ImVec4 & col, float lineWidth = 1.0f);
 
     template<typename Scalar, int SizeX, int SizeY>
     void drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &v, const std::string &name);

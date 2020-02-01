@@ -442,3 +442,42 @@ Mat3 FundMatAlgorithms::findFundMatGS(const std::vector<Vec2> &pts1, const std::
 
     return F;
 }
+
+Mat3 FundMatAlgorithms::findFundMatCeres(const std::vector<Vec2> &pts1, const std::vector<Vec2> &pts2)
+{
+
+}
+
+Vec2 FundMatAlgorithms::epiporalDistancesF(const Mat3 &F, const Vec2 &qL, const Vec2 &qR)
+{
+    const auto & a = F(0,2);
+    const auto & b = F(1,2);
+    const auto & c = F(2,0);
+    const auto & d = F(2,1);
+    const auto & e = F(2,2);
+
+    const auto & qxR = qR[0];
+    const auto & qyR = qR[1];
+    const auto & qxL = qL[0];
+    const auto & qyL = qL[1];
+
+    double errL,errR;
+    FundMatAlgorithms::epiporalDistances(a,b,c,d,e,
+                                         qxL,qyL,qxR,qyR,
+                                         &errL,&errR);
+
+    Vec2 errs;
+    errs << errL, errR;
+    return errs;
+}
+
+template<typename T>
+void FundMatAlgorithms::epiporalDistances(const T a, const T b, const T c, const T d, const T e,
+                                       const T qxL, const T qyL, const T qxR, const T qyR,
+                                       T *errorL, T *errorR)
+{
+    if (!errorL || !errorR) return;
+    T error = abs(a*qxR +b*qyR + c*qxL + d*qyL + e);
+    *errorL = 1.0/sqrt( a*a + b*b ) * error;
+    *errorR = 1.0/sqrt( c*c + d*d ) * error;
+}

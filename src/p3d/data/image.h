@@ -35,6 +35,8 @@ public:
     // Interface
     cv::Mat getREFACTOR(){ return _imageCV; } //original, withInterestPoints...
     const cv::Mat & cvMat() const { return _imageCV; } //original, withInterestPoints...
+    int width() const { return _imageCV.cols; }
+    int height() const { return _imageCV.rows; }
 
     operator cv::Mat(){ return _imageCV; }
     operator cv::_InputArray(){ return _imageCV; }

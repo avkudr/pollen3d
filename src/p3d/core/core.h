@@ -26,6 +26,7 @@ using Vec4  = Eigen::Matrix<double,4,1>;
 using Mat3  = Eigen::Matrix3d;
 using Mat34 = Eigen::Matrix<double,3,4>;
 using Mat   = Eigen::Matrix<double,-1,-1>;
+using Mat2X = Eigen::Matrix<double,2,-1>;
 using Vec   = Eigen::Matrix<double,-1, 1>;
 
 class Exception : public std::exception

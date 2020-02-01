@@ -1,4 +1,4 @@
-// from https://www.shadertoy.com/view/ll2GD3
+// from https://iquilezles.org/www/articles/palettes/palettes.htm
 
 #include "p3d/core/core.h"
 
@@ -19,6 +19,10 @@ namespace palette{
 
     Vec3f color2(float t) {
         return impl::pal(t,Vec3f(0.5f,0.5f,0.5f),Vec3f(0.5f,0.5f,0.5f),Vec3f(1.0f,1.0f,1.0f),Vec3f(0.0f,0.10f,0.20f));
+    }
+
+    Vec3f color6(float t) {
+        return impl::pal(t,Vec3f(0.5f,0.5f,0.5f),Vec3f(0.5f,0.5f,0.5f),Vec3f(2.0f,1.0f,0.0f),Vec3f(0.5f,0.20f,0.25f));
     }
 
     Vec3f color7(float t) {

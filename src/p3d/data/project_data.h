@@ -99,7 +99,8 @@ public:
     Image * imagePairR(const std::size_t idx) { return imagePairImage(idx,false); }
 
     void getPairwiseMatches(const std::size_t idx, std::vector<Vec2> & ptsL, std::vector<Vec2> & ptsR);
-    void getEpipolarErrors(const std::size_t idx, Vec & errorsSquared);
+    void getEpipolarErrorsResidual(const std::size_t idx, Vec & errorsSquared);
+    void getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances);
 
 private:
 

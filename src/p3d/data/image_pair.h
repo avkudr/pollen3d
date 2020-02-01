@@ -94,6 +94,28 @@ public:
 
     const Eigen::Matrix<double,3,3> & getFundMat() const { return F; }
     void setFundMat(const Eigen::Matrix<double,3,3> & f) { F = f; }
+    void getEpilines(const std::vector<Vec2> & pts, Mat & epilines, bool transpose) const
+    {
+        if (pts.empty()) return;
+        int nbPts = (int) pts.size();
+
+        epilines.setOnes(3,pts.size());
+        for (int i = 0; i < nbPts; i++){
+            epilines(0,i) = pts[i][0];
+            epilines(1,i) = pts[i][1];
+        }
+
+        if (transpose) epilines = F.transpose()*epilines;
+        else epilines = F*epilines;
+    }
+
+    void getEpilinesLeft(const std::vector<Vec2> & ptsR, Mat & epilinesL) const {
+        getEpilines(ptsR, epilinesL, true);
+    }
+
+    void getEpilinesRight(const std::vector<Vec2> & ptsL, Mat & epilinesR){
+        getEpilines(ptsL, epilinesR, false);
+    }
 
     std::vector<cv::Point2d> getInliersLeftImageREFACTOR() { return getInliersREFACTOR(0); }
     std::vector<cv::Point2d> getInliersRightImageREFACTOR() { return getInliersREFACTOR(1); }

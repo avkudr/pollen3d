@@ -610,7 +610,12 @@ void Application::_drawCentral()
         return;
     }
 
+    const int SHOW_MATCHES = 0;
+    const int SHOW_EPILINES = 1;
+    static int display = SHOW_MATCHES;
+
     static bool showFeatures = true;
+    static bool showEpilines = true;
     static bool showMatches = true;
     int controlBottomBarHeight = 35;
     static float imageOpacity = 1.0f;
@@ -672,7 +677,8 @@ void Application::_drawCentral()
         if (isOneOf(m_currentTab,{Tab_General,Tab_Image})) {
             if (showFeatures) _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH),col,featuresSize);
         } else if (m_currentTab == Tab_Stereo) {
-            if (showMatches) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
+            if (display == SHOW_MATCHES) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
+            else if (display == SHOW_EPILINES) _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
         }
     } else {
         ImGui::Text("No image to display");
@@ -693,11 +699,11 @@ void Application::_drawCentral()
         ImGui::SameLine();
         ImGui::SliderFloat("##feature-size",&featuresSize, 1.0f,15.0f, "feat_size:%.1f");
     } else if (m_currentTab == Tab_Stereo) {
-        ImGui::Text("--");
-        ImGui::SameLine();
-        ImGui::Checkbox("Show matches",&showMatches);
+        ImGui::Text("--"); ImGui::SameLine();
+        ImGui::RadioButton("matches", &display, 0); ImGui::SameLine();
+        ImGui::RadioButton("epilines", &display, 1);
     }
-    if (showFeatures || showMatches) {
+    if (showFeatures || (display == SHOW_MATCHES)) {
         ImGui::SameLine();
         ImGui::ColorEdit4("MyColor##3", (float*)&col, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel );
         ImGui::SameLine();
@@ -773,6 +779,79 @@ void Application::_showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImV
     }
 }
 
+void Application::_showEpilines(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth)
+{
+    std::vector<Vec2> ptsL, ptsR;
+    m_projectData.getPairwiseMatches(m_currentImage,ptsL,ptsR);
+
+    auto imPair = m_projectData.imagePair(m_currentImage);
+    if (ptsL.empty() || ptsR.empty()) return;
+
+    auto imL = m_projectData.image(imPair->imL());
+    auto imR = m_projectData.image(imPair->imR());
+
+    if (!imL || !imR) return;
+
+    // the texture is rendered started in {pos} with the size {size}
+    float ratioLeftTotal = imL->width() / float(imL->width() + imR->width());
+    float ratioRightTotal = (1.0f - ratioLeftTotal);
+
+    if (imL->height() != imR->height()) {
+        LOG_ERR("Showing matches is not supported yet for images with different height");
+    }
+
+    const float posXr = ratioLeftTotal * size.x;
+
+    Mat epilinesL,epilinesR;
+    imPair->getEpilinesLeft(ptsR,epilinesL);
+    imPair->getEpilinesRight(ptsL,epilinesR);
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+    for (int i = 0; i < ptsL.size(); ++i) {
+        const auto & ptL = ptsL[i];
+        const auto & ptR = ptsR[i];
+
+        std::vector<Vec2> intesecPoints;
+        intesecPoints.reserve(4);
+        intesecPoints.emplace_back(Vec2(0,-epilinesL(2,i)/epilinesL(1,i)));
+        intesecPoints.emplace_back(Vec2(imL->width(),-(epilinesL(2,i)+epilinesL(0,i)*imL->width())/epilinesL(1,i)));
+        intesecPoints.emplace_back(Vec2(-epilinesL(2,i)/epilinesL(0,i),0));
+        intesecPoints.emplace_back(Vec2(-(epilinesL(2,i)+epilinesL(1,i)*imL->height())/epilinesL(0,i),imL->height()));
+
+        if ( intesecPoints[3][0] < 0 || intesecPoints[3][0] > imL->width() )
+            intesecPoints.erase( intesecPoints.begin() + 3);
+        if ( intesecPoints[2][0] < 0 || intesecPoints[2][0] > imL->width() )
+            intesecPoints.erase( intesecPoints.begin() + 2);
+        if ( intesecPoints[1][1] < 0 || intesecPoints[1][1] > imL->height() )
+            intesecPoints.erase( intesecPoints.begin() + 1);
+        if ( intesecPoints[0][1] < 0 || intesecPoints[0][1] > imL->height() )
+            intesecPoints.erase( intesecPoints.begin() + 0);
+
+        float xR1 = pos.x + float(intesecPoints[0][0]) / float(imL->width()) * ratioLeftTotal * size.x;
+        float yR1 = pos.y + float(intesecPoints[0][1]) / float(imL->height()) * size.y;
+        float xR2 = pos.x + float(intesecPoints[1][0]) / float(imL->width()) * ratioLeftTotal * size.x;
+        float yR2 = pos.y + float(intesecPoints[1][1]) / float(imL->height()) * size.y;
+
+//        float xr = pos.x + posXr + float(ptsR[id2].pt.x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
+//        float yr = pos.y + float(ptsR[id2].pt.y) / float(imR->cvMat().rows) * size.y;
+
+        Vec3f color = palette::color1(i / float(ptsL.size()));
+        auto color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,col.w*255);
+
+        float xl = pos.x + float(ptL[0]) / float(imL->width()) * ratioLeftTotal * size.x;
+        float yl = pos.y + float(ptL[1]) / float(imL->height()) * size.y;
+        float xr = pos.x + posXr + float(ptR[0]) / float(imR->width()) * ratioRightTotal * size.x;
+        float yr = pos.y + float(ptR[1]) / float(imR->height()) * size.y;
+
+        draw_list->AddCircle(ImVec2(xl, yl), 2, color32, 6, 2);
+        draw_list->AddCircle(ImVec2(xr, yr), 2, color32, 6, 2);
+        draw_list->AddLine(ImVec2(xR1,yR1),ImVec2(xR2,yR2), color32,lineWidth);
+        draw_list->AddLine(ImVec2(xR1 + posXr,yR1),ImVec2(xR2 + posXr, yR2), color32,lineWidth);
+    }
+
+}
+
 void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth)
 {
     auto imPair = m_projectData.imagePair(m_currentImage);
@@ -794,7 +873,7 @@ void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVe
     float ratioRightTotal = (1.0f - ratioLeftTotal);
 
     if (imL->cvMat().rows != imR->cvMat().rows) {
-        LOG_ERR("Showing matches is not supported yet for images with different height");
+        LOG_ERR("Showing epilines is not supported yet for images with different height");
     }
 
     const float posXr = ratioLeftTotal * size.x;
@@ -805,13 +884,15 @@ void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVe
     auto ptsR = imR->getKeyPoints();
     auto matches = imPair->getMatches();
     for (int i = 0; i < matches.size(); ++i) {
-        const auto & id1 = matches[i].iPtL;
-        const auto & id2 = matches[i].iPtR;
+        const auto & idL = matches[i].iPtL;
+        const auto & idR = matches[i].iPtR;
+        const Vec2 left (ptsL[idL].pt.x,ptsL[idL].pt.y);
+        const Vec2 right(ptsR[idR].pt.x,ptsR[idR].pt.y);
 
-        float xl = pos.x + float(ptsL[id1].pt.x) / float(imL->cvMat().cols) * ratioLeftTotal * size.x;
-        float yl = pos.y + float(ptsL[id1].pt.y) / float(imL->cvMat().rows) * size.y;
-        float xr = pos.x + posXr + float(ptsR[id2].pt.x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
-        float yr = pos.y + float(ptsR[id2].pt.y) / float(imR->cvMat().rows) * size.y;
+        float xl = pos.x + float(ptsL[idL].pt.x) / float(imL->cvMat().cols) * ratioLeftTotal * size.x;
+        float yl = pos.y + float(ptsL[idL].pt.y) / float(imL->cvMat().rows) * size.y;
+        float xr = pos.x + posXr + float(ptsR[idR].pt.x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
+        float yr = pos.y + float(ptsR[idR].pt.y) / float(imR->cvMat().rows) * size.y;
 
         Vec3f color = palette::color1(i / float(matches.size()));
         auto color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,col.w*255);

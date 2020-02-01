@@ -310,7 +310,7 @@ void ProjectData::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &pts
     }
 }
 
-void ProjectData::getEpipolarErrors(const std::size_t idx, Vec &errorsSquared)
+void ProjectData::getEpipolarErrorsResidual(const std::size_t idx, Vec &errorsSquared)
 {
     if (idx >= m_imagesPairs.size()) return;
     std::vector<Vec2> ptsL, ptsR;
@@ -326,6 +326,24 @@ void ProjectData::getEpipolarErrors(const std::size_t idx, Vec &errorsSquared)
         ptRh << ptsR[i][0],ptsR[i][1],1.0;
         error = ptRh.transpose() * F * ptLh;
         errorsSquared[i] = error*error;
+    }
+}
+
+/*
+ * see Equation 2.33, p53
+ */
+void ProjectData::getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances)
+{
+    if (idx >= m_imagesPairs.size()) return;
+    std::vector<Vec2> ptsL, ptsR;
+    getPairwiseMatches(idx, ptsL, ptsR);
+    if (ptsL.empty() || ptsR.empty()) return;
+    const auto & F = imagePair(idx)->getFundMat();
+
+    distances.setZero(2,ptsL.size());
+    for (int i = 0; i < ptsL.size(); ++i) {
+        Vec2 errs = FundMatAlgorithms::epiporalDistancesF(F,ptsL[i],ptsR[i]);
+        distances.col(i) = errs;
     }
 }
 
