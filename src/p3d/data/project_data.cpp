@@ -283,6 +283,52 @@ void ProjectData::updateCameraMatrices()
     }
 }
 
+void ProjectData::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &ptsL, std::vector<Vec2> &ptsR)
+{
+    ptsL.clear();
+    ptsR.clear();
+
+    ImagePair * imPair = imagePair(i);
+    if (!imPair) return;
+    Image * iL = imagePairL(i);
+    Image * iR = imagePairR(i);
+    if (!iL || !iR) return;
+
+    if (!iL->hasFeatures() || !iR->hasFeatures()) return;
+    if (!imPair->hasMatches()) return;
+
+    auto ptsLraw = iL->getKeyPoints();
+    auto ptsRraw = iR->getKeyPoints();
+    auto matches = imPair->getMatches();
+    ptsL.reserve(matches.size());
+    ptsR.reserve(matches.size());
+    for (int i = 0; i < matches.size(); ++i) {
+        const auto & idL = matches[i].iPtL;
+        const auto & idR = matches[i].iPtR;
+        ptsL.emplace_back(Vec2(ptsLraw[idL].pt.x,ptsLraw[idL].pt.y));
+        ptsR.emplace_back(Vec2(ptsRraw[idR].pt.x,ptsRraw[idR].pt.y));
+    }
+}
+
+void ProjectData::getEpipolarErrors(const std::size_t idx, Vec &errorsSquared)
+{
+    if (idx >= m_imagesPairs.size()) return;
+    std::vector<Vec2> ptsL, ptsR;
+    getPairwiseMatches(idx, ptsL, ptsR);
+    if (ptsL.empty() || ptsR.empty()) return;
+    const auto & F = imagePair(idx)->getFundMat();
+
+    errorsSquared.setZero(ptsL.size(),1);
+    for (int i = 0; i < ptsL.size(); ++i) {
+        double error = 0;
+        Vec3 ptLh, ptRh;
+        ptLh << ptsL[i][0],ptsL[i][1],1.0;
+        ptRh << ptsR[i][0],ptsR[i][1],1.0;
+        error = ptRh.transpose() * F * ptLh;
+        errorsSquared[i] = error*error;
+    }
+}
+
 /*
 void ProjectData::updatePAAAroperties()
 {

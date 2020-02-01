@@ -13,7 +13,7 @@
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 #endif
 
-TEST(PATHS, baseNameFromPath)
+TEST(PATHS, path_baseName)
 {
     std::string basename = "path_to.yml.gz";
     ASSERT_EQ(basename, utils::baseNameFromPath("/home/andrey/" + basename));
@@ -22,7 +22,7 @@ TEST(PATHS, baseNameFromPath)
     ASSERT_EQ(basename, utils::baseNameFromPath("C:\\dev\\dqsdqsdqs\\" + basename));
 }
 
-TEST(PATHS, endsWith)
+TEST(PATHS, path_endsWith)
 {
     std::string basename = "path_to" + std::string(P3D_PROJECT_EXTENSION);
     ASSERT_TRUE (utils::endsWith(basename,".yml.gz"));

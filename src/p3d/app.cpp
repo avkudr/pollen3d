@@ -4,6 +4,7 @@
 
 #include "p3d/project_manager.h"
 #include "p3d/commands.h"
+#include "p3d/gui/palette.h"
 
 #include "fonts/IconsFontAwesome5.h"
 
@@ -312,13 +313,13 @@ void Application::_drawTab_General()
     ImGui::SameLine();
     if (ImGui::Button("DBG_SAVE"))
     {
-        ProjectManager::get()->saveProject(&m_projectData,"/home/andrey/Projects/pollen3d/build/test_project" + std::string(P3D_PROJECT_EXTENSION));
+        ProjectManager::get()->saveProject(&m_projectData,"test_project" + std::string(P3D_PROJECT_EXTENSION));
     }
     ImGui::SameLine();
     if (ImGui::Button("DBG_PROJ"))
     {
         auto f = [&]() {
-            ProjectManager::get()->openProject(&m_projectData, "/home/andrey/Projects/pollen3d/build/test_project" + std::string(P3D_PROJECT_EXTENSION));
+            ProjectManager::get()->openProject(&m_projectData, "test_project" + std::string(P3D_PROJECT_EXTENSION));
             m_currentImage = 0;
             m_textureNeedsUpdate = true;
         };
@@ -435,10 +436,10 @@ void Application::_drawTab_Stereo()
             }
 
             ImGui::SetNextItemWidth(matchingWidgetW);
-            if (ImGui::Button("Match features"))
+            if (ImGui::Button("Find fundamental matrix"))
             {
                 auto f = [&]() {
-                    ProjectManager::get()->matchFeatures(m_projectData, {m_currentImage});
+                    ProjectManager::get()->findFundamentalMatrix(m_projectData, {m_currentImage});
                 };
                 _doHeavyTask(f);
             }
@@ -447,7 +448,7 @@ void Application::_drawTab_Stereo()
             if (ImGui::Button("ALL"))
             {
                 auto f = [&]() {
-                    ProjectManager::get()->matchFeatures(m_projectData);
+                    ProjectManager::get()->findFundamentalMatrix(m_projectData);
                 };
                 _doHeavyTask(f);
             }
@@ -760,12 +761,14 @@ void Application::_showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImV
         const auto & keyPts = im->getKeyPoints();
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
+        const auto color32 = IM_COL32(col.x*255,col.y*255,col.z*255,col.w*255);
+
         for (const auto & kpt : keyPts) {
             float x = pos.x + kpt.pt.x / float(m_textureWidth) * size.x;
             float y = pos.y + kpt.pt.y / float(m_textureHeight) * size.y;
 
-            draw_list->AddCircle(ImVec2(x, y), featuresSize,
-                                 IM_COL32(col.x*255,col.y*255,col.z*255,col.w*255), 6, 2);
+
+            draw_list->AddCircle(ImVec2(x, y), featuresSize, color32, 6, 2);
         }
     }
 }
@@ -810,8 +813,11 @@ void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVe
         float xr = pos.x + posXr + float(ptsR[id2].pt.x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
         float yr = pos.y + float(ptsR[id2].pt.y) / float(imR->cvMat().rows) * size.y;
 
-        draw_list->AddLine(ImVec2(xl,yl),ImVec2(xr,yr),
-                           IM_COL32(col.x*255,col.y*255,col.z*255,col.w*255),lineWidth);
+        Vec3f color = palette::color1(i / float(matches.size()));
+        auto color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,col.w*255);
+        draw_list->AddCircle(ImVec2(xl, yl), 2, color32, 6, 2);
+        draw_list->AddCircle(ImVec2(xr, yr), 2, color32, 6, 2);
+        draw_list->AddLine(ImVec2(xl,yl),ImVec2(xr,yr), color32,lineWidth);
     }
 
 }

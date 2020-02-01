@@ -300,3 +300,56 @@ TEST(META, meta_setterGetter)
     CommandManager::get()->undoCommand();
     EXPECT_EQ(a.getValue(),15);
 }
+
+TEST(META, meta_setSettings)
+{
+    float f  = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
+    ProjectManager::get()->setSetting(p3dSetting_matcherFilterCoef, 2.0f*f);
+    float f2 = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
+    EXPECT_FLOAT_EQ(f2,2.0f*f);
+}
+
+
+TEST(META, meta_setValue)
+{
+    auto identifier = P3D_ID_TYPE(1002);
+    ProjectSettings s;
+    auto data = entt::resolve<ProjectSettings>().data(identifier);
+    entt::meta_any v = data.get(s); // default value is 0.3f
+    data.set(s,v);                  EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.3f);    // ok
+    data.set(s,2.0f);               EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 2.0f);    // ok
+    data.set(s,2.0f * 2.0f);        EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 4.0f);    // ok
+
+    CommandManager::get()->executeCommand(new CommandSetProperty(&s,identifier,v));
+    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.3f);
+    CommandManager::get()->executeCommand(new CommandSetProperty(&s,identifier,2.0f));
+    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 2.0f);
+    CommandManager::get()->executeCommand(new CommandSetProperty(&s,identifier,2.0f * 2.0f));
+    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 4.0f);
+
+//    foo(&s,identifier,2.0f);
+//    foo(&s,identifier,2.0f * 1.0f);
+}
+
+struct B{
+    B() {
+        entt::meta<B>()
+            .type("ClassB"_hs)
+            .data<&B::value>("value"_hs);
+    }
+    int value = 5;
+};
+
+struct Dummy{
+    entt::meta_any value{};
+};
+
+TEST(META, meta_setValueClassAttribute)
+{
+    Dummy d;
+    B b;
+    auto data = entt::resolve<B>().data("value"_hs);
+    d.value = data.get(b);
+
+    EXPECT_EQ(d.value,b.value);
+}

@@ -1,5 +1,7 @@
 #include "fundmat.h"
 
+#include <Eigen/Eigen>
+
 #include "p3d/console_logger.h"
 
 FundMat::FundMat()
@@ -389,3 +391,54 @@ bool FundMatEstimation::isDegenerate(std::vector<int> samplesIdx)
 }
 
 
+
+Mat3 FundMatAlgorithms::findFundMatGS(const std::vector<Vec2> &pts1, const std::vector<Vec2> &pts2)
+{
+    Mat3 F;
+    F.setZero(3,3);
+    F(2,2) = 1;
+
+    int nbPts = 0;
+    nbPts = (int)pts1.size();
+
+    Mat W;
+    W.setZero(4,nbPts);
+    for (int i = 0; i < nbPts; i++){
+        W(0,i) = pts2[i][0];
+        W(1,i) = pts2[i][1];
+        W(2,i) = pts1[i][0];
+        W(3,i) = pts1[i][1];
+    }
+
+    Vec4 meanW;
+    for (auto & i : {0,1,2,3}) {
+        meanW[i] = W.row(i).mean();
+        W.row(i).array() -= meanW[i];
+    }
+
+    Eigen::JacobiSVD<Mat> svd(W.transpose(), Eigen::ComputeFullV);
+
+    Mat N =  svd.matrixV().transpose().rightCols(1);
+
+    F(0,2) = N(0); // a
+    F(1,2) = N(1); // b
+    F(2,0) = N(2); // c
+    F(2,1) = N(3); // d
+    F(2,2) = Mat(-1*N.transpose()*meanW)(0,0);
+
+    F = F / F.norm();
+
+//    cv::SVD::compute(W.transpose(), S, U, Vt);
+//    cv::Mat V = Vt.t();
+//    cv::Mat N = V.col(V.cols - 1);
+
+//    F.at<double>(0,2) = N.at<double>(0);
+//    F.at<double>(1,2) = N.at<double>(1);
+//    F.at<double>(2,0) = N.at<double>(2);
+//    F.at<double>(2,1) = N.at<double>(3);
+//    F.at<double>(2,2) = cv::Mat(-1*N.t()*meanW).at<double>(0,0);
+
+//    F = F / F.at<double>(2,2);
+
+    return F;
+}

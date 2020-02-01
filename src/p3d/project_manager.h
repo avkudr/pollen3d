@@ -31,14 +31,16 @@ public:
 
     void extractFeatures(ProjectData & imList, std::vector<int> imIds = {});
     void matchFeatures(ProjectData & imList, std::vector<int> imPairsIds = {});
+    void findFundamentalMatrix(ProjectData & imList, std::vector<int> imPairsIds = {});
 
     entt::meta_any getSetting(const p3dSetting & name);
 
-    void setSetting(const p3dSetting & name, entt::meta_any value);
+    void setSetting(const p3dSetting & name, const entt::meta_any &value);
+    void setSettings(const ProjectSettings & settings){ m_settings = settings; }
 
 private:
     ProjectManager() {}
     static ProjectManager * m_instance;
-    ProjectSettings settings;
+    ProjectSettings m_settings;
 
 };

@@ -119,7 +119,7 @@ void ProjectManager::saveProject(ProjectData *data, std::string path) {
     cv::FileStorage fs(path, cv::FileStorage::WRITE);
     if (fs.isOpened()) {
         fs << "ProjectSettings" << "{";
-        settings.write(fs);
+        m_settings.write(fs);
         fs << "}";
         fs << "ProjectData" << "{";
         data->write(fs);
@@ -142,7 +142,7 @@ void ProjectManager::openProject(ProjectData *data, std::string path)
     try {
         cv::FileStorage fs(path, cv::FileStorage::READ);
         if (fs.isOpened()) {
-            settings.read(fs["ProjectSettings"]);
+            m_settings.read(fs["ProjectSettings"]);
             data->read(fs["ProjectData"]);
             LOG_OK( "Done" );
             fs.release();
@@ -247,12 +247,32 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
     }
 }
 
+void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> imPairsIds)
+{
+    if (data.nbImagePairs() == 0) return;
+    if (imPairsIds.empty())
+        for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
+
+#ifdef WITH_OPENMP
+    omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
+    #pragma omp parallel for
+#endif
+    for (size_t i = 0; i < imPairsIds.size(); i++) {
+        std::vector<Vec2> ptsL, ptsR;
+        data.getPairwiseMatches(i, ptsL, ptsR);
+        if (ptsL.empty() || ptsR.empty()) continue;
+
+        Mat3 F = FundMatAlgorithms::findFundMatGS(ptsL,ptsR);
+        data.imagePair(i)->setFundMat(F);
+    }
+}
+
 entt::meta_any ProjectManager::getSetting(const p3dSetting &name) {
     auto data = entt::resolve<ProjectSettings>().data(P3D_ID_TYPE(name));
     if (!data) return entt::meta_any{nullptr};
-    return data.get(settings);
+    return data.get(m_settings);
 }
 
-void ProjectManager::setSetting(const p3dSetting &name, entt::meta_any value) {
-    CommandManager::get()->executeCommand(new CommandSetProperty(&settings,name,value));
+void ProjectManager::setSetting(const p3dSetting &id, const entt::meta_any &value) {
+    CommandManager::get()->executeCommand(new CommandSetProperty(&m_settings,P3D_ID_TYPE(id),value));
 }

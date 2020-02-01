@@ -21,6 +21,10 @@
 #include "p3d/core/core.h"
 #include "p3d/core/robust_estim.hpp"
 
+struct FundMatAlgorithms{
+    static Mat3 findFundMatGS(const std::vector<Vec2> & pts1,const std::vector<Vec2> & pts2);
+};
+
 class FundMat : public cv::Matx33d
 {
 public:

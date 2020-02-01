@@ -105,6 +105,7 @@ set(SOURCES
     ./src/p3d/console_logger.cpp
     ./src/p3d/commands.h
     ./src/p3d/commands.cpp
+    ./src/p3d/gui/palette.h
 )
 
 set(SOURCES

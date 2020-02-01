@@ -16,6 +16,18 @@
 #else
 #define P3D_ID_TYPE std::size_t
 #endif
+
+#include <Eigen/Core>
+
+using Vec2  = Eigen::Vector2d;
+using Vec3  = Eigen::Vector3d;
+using Vec3f = Eigen::Vector3f;
+using Vec4  = Eigen::Matrix<double,4,1>;
+using Mat3  = Eigen::Matrix3d;
+using Mat34 = Eigen::Matrix<double,3,4>;
+using Mat   = Eigen::Matrix<double,-1,-1>;
+using Vec   = Eigen::Matrix<double,-1, 1>;
+
 class Exception : public std::exception
 {
 public:
@@ -70,20 +82,3 @@ std::string format( const char* fmt, ... );
 #define p3d_DbgAssert(expr)
 #endif
 
-typedef int p3dSetting;
-enum p3dSetting_
-{
-    p3dSetting_projectSettings   = 1000,
-    p3dSetting_matcherCurAlg     = 1001,
-    p3dSetting_matcherFilterCoef = 1002,
-};
-
-typedef int p3dData;
-enum p3dData_
-{
-    p3dData_projectData = 2000,
-    p3dData_projectPath = 2001,
-    p3dData_dummy       = 2002,
-    p3dData_images      = 2003,
-    p3dData_imagePairs  = 2004,
-};

@@ -33,7 +33,7 @@ template <typename T>
 class CommandSetProperty : public Command
 {
 public:
-    CommandSetProperty(T * instance, const int &propId, entt::meta_any v) :
+    CommandSetProperty(T * instance, const P3D_ID_TYPE &propId, const entt::meta_any & v) :
         m_propId(propId),m_to(v),m_instance(instance)
     {
         if (instance == nullptr) return;
@@ -45,7 +45,7 @@ public:
             return;
         }
 
-        m_from = m_data.get(*m_instance);
+        m_from = entt::meta_any{m_data.get(*instance)};
         if (m_to.type() == m_data.type() && m_to != m_from){
             m_isValid = true;
         }
@@ -69,8 +69,8 @@ public:
 private:
     T * m_instance;
     int m_propId;
-    entt::meta_any m_to;
-    entt::meta_any m_from;
+    entt::meta_any m_to{};
+    entt::meta_any m_from{};
     entt::meta_data m_data;
 };
 

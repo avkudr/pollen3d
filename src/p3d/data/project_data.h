@@ -18,6 +18,16 @@
 using std::vector;
 using std::string;
 
+typedef int p3dData;
+enum p3dData_
+{
+    p3dData_projectData = 2000,
+    p3dData_projectPath = 2001,
+    p3dData_dummy       = 2002,
+    p3dData_images      = 2003,
+    p3dData_imagePairs  = 2004,
+};
+
 class ProjectData : public Serializable<ProjectData>{
 
 public:
@@ -87,6 +97,9 @@ public:
 
     Image * imagePairL(const std::size_t idx) { return imagePairImage(idx,true); }
     Image * imagePairR(const std::size_t idx) { return imagePairImage(idx,false); }
+
+    void getPairwiseMatches(const std::size_t idx, std::vector<Vec2> & ptsL, std::vector<Vec2> & ptsR);
+    void getEpipolarErrors(const std::size_t idx, Vec & errorsSquared);
 
 private:
 

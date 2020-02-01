@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Setup testing
 enable_testing()
 find_package(GTest REQUIRED)
@@ -14,6 +16,7 @@ include_directories(${GTEST_INCLUDE_DIR})
 add_executable(pollen3d_tests
     ./tests/test_paths.h
     ./tests/test_meta.h
+    ./tests/test_fundmat.h
     ./tests/main_tests.cpp
     ${SOURCES}
 )
