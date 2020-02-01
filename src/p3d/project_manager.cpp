@@ -257,18 +257,19 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
     omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
-    for (size_t i = 0; i < imPairsIds.size(); i++) {
+    for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
+        auto i = imPairsIds[idx];
         std::vector<Vec2> ptsL, ptsR;
-        data.getPairwiseMatches(imPairsIds[i], ptsL, ptsR);
+        data.getPairwiseMatches(i, ptsL, ptsR);
         if (ptsL.empty() || ptsR.empty()) {
-            LOG_OK("Pair %i has no matches", imPairsIds[i]);
+            LOG_OK("Pair %i has no matches", i);
             continue;
         }
 
         Mat3 F = FundMatAlgorithms::findFundMatCeres(ptsL,ptsR);
         data.imagePair(i)->setFundMat(F);
 
-        LOG_OK("Pair %i, estimated F (ceres)", imPairsIds[i]);
+        LOG_OK("Pair %i, estimated F (ceres)", i);
     }
 }
 

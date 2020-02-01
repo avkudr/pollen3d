@@ -553,8 +553,12 @@ void Application::drawProperty_basic(const Type &v, const std::string &name, con
 template<typename Scalar, int SizeX, int SizeY>
 void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &A, const std::string &name)
 {
+    bool hovered = false;
     ImGui::Text("%s %s", ICON_FA_BORDER_ALL, name.c_str());
-    if (ImGui::IsItemHovered())
+    if (ImGui::IsItemHovered()) hovered = true;
+    ImGui::NextColumn();
+    ImGui::Text("[%ix%i]", SizeX, SizeY);
+    if (hovered || ImGui::IsItemHovered())
     {
         ImGui::BeginTooltip();
         int maxX = 12;
@@ -568,7 +572,7 @@ void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> 
         ImGui::Indent();
         for (int i = 0; i < maxX; ++i){
             for (int j = 0; j < maxY; ++j){
-                ImGui::Text("%.4f",A(i,j));
+                ImGui::Text("%.5f",A(i,j));
                 if (j < maxY - 1) ImGui::SameLine();
             }
         }
@@ -576,8 +580,6 @@ void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> 
 
         ImGui::EndTooltip();
     }
-    ImGui::NextColumn();
-    ImGui::Text("[%ix%i]", SizeX, SizeY);
     ImGui::NextColumn();
 }
 
