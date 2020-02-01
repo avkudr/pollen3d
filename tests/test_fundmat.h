@@ -49,6 +49,9 @@ TEST(FUNDMAT, fundmat_testImages)
     // --- extract features from all images. {} = all
     ProjectManager::get()->extractFeatures(data,{});
 
+    ASSERT_EQ(data.nbImages(), 2);
+    ASSERT_NE(data.image(0), nullptr);
+    ASSERT_NE(data.image(1), nullptr);
     EXPECT_GE(data.image(0)->getNbFeatures(), 100);
     EXPECT_GE(data.image(1)->getNbFeatures(), 100);
 

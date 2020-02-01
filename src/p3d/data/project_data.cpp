@@ -36,7 +36,7 @@ ProjectData::ProjectData() : Serializable(){
 
 void ProjectData::setImageList(const std::vector<Image> &imList){
     if (imList.empty()) return;
-    m_images = imList;
+    m_images = std::vector<Image>(imList);
 
     m_imagesPairs.clear();
     for (auto i = 0; i < m_images.size()-1; ++i) {

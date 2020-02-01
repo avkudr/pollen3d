@@ -86,7 +86,7 @@ public:
     vector<Property*> _properties;
 
     Image * image(const std::size_t idx) {
-        if (idx < 0 && idx >= m_images.size()) return nullptr;
+        if (idx >= m_images.size()) return nullptr;
         return &m_images[idx];
     }
 
@@ -111,8 +111,8 @@ private:
         return &m_images[idxImage];
     }
 
-    std::vector<Image> m_images;
-    std::vector<ImagePair> m_imagesPairs;
+    std::vector<Image> m_images{};
+    std::vector<ImagePair> m_imagesPairs{};
     std::string m_projectPath = "";
 
 

@@ -73,6 +73,11 @@ protected:
         m_heavyAsyncTask = std::async(std::launch::async,f);
     }
 
+    void _resetAppState() {
+        m_currentSection = Section_Default;
+        m_textureNeedsUpdate = true;
+    }
+
     enum Tab{
         Tab_General = 0,
         Tab_Image      ,
@@ -92,6 +97,14 @@ protected:
 
     int m_currentTab = -1;
     int m_currentImage = -1;
+
+    enum Section_{
+        Section_Default = 0,
+        Section_Rectified,
+        Section_DepthMap,
+    };
+
+    int m_currentSection = Section_Default;
 
     int m_width = 1600;
     int m_height = 1000;

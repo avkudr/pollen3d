@@ -37,6 +37,7 @@ public:
     const cv::Mat & cvMat() const { return _imageCV; } //original, withInterestPoints...
     int width() const { return _imageCV.cols; }
     int height() const { return _imageCV.rows; }
+    cv::Size size() const { return _imageCV.size(); }
 
     operator cv::Mat(){ return _imageCV; }
     operator cv::_InputArray(){ return _imageCV; }
@@ -52,7 +53,7 @@ public:
     // Features
 
     bool hasFeatures(){ return _kpts.size() > 0; }
-    int getNbFeatures(){ return (int)_kpts.size();}
+    int getNbFeatures() const { return _kpts.size();}
     cv::Mat getFeaturePositions() const;
     const vector<cv::KeyPoint> & getKeyPoints(){ return _kpts;}
     void setKeyPoints(std::vector<cv::KeyPoint> kpts);
@@ -91,7 +92,7 @@ private:
     cv::Mat _imageCV;
 
 public:
-    std::vector<cv::KeyPoint> _kpts;
+    std::vector<cv::KeyPoint> _kpts{};
     cv::Mat _desc;
 
     cv::Mat K;

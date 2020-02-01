@@ -12,6 +12,12 @@
 #include "p3d/core/fundmat.h"
 #include "p3d/core/core.h"
 
+struct FundMat {
+    cv::Mat getEpilinesRight() { return cv::Mat();}
+    cv::Mat getEpilinesLeft()  { return cv::Mat();}
+    bool isEmpty() { return false;}
+};
+
 class Rectifier
 {
 public:

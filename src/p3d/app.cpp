@@ -227,7 +227,7 @@ void Application::_drawTab()
         {
             ImGui::Text("ID: 0123456789");
             ImGui::EndTabItem();
-            if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) m_textureNeedsUpdate = true;
+            if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
             m_currentTab = Tab_Multiview;
         }
         if (ImGui::BeginTabItem("Point cloud"))
@@ -236,7 +236,7 @@ void Application::_drawTab()
             ImGui::Text("ID: 0123456789");
             ImGui::PopStyleColor();
             ImGui::EndTabItem();
-            if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) m_textureNeedsUpdate = true;
+            if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
             m_currentTab = Tab_PointCloud;
         }
         ImGui::EndTabBar();
@@ -255,7 +255,7 @@ void Application::_drawTab_General()
         auto f = [&,files]() {
             ProjectManager::get()->loadImages(&m_projectData,files);
             if (!m_projectData.empty()) m_currentImage = 0;
-            m_textureNeedsUpdate = true;
+            _resetAppState();
         };
         _doHeavyTask(f);
     }
@@ -281,8 +281,7 @@ void Application::_drawTab_General()
 
         auto f = [&,file]() {
             ProjectManager::get()->openProject(&m_projectData, file);
-            m_currentImage = 0;
-            m_textureNeedsUpdate = true;
+            _resetAppState();
         };
         if (file != "") _doHeavyTask(f);
     }
@@ -306,7 +305,7 @@ void Application::_drawTab_General()
         auto f = [&,imPaths]() {
             ProjectManager::get()->loadImages(&m_projectData,imPaths);
             if (!m_projectData.empty()) m_currentImage = 0;
-            m_textureNeedsUpdate = true;
+            _resetAppState();
         };
         _doHeavyTask(f);
     }
@@ -321,14 +320,14 @@ void Application::_drawTab_General()
         auto f = [&]() {
             ProjectManager::get()->openProject(&m_projectData, "test_project" + std::string(P3D_PROJECT_EXTENSION));
             m_currentImage = 0;
-            m_textureNeedsUpdate = true;
+            _resetAppState();
         };
         _doHeavyTask(f);
     }
     ImGui::SameLine();
     ImGui::EndTabItem();
 
-    if (!isOneOf(m_currentTab, {Tab_General,Tab_Image})) m_textureNeedsUpdate = true;
+    if (!isOneOf(m_currentTab, {Tab_General,Tab_Image})) _resetAppState();
     m_currentTab = Tab_General;
 }
 
@@ -362,7 +361,7 @@ void Application::_drawTab_Image()
 
         ImGui::EndTabItem();
 
-        if (!isOneOf(m_currentTab, {Tab_General,Tab_Image})) m_textureNeedsUpdate = true;
+        if (!isOneOf(m_currentTab, {Tab_General,Tab_Image})) _resetAppState();
         m_currentTab = Tab_Image;
     }
 }
@@ -438,9 +437,35 @@ void Application::_drawTab_Stereo()
             ImGui::EndChild();
         }
 
+        ImGui::SameLine();
+
+        if (ImGui::BeginChild("Rectification",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
+        {
+            ImGui::BulletText("Rectification");
+
+            ImGui::SetNextItemWidth(matchingWidgetW);
+            if (ImGui::Button("Rectify image pair"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->rectifyImagePairs(m_projectData, {m_currentImage});
+                };
+                _doHeavyTask(f);
+            }
+
+            ImGui::SetNextItemWidth(matchingWidgetW);
+            if (ImGui::Button("ALL"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->rectifyImagePairs(m_projectData);
+                };
+                _doHeavyTask(f);
+            }
+            ImGui::EndChild();
+        }
+
         ImGui::EndTabItem();
 
-        if (m_currentTab != Tab_Stereo) m_textureNeedsUpdate = true;
+        if (m_currentTab != Tab_Stereo) _resetAppState();
         m_currentTab = Tab_Stereo;
     }
 }
@@ -451,7 +476,7 @@ void Application::_drawData()
 
         if (m_currentImage >= m_projectData.nbImages()) {
             m_currentImage = 0;
-            m_textureNeedsUpdate = true;
+            _resetAppState();
         }
 
         if (ImGui::TreeNodeEx("Image list:", ImGuiTreeNodeFlags_DefaultOpen))
@@ -465,6 +490,7 @@ void Application::_drawData()
                 if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
                     if (m_currentImage != n) {
                         m_currentImage = n;
+                        m_currentSection = Section_Default;
                         m_textureNeedsUpdate = true;
                         LOG_DBG("Selection changed: %i", n);
                     }
@@ -492,10 +518,39 @@ void Application::_drawData()
 
                 std::string entry = ICON_FA_IMAGES" " + imL->name() + " <> " + imR->name();
                 if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
-                    if (m_currentImage != n) {
+                    if (m_currentImage != n || m_currentSection != Section_Default) {
                         m_currentImage = n;
+                        m_currentSection = Section_Default;
                         m_textureNeedsUpdate = true;
                         LOG_DBG("Selection changed: %i", n);
+                        LOG_DBG(" - section: %i", m_currentSection);
+
+                    }
+                }
+            }
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Rectified:", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            for (auto n = 0; n < (int)m_projectData.nbImagePairs(); n++)
+            {
+                auto imPair = m_projectData.imagePair(n);
+                if (!imPair || !imPair->isRectified()) continue;
+
+                auto imL = m_projectData.imagePairL(n);
+                auto imR = m_projectData.imagePairR(n);
+                if (!imL) continue;
+                if (!imR) continue;
+
+                std::string entry = ICON_FA_ALIGN_CENTER" " + imL->name() + " <> " + imR->name();
+                if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
+                    if (m_currentImage != n || m_currentSection != Section_Rectified) {
+                        m_currentImage = n;
+                        m_currentSection = Section_Rectified;
+                        m_textureNeedsUpdate = true;
+                        LOG_DBG("Selection changed: %i", n);
+                        LOG_DBG(" - section: %i", m_currentSection);
+
                     }
                 }
             }
@@ -615,13 +670,19 @@ void Application::_drawCentral()
         } else if (m_currentTab == Tab_Stereo) {
             auto imPair = m_projectData.imagePair(m_currentImage);
             if (imPair && imPair->isValid()) {
-                auto imIdxL = imPair->imL();
-                auto imIdxR = imPair->imR();
-                auto imL = m_projectData.image(imIdxL);
-                auto imR = m_projectData.image(imIdxR);
+                if (m_currentSection == Section_Default) {
+                    auto imIdxL = imPair->imL();
+                    auto imIdxR = imPair->imR();
+                    auto imL = m_projectData.image(imIdxL);
+                    auto imR = m_projectData.image(imIdxR);
 
-                if (imL && imR) {
-                    matToBind = utils::concatenateMat({imL->cvMat(),imR->cvMat()},utils::CONCAT_HORIZONTAL);
+                    if (imL && imR)
+                        matToBind = utils::concatenateMat({imL->cvMat(),imR->cvMat()},utils::CONCAT_HORIZONTAL);
+                } else if (m_currentSection == Section_Rectified) {
+                    const auto & imL = imPair->getRectifiedImageL();
+                    const auto & imR = imPair->getRectifiedImageR();
+                    if (!imL.empty() && !imR.empty())
+                        matToBind = utils::concatenateMat({imL,imR},utils::CONCAT_HORIZONTAL);
                 }
             }
         }
@@ -662,8 +723,10 @@ void Application::_drawCentral()
         if (isOneOf(m_currentTab,{Tab_General,Tab_Image})) {
             if (showFeatures) _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH),col,featuresSize);
         } else if (m_currentTab == Tab_Stereo) {
-            if (display == SHOW_MATCHES) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
-            else if (display == SHOW_EPILINES) _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
+            if (m_currentSection == Section_Default) {
+                if (display == SHOW_MATCHES) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
+                else if (display == SHOW_EPILINES) _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
+            }
         }
     } else {
         ImGui::Text("No image to display");
@@ -684,11 +747,13 @@ void Application::_drawCentral()
         ImGui::SameLine();
         ImGui::SliderFloat("##feature-size",&featuresSize, 1.0f,15.0f, "feat_size:%.1f");
     } else if (m_currentTab == Tab_Stereo) {
-        ImGui::Text("--"); ImGui::SameLine();
-        ImGui::RadioButton("matches", &display, 0); ImGui::SameLine();
-        ImGui::RadioButton("epilines", &display, 1);
+        if (m_currentSection == Section_Default) {
+            ImGui::Text("--"); ImGui::SameLine();
+            ImGui::RadioButton("matches", &display, 0); ImGui::SameLine();
+            ImGui::RadioButton("epilines", &display, 1);
+        }
     }
-    if (showFeatures/* || (display == SHOW_MATCHES)*/) {
+    if (isOneOf(m_currentTab,{Tab_General,Tab_Image})/* || (display == SHOW_MATCHES)*/) {
         ImGui::SameLine();
         ImGui::ColorEdit4("MyColor##3", (float*)&col, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel );
         ImGui::SameLine();

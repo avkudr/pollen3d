@@ -52,48 +52,6 @@ private:
     cv::Mat * _ptrToMat;
 };
 
-class FundMatProperty : virtual public Property{
-public:
-    FundMatProperty(FundMat * ptr, std::string varName){
-        _ptrToMat = ptr;
-        _varName  = varName;
-        _varType  = "Mat";
-        _varSize  = "3x3";
-    }
-
-    void show(){
-
-    }
-    bool isEmpty(){
-        return _ptrToMat->isEmpty();
-    }
-private:
-    FundMat * _ptrToMat;
-};
-
-class FundMatErrorProperty : virtual public Property{
-public:
-    FundMatErrorProperty(FundMat * ptr){
-        _ptrToMat = ptr;
-        _varName  = "   residual error";
-        _varType  = "";
-        if (! ptr->isEmpty()) {
-            std::ostringstream os;
-            os << ptr->getResidualError() << " px²";
-            _varSize  = os.str();
-
-        }
-    }
-
-    void show(){
-    }
-    bool isEmpty(){
-        return _ptrToMat->isEmpty();
-    }
-private:
-    FundMat * _ptrToMat;
-};
-
 //ImageInterface
 /* Property
  *      std::string name;

@@ -29,9 +29,10 @@ public:
 
     // ***** Image
 
-    void extractFeatures(ProjectData & imList, std::vector<int> imIds = {});
-    void matchFeatures(ProjectData & imList, std::vector<int> imPairsIds = {});
-    void findFundamentalMatrix(ProjectData & imList, std::vector<int> imPairsIds = {});
+    void extractFeatures(ProjectData & data, std::vector<int> imIds = {});
+    void matchFeatures(ProjectData & data, std::vector<int> imPairsIds = {});
+    void findFundamentalMatrix(ProjectData & data, std::vector<int> imPairsIds = {});
+    void rectifyImagePairs(ProjectData & data, std::vector<int> imPairsIds = {});
 
     entt::meta_any getSetting(const p3dSetting & name);
 
