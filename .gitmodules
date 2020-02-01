@@ -8,3 +8,6 @@
 [submodule "3rdparty/entt"]
 	path = 3rdparty/entt
 	url = https://github.com/avkudr/entt.git
+[submodule "3rdparty/ceres"]
+	path = 3rdparty/ceres
+	url = https://ceres-solver.googlesource.com/ceres-solver

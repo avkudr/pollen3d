@@ -22,8 +22,8 @@
 #include "p3d/core/robust_estim.hpp"
 
 struct FundMatAlgorithms{
-    static Mat3 findFundMatGS(const std::vector<Vec2> & pts1,const std::vector<Vec2> & pts2);
-    static Mat3 findFundMatCeres(const std::vector<Vec2> & pts1,const std::vector<Vec2> & pts2);
+    static Mat3 findFundMatGS(const std::vector<Vec2> & ptsL,const std::vector<Vec2> & ptsR);
+    static Mat3 findFundMatCeres(const std::vector<Vec2> & ptsL, const std::vector<Vec2> & ptsR);
 
     template<typename T>
     static void epiporalDistances(const T a, const T b, const T c, const T d, const T e,

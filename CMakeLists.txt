@@ -75,6 +75,13 @@ else()
     message( FATAL_ERROR "OpenCV not found" )
 endif()
 
+# ----- Add Ceres --------------------------------------------
+
+find_package(Ceres REQUIRED)
+if (Ceres_FOUND)
+    include_directories(${CERES_INCLUDE_DIRS})
+endif()
+
 # ----- Add ImGui --------------------------------------------
 
 find_package(ImGui REQUIRED)
@@ -164,9 +171,12 @@ endif()
 include_directories(./3rdparty/entt/src/entt/)
 include_directories(./src/)
 
-set(TARGET_LIBS ${ImGui_LIBS} ${OpenCV_LIBS})
+set(TARGET_LIBS ${TARGET_LIBS} ${ImGui_LIBS} ${OpenCV_LIBS})
 if(Eigen_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} Eigen3::Eigen)
+endif()
+if(Ceres_FOUND)
+    set(TARGET_LIBS ${TARGET_LIBS} ${CERES_LIBRARIES})
 endif()
 if(OpenMP_CXX_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} OpenMP::OpenMP_CXX)

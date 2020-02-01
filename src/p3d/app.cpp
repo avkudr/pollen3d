@@ -418,23 +418,6 @@ void Application::_drawTab_Stereo()
         {
             ImGui::BulletText("Epipolar geometry");
 
-            const char* matchingAlgos[] = { "BruteForce-L1", "BruteForce", "FlannBased"};
-            auto matcherCurAlg     = ProjectManager::get()->getSetting(p3dSetting_matcherCurAlg).cast<int>();
-
-            if (ImGui::Combo("matcher", &matcherCurAlg, matchingAlgos, IM_ARRAYSIZE(matchingAlgos))) {
-                ProjectManager::get()->setSetting(p3dSetting_matcherCurAlg,matcherCurAlg);
-            }
-
-            {
-                auto matcherFilterCoef = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
-                float min = 0.1f;
-                float max = 1.0f;
-                ImGui::InputFloat("filter coef", &matcherFilterCoef, min, max, "%.2f");
-                matcherFilterCoef = std::max(min,std::min(matcherFilterCoef,max));
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setSetting(p3dSetting_matcherFilterCoef,matcherFilterCoef);
-            }
-
             ImGui::SetNextItemWidth(matchingWidgetW);
             if (ImGui::Button("Find fundamental matrix"))
             {
@@ -703,7 +686,7 @@ void Application::_drawCentral()
         ImGui::RadioButton("matches", &display, 0); ImGui::SameLine();
         ImGui::RadioButton("epilines", &display, 1);
     }
-    if (showFeatures || (display == SHOW_MATCHES)) {
+    if (showFeatures/* || (display == SHOW_MATCHES)*/) {
         ImGui::SameLine();
         ImGui::ColorEdit4("MyColor##3", (float*)&col, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel );
         ImGui::SameLine();
@@ -797,82 +780,62 @@ void Application::_showEpilines(const ImVec2 &pos, const ImVec2 &size, const ImV
     float ratioRightTotal = (1.0f - ratioLeftTotal);
 
     if (imL->height() != imR->height()) {
-        LOG_ERR("Showing matches is not supported yet for images with different height");
+        LOG_ERR("Showing epilines is not supported yet for images with different height");
     }
 
     const float posXr = ratioLeftTotal * size.x;
 
-    Mat epilinesL,epilinesR;
+    std::vector<Vec3> epilinesL,epilinesR;
     imPair->getEpilinesLeft(ptsR,epilinesL);
     imPair->getEpilinesRight(ptsL,epilinesR);
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
+    auto mapToTextureL = [&] ( const Vec2 & pt) -> ImVec2 {
+        return ImVec2(pos.x + float(pt[0]) / float(imL->width()) * ratioLeftTotal * size.x,
+                      pos.y + float(pt[1]) / float(imL->height()) * size.y);
+    };
+
+    auto mapToTextureR = [&] ( const Vec2 & pt) -> ImVec2 {
+        return ImVec2(pos.x + posXr + float(pt[0]) / float(imR->width()) * ratioRightTotal * size.x,
+                      pos.y + float(pt[1]) / float(imR->height()) * size.y);
+    };
+
     for (int i = 0; i < ptsL.size(); ++i) {
         const auto & ptL = ptsL[i];
         const auto & ptR = ptsR[i];
 
-        std::vector<Vec2> intesecPoints;
-        intesecPoints.reserve(4);
-        intesecPoints.emplace_back(Vec2(0,-epilinesL(2,i)/epilinesL(1,i)));
-        intesecPoints.emplace_back(Vec2(imL->width(),-(epilinesL(2,i)+epilinesL(0,i)*imL->width())/epilinesL(1,i)));
-        intesecPoints.emplace_back(Vec2(-epilinesL(2,i)/epilinesL(0,i),0));
-        intesecPoints.emplace_back(Vec2(-(epilinesL(2,i)+epilinesL(1,i)*imL->height())/epilinesL(0,i),imL->height()));
+        auto epilinePtsL = utils::lineIntersectBox(epilinesL[i],imL->width(),imL->height());
+        auto epilinePtsR = utils::lineIntersectBox(epilinesR[i],imR->width(),imR->height());
 
-        if ( intesecPoints[3][0] < 0 || intesecPoints[3][0] > imL->width() )
-            intesecPoints.erase( intesecPoints.begin() + 3);
-        if ( intesecPoints[2][0] < 0 || intesecPoints[2][0] > imL->width() )
-            intesecPoints.erase( intesecPoints.begin() + 2);
-        if ( intesecPoints[1][1] < 0 || intesecPoints[1][1] > imL->height() )
-            intesecPoints.erase( intesecPoints.begin() + 1);
-        if ( intesecPoints[0][1] < 0 || intesecPoints[0][1] > imL->height() )
-            intesecPoints.erase( intesecPoints.begin() + 0);
-
-        float xR1 = pos.x + float(intesecPoints[0][0]) / float(imL->width()) * ratioLeftTotal * size.x;
-        float yR1 = pos.y + float(intesecPoints[0][1]) / float(imL->height()) * size.y;
-        float xR2 = pos.x + float(intesecPoints[1][0]) / float(imL->width()) * ratioLeftTotal * size.x;
-        float yR2 = pos.y + float(intesecPoints[1][1]) / float(imL->height()) * size.y;
-
-//        float xr = pos.x + posXr + float(ptsR[id2].pt.x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
-//        float yr = pos.y + float(ptsR[id2].pt.y) / float(imR->cvMat().rows) * size.y;
-
-        Vec3f color = palette::color1(i / float(ptsL.size()));
+        auto color = palette::color1(i / float(ptsL.size()));
         auto color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,col.w*255);
 
-        float xl = pos.x + float(ptL[0]) / float(imL->width()) * ratioLeftTotal * size.x;
-        float yl = pos.y + float(ptL[1]) / float(imL->height()) * size.y;
-        float xr = pos.x + posXr + float(ptR[0]) / float(imR->width()) * ratioRightTotal * size.x;
-        float yr = pos.y + float(ptR[1]) / float(imR->height()) * size.y;
-
-        draw_list->AddCircle(ImVec2(xl, yl), 2, color32, 6, 2);
-        draw_list->AddCircle(ImVec2(xr, yr), 2, color32, 6, 2);
-        draw_list->AddLine(ImVec2(xR1,yR1),ImVec2(xR2,yR2), color32,lineWidth);
-        draw_list->AddLine(ImVec2(xR1 + posXr,yR1),ImVec2(xR2 + posXr, yR2), color32,lineWidth);
+        draw_list->AddCircle(mapToTextureL(ptL), 2, color32, 6, 3);
+        draw_list->AddCircle(mapToTextureR(ptR), 2, color32, 6, 3);
+        draw_list->AddLine(mapToTextureL(epilinePtsL.first),mapToTextureL(epilinePtsL.second), color32,lineWidth);
+        draw_list->AddLine(mapToTextureR(epilinePtsR.first),mapToTextureR(epilinePtsR.second), color32,lineWidth);
     }
-
 }
 
 void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth)
 {
+    std::vector<Vec2> ptsL, ptsR;
+    m_projectData.getPairwiseMatches(m_currentImage,ptsL,ptsR);
+
     auto imPair = m_projectData.imagePair(m_currentImage);
-    if (!imPair || !imPair->isValid()) return;
-    if (!imPair->hasMatches()) return;
+    if (ptsL.empty() || ptsR.empty()) return;
 
-    auto imIdxL = imPair->imL();
-    auto imIdxR = imPair->imR();
-    auto imL = m_projectData.image(imIdxL);
-    auto imR = m_projectData.image(imIdxR);
+    auto imL = m_projectData.image(imPair->imL());
+    auto imR = m_projectData.image(imPair->imR());
 
-    if (!imL) return;
-    if (!imR) return;
-    if (!imL->hasFeatures()) return;
-    if (!imR->hasFeatures()) return;
+    if (!imL || !imR) return;
 
     // the texture is rendered started in {pos} with the size {size}
-    float ratioLeftTotal = imL->cvMat().cols / float(imL->cvMat().cols + imR->cvMat().cols);
+    float ratioLeftTotal = imL->width() / float(imL->width() + imR->width());
     float ratioRightTotal = (1.0f - ratioLeftTotal);
 
-    if (imL->cvMat().rows != imR->cvMat().rows) {
+    if (imL->height() != imR->height()) {
         LOG_ERR("Showing epilines is not supported yet for images with different height");
     }
 
@@ -880,25 +843,25 @@ void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVe
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
-    auto ptsL = imL->getKeyPoints();
-    auto ptsR = imR->getKeyPoints();
-    auto matches = imPair->getMatches();
-    for (int i = 0; i < matches.size(); ++i) {
-        const auto & idL = matches[i].iPtL;
-        const auto & idR = matches[i].iPtR;
-        const Vec2 left (ptsL[idL].pt.x,ptsL[idL].pt.y);
-        const Vec2 right(ptsR[idR].pt.x,ptsR[idR].pt.y);
+    auto mapToTextureL = [&] ( const Vec2 & pt) -> ImVec2 {
+        return ImVec2(pos.x + float(pt[0]) / float(imL->width()) * ratioLeftTotal * size.x,
+                      pos.y + float(pt[1]) / float(imL->height()) * size.y);
+    };
 
-        float xl = pos.x + float(ptsL[idL].pt.x) / float(imL->cvMat().cols) * ratioLeftTotal * size.x;
-        float yl = pos.y + float(ptsL[idL].pt.y) / float(imL->cvMat().rows) * size.y;
-        float xr = pos.x + posXr + float(ptsR[idR].pt.x) / float(imR->cvMat().cols) * ratioRightTotal * size.x;
-        float yr = pos.y + float(ptsR[idR].pt.y) / float(imR->cvMat().rows) * size.y;
+    auto mapToTextureR = [&] ( const Vec2 & pt) -> ImVec2 {
+        return ImVec2(pos.x + posXr + float(pt[0]) / float(imR->width()) * ratioRightTotal * size.x,
+                      pos.y + float(pt[1]) / float(imR->height()) * size.y);
+    };
 
-        Vec3f color = palette::color1(i / float(matches.size()));
+    for (int i = 0; i < ptsL.size(); ++i) {
+        const auto & ptL = ptsL[i];
+        const auto & ptR = ptsR[i];
+
+        auto color = palette::color1(i / float(ptsL.size()));
         auto color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,col.w*255);
-        draw_list->AddCircle(ImVec2(xl, yl), 2, color32, 6, 2);
-        draw_list->AddCircle(ImVec2(xr, yr), 2, color32, 6, 2);
-        draw_list->AddLine(ImVec2(xl,yl),ImVec2(xr,yr), color32,lineWidth);
-    }
 
+        draw_list->AddCircle(mapToTextureL(ptL), 2, color32, 6, 3);
+        draw_list->AddCircle(mapToTextureR(ptR), 2, color32, 6, 3);
+        draw_list->AddLine(mapToTextureL(ptL),mapToTextureR(ptR), color32,lineWidth);
+    }
 }

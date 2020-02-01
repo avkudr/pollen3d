@@ -205,7 +205,7 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
     #pragma omp parallel for
 #endif
     for (int i = 0; i < nbPairs; i++) {
-        auto imPair = imList.imagePair(i);
+        auto imPair = imList.imagePair(imPairsIds[i]);
         if (!imPair || !imPair->isValid()) continue;
 
         auto imIdxL = imPair->imL();
@@ -243,7 +243,7 @@ void ProjectManager::matchFeatures(ProjectData &imList, std::vector<int> imPairs
 
         imPair->setMatches(matchesPair);
 
-        LOG_OK("Pair %i, matched %i features", i, matchesPair.size());
+        LOG_OK("Pair %i, matched %i features", imPairsIds[i], matchesPair.size());
     }
 }
 
@@ -259,11 +259,16 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
 #endif
     for (size_t i = 0; i < imPairsIds.size(); i++) {
         std::vector<Vec2> ptsL, ptsR;
-        data.getPairwiseMatches(i, ptsL, ptsR);
-        if (ptsL.empty() || ptsR.empty()) continue;
+        data.getPairwiseMatches(imPairsIds[i], ptsL, ptsR);
+        if (ptsL.empty() || ptsR.empty()) {
+            LOG_OK("Pair %i has no matches", imPairsIds[i]);
+            continue;
+        }
 
-        Mat3 F = FundMatAlgorithms::findFundMatGS(ptsL,ptsR);
+        Mat3 F = FundMatAlgorithms::findFundMatCeres(ptsL,ptsR);
         data.imagePair(i)->setFundMat(F);
+
+        LOG_OK("Pair %i, estimated F (ceres)", imPairsIds[i]);
     }
 }
 

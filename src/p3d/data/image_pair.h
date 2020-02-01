@@ -94,26 +94,25 @@ public:
 
     const Eigen::Matrix<double,3,3> & getFundMat() const { return F; }
     void setFundMat(const Eigen::Matrix<double,3,3> & f) { F = f; }
-    void getEpilines(const std::vector<Vec2> & pts, Mat & epilines, bool transpose) const
+    void getEpilines(const std::vector<Vec2> & pts, std::vector<Vec3> & epilines, bool transpose) const
     {
         if (pts.empty()) return;
-        int nbPts = (int) pts.size();
+        auto nbPts = pts.size();
 
-        epilines.setOnes(3,pts.size());
-        for (int i = 0; i < nbPts; i++){
-            epilines(0,i) = pts[i][0];
-            epilines(1,i) = pts[i][1];
+        epilines.reserve(pts.size());
+        for (auto i = 0; i < nbPts; i++){
+            Vec3 pt(pts[i][0],pts[i][1],1.0);
+            if (transpose) pt = F.transpose()*pt;
+            else pt = F*pt;
+            epilines.emplace_back(pt);
         }
-
-        if (transpose) epilines = F.transpose()*epilines;
-        else epilines = F*epilines;
     }
 
-    void getEpilinesLeft(const std::vector<Vec2> & ptsR, Mat & epilinesL) const {
+    void getEpilinesLeft(const std::vector<Vec2> & ptsR, std::vector<Vec3> & epilinesL) const {
         getEpilines(ptsR, epilinesL, true);
     }
 
-    void getEpilinesRight(const std::vector<Vec2> & ptsL, Mat & epilinesR){
+    void getEpilinesRight(const std::vector<Vec2> & ptsL, std::vector<Vec3> & epilinesR){
         getEpilines(ptsL, epilinesR, false);
     }
 

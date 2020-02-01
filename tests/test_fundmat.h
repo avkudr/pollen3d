@@ -24,7 +24,7 @@ TEST(FUNDMAT, fundmat_testData)
         ptsR.emplace_back(Vec2(xR[i],yR[i]));
     }
 
-    Mat3 F = FundMatAlgorithms::findFundMatGS(ptsL,ptsR);
+    Mat3 F = FundMatAlgorithms::findFundMatCeres(ptsL,ptsR);
 
     Mat2X distances;
     distances.setZero(2,ptsL.size());
@@ -32,8 +32,7 @@ TEST(FUNDMAT, fundmat_testData)
         Vec2 errs = FundMatAlgorithms::epiporalDistancesF(F,ptsL[i],ptsR[i]);
         distances.col(i) = errs;
     }
-    std::cout << distances.transpose() << std::endl;
-
+    EXPECT_GE(2.0,distances.mean());
 }
 
 TEST(FUNDMAT, fundmat_testImages)
@@ -62,8 +61,6 @@ TEST(FUNDMAT, fundmat_testImages)
     data.getEpipolarErrorsResidual(0,errors);
     Mat2X distances;
     data.getEpipolarErrorsDistance(0,distances);
-    std::cout << distances.transpose() << std::endl;
     EXPECT_GE(0.5f, errors.mean());
-
 }
 

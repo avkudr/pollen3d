@@ -151,3 +151,23 @@ int utils::nbAvailableThreads(){
 #endif
     return 1;
 }
+
+std::pair<Vec2, Vec2> utils::lineIntersectBox(const Vec3 &line, double w, double h){
+    std::vector<Vec2> intesecPoints;
+    intesecPoints.reserve(4);
+    intesecPoints.emplace_back(Vec2(0,-line(2)/line(1)));
+    intesecPoints.emplace_back(Vec2(w,-(line(2)+line(0)*w)/line(1)));
+    intesecPoints.emplace_back(Vec2(-line(2)/line(0),0));
+    intesecPoints.emplace_back(Vec2(-(line(2)+line(1)*h)/line(0),h));
+
+    if ( intesecPoints[3][0] < 0 || intesecPoints[3][0] > w )
+        intesecPoints.erase( intesecPoints.begin() + 3);
+    if ( intesecPoints[2][0] < 0 || intesecPoints[2][0] > w )
+        intesecPoints.erase( intesecPoints.begin() + 2);
+    if ( intesecPoints[1][1] < 0 || intesecPoints[1][1] > h )
+        intesecPoints.erase( intesecPoints.begin() + 1);
+    if ( intesecPoints[0][1] < 0 || intesecPoints[0][1] > h )
+        intesecPoints.erase( intesecPoints.begin() + 0);
+
+    return {intesecPoints[0],intesecPoints[1]};
+}
