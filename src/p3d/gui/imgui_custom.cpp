@@ -14,3 +14,17 @@ void ImGuiC::PopDisabled()
 }
 
 
+
+void ImGuiC::ItemCircle(const char *label, const ImVec2 & pt, float radius, const ImU32 & color32)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    const float size = radius*1.5f;
+    const ImRect leftCircle(pt.x - size, pt.y - size, pt.x + size, pt.y + size);
+    ImGui::ItemSize(leftCircle, 0);
+    const ImGuiID id = window->GetID(label);
+    ImGui::ItemAdd(leftCircle, id);
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    draw_list->AddCircle(pt, radius, color32, 6, 2);
+
+}

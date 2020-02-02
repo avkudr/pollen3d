@@ -57,21 +57,22 @@ void Application::draw(int width, int height){
     ImGui::SetNextWindowPos(ImVec2(0, m_heightTabSection));
     ImGui::SetNextWindowSizeConstraints(ImVec2(width, height - m_heightTabSection),ImVec2(width, height - m_heightTabSection));
     ImGuiID dock_id = ImGui::GetID("ID().c_str()");
-    if (ImGui::Begin("CentralArea",nullptr,ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings)) {
+    if (ImGui::Begin("CentralArea",nullptr,ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus)) {
         ImGui::DockSpace(dock_id);
         ImGui::End();
     }
 
-    ImGui::Begin("DataWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    ImGui::Begin("DataWidget",nullptr, flags);
     _drawData();
     ImGui::End();
-    ImGui::Begin("Properties",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
+    ImGui::Begin("Properties",nullptr, flags);
     _drawProperties();
     ImGui::End();
-    ImGui::Begin("CentralWidget",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
+    ImGui::Begin("CentralWidget",nullptr, flags);
     _drawCentral();
     ImGui::End();
-    ImGui::Begin("Console",nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration);
+    ImGui::Begin("Console",nullptr, flags);
     ConsoleLogger::get()->render();
     ImGui::End();
 
@@ -174,7 +175,8 @@ void Application::_drawTab()
                  ImGuiWindowFlags_NoResize |
                  ImGuiWindowFlags_NoCollapse |
                  ImGuiWindowFlags_NoTitleBar |
-                 ImGuiWindowFlags_MenuBar);
+                 ImGuiWindowFlags_MenuBar |
+                 ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     if (ImGui::BeginMenuBar())
     {
@@ -690,8 +692,11 @@ void Application::_drawCentral()
     static bool showMatches = true;
     int controlBottomBarHeight = 35;
     static float imageOpacity = 1.0f;
+    static int skipEvery = 1;
+    static float lineWidth = 1.0f;
+
     static float featuresSize = 2.5f;
-    static ImVec4 col = COLOR_GREEN;
+    static ImVec4 color = COLOR_GREEN;
 
     if (m_textureNeedsUpdate) {
         cv::Mat matToBind;
@@ -752,11 +757,11 @@ void Application::_drawCentral()
         const float posY = winPos.y + imStartY;
 
         if (isOneOf(m_currentTab,{Tab_General,Tab_Image})) {
-            if (showFeatures) _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH),col,featuresSize);
+            if (showFeatures) _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH),color,featuresSize);
         } else if (m_currentTab == Tab_Stereo) {
             if (m_currentSection == Section_Default) {
-                if (display == SHOW_MATCHES) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
-                else if (display == SHOW_EPILINES) _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),col,1.0f);
+                if (display == SHOW_MATCHES) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),color,lineWidth,skipEvery);
+                else if (display == SHOW_EPILINES) _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),color,lineWidth,skipEvery);
             }
         }
     } else {
@@ -783,10 +788,15 @@ void Application::_drawCentral()
             ImGui::RadioButton("matches", &display, 0); ImGui::SameLine();
             ImGui::RadioButton("epilines", &display, 1);
         }
+        ImGui::SameLine();
+        const char * sliderText = (skipEvery == 1) ? "show all" : "skip every:%i";
+        ImGui::SliderInt("##percentage_of_features", &skipEvery, 1, 10, sliderText);
+        ImGui::SameLine();
+        ImGui::SliderFloat("##lineWidth", &lineWidth, 1.0f, 5.0f, "line width: %.1f");
     }
     if (isOneOf(m_currentTab,{Tab_General,Tab_Image})/* || (display == SHOW_MATCHES)*/) {
         ImGui::SameLine();
-        ImGui::ColorEdit4("MyColor##3", (float*)&col, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel );
+        ImGui::ColorEdit4("MyColor##3", (float*)&color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel );
         ImGui::SameLine();
     }
     ImGui::PopFont();
@@ -860,7 +870,7 @@ void Application::_showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImV
     }
 }
 
-void Application::_showEpilines(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth)
+void Application::_showEpilines(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth, int skipEvery)
 {
     std::vector<Vec2> ptsL, ptsR;
     m_projectData.getPairwiseMatches(m_currentImage,ptsL,ptsR);
@@ -899,24 +909,56 @@ void Application::_showEpilines(const ImVec2 &pos, const ImVec2 &size, const ImV
                       pos.y + float(pt[1]) / float(imR->height()) * size.y);
     };
 
-    for (int i = 0; i < ptsL.size(); ++i) {
+    static int hoveredLine = -1;
+    bool wasHoveredThisFrame = false;
+    float radius = 1.5f + lineWidth * 1.5f;
+    for (int i = 0; i < ptsL.size(); i += skipEvery) {
         const auto & ptL = ptsL[i];
         const auto & ptR = ptsR[i];
 
         auto epilinePtsL = utils::lineIntersectBox(epilinesL[i],imL->width(),imL->height());
         auto epilinePtsR = utils::lineIntersectBox(epilinesR[i],imR->width(),imR->height());
 
-        auto color = palette::color1(i / float(ptsL.size()));
-        auto color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,col.w*255);
+        ImU32 color32 = IM_COL32(125,125,125,125);
+        if (hoveredLine == -1) {
+            Vec3f color = palette::color1(i / float(ptsL.size()));
+            color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,255);
+        }
 
-        draw_list->AddCircle(mapToTextureL(ptL), 2, color32, 6, 3);
-        draw_list->AddCircle(mapToTextureR(ptR), 2, color32, 6, 3);
+        ImVec2 leftPoint = mapToTextureL(ptL);
+        ImVec2 rightPoint = mapToTextureR(ptR);
+
+        std::string featureLblL = "##featureL-" + std::to_string(i);
+        std::string featureLblR = "##featureR-" + std::to_string(i);
+        ImGuiC::ItemCircle(featureLblL.c_str(),leftPoint,radius,color32);
+        if (ImGui::IsItemHovered()) { hoveredLine = i; wasHoveredThisFrame = true;}
+        ImGuiC::ItemCircle(featureLblR.c_str(),rightPoint,radius,color32);
+        if (ImGui::IsItemHovered()) { hoveredLine = i; wasHoveredThisFrame = true;}
+
+//        draw_list->AddCircle(leftPoint, 2, color32, 6, 3);
+//        draw_list->AddCircle(rightPoint, 2, color32, 6, 3);
         draw_list->AddLine(mapToTextureL(epilinePtsL.first),mapToTextureL(epilinePtsL.second), color32,lineWidth);
         draw_list->AddLine(mapToTextureR(epilinePtsR.first),mapToTextureR(epilinePtsR.second), color32,lineWidth);
     }
+
+    if (hoveredLine != -1) {
+        const auto & ptL = ptsL[hoveredLine];
+        const auto & ptR = ptsR[hoveredLine];
+        auto epilinePtsL = utils::lineIntersectBox(epilinesL[hoveredLine],imL->width(),imL->height());
+        auto epilinePtsR = utils::lineIntersectBox(epilinesR[hoveredLine],imR->width(),imR->height());
+
+        Vec3f color = palette::color1(hoveredLine / float(ptsL.size()));
+        ImU32 color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,255);
+        draw_list->AddCircle( mapToTextureL(ptL), radius, color32, 6, 2);
+        draw_list->AddCircle( mapToTextureR(ptR), radius, color32, 6, 2);
+        draw_list->AddLine(mapToTextureL(epilinePtsL.first),mapToTextureL(epilinePtsL.second), color32,lineWidth);
+        draw_list->AddLine(mapToTextureR(epilinePtsR.first),mapToTextureR(epilinePtsR.second), color32,lineWidth);
+    }
+
+    if (!wasHoveredThisFrame) hoveredLine = -1;
 }
 
-void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth)
+void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth, int skipEvery)
 {
     std::vector<Vec2> ptsL, ptsR;
     m_projectData.getPairwiseMatches(m_currentImage,ptsL,ptsR);
@@ -951,15 +993,43 @@ void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVe
                       pos.y + float(pt[1]) / float(imR->height()) * size.y);
     };
 
-    for (int i = 0; i < ptsL.size(); ++i) {
+    static int hoveredLine = -1;
+    bool wasHoveredThisFrame = false;
+    float radius = 1.5f + lineWidth * 1.5f;
+    for (int i = 0; i < ptsL.size(); i += skipEvery) {
         const auto & ptL = ptsL[i];
         const auto & ptR = ptsR[i];
 
-        auto color = palette::color1(i / float(ptsL.size()));
-        auto color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,col.w*255);
+        ImU32 color32 = IM_COL32(125,125,125,125);
+        if (hoveredLine == -1) {
+            Vec3f color = palette::color1(i / float(ptsL.size()));
+            color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,255);
+        }
 
-        draw_list->AddCircle(mapToTextureL(ptL), 2, color32, 6, 3);
-        draw_list->AddCircle(mapToTextureR(ptR), 2, color32, 6, 3);
+        ImVec2 leftPoint = mapToTextureL(ptL);
+        ImVec2 rightPoint = mapToTextureR(ptR);
+
+        std::string featureLblL = "##featureL-" + std::to_string(i);
+        std::string featureLblR = "##featureR-" + std::to_string(i);
+        ImGuiC::ItemCircle(featureLblL.c_str(),leftPoint,radius,color32);
+        if (ImGui::IsItemHovered()) { hoveredLine = i; wasHoveredThisFrame = true;}
+        ImGuiC::ItemCircle(featureLblR.c_str(),rightPoint,radius,color32);
+        if (ImGui::IsItemHovered()) { hoveredLine = i; wasHoveredThisFrame = true;}
+
+        //draw_list->AddCircle( leftPoint, 2, color32, 6, 1 + lineWidth * 1.5f);
+        //draw_list->AddCircle(rightPoint, 2, color32, 6, 1 + lineWidth * 1.5f);
         draw_list->AddLine(mapToTextureL(ptL),mapToTextureR(ptR), color32,lineWidth);
     }
+
+    if (hoveredLine != -1) {
+        const auto & ptL = ptsL[hoveredLine];
+        const auto & ptR = ptsR[hoveredLine];
+        Vec3f color = palette::color1(hoveredLine / float(ptsL.size()));
+        ImU32 color32 = IM_COL32(color(0)*255,color(1)*255,color(2)*255,255);
+        draw_list->AddCircle( mapToTextureL(ptL), radius, color32, 6, 2);
+        draw_list->AddCircle( mapToTextureR(ptR), radius, color32, 6, 2);
+        draw_list->AddLine(mapToTextureL(ptL),mapToTextureR(ptR), color32,lineWidth);
+    }
+
+    if (!wasHoveredThisFrame) hoveredLine = -1;
 }
