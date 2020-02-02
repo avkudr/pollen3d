@@ -113,6 +113,8 @@ set(SOURCES
     ./src/p3d/commands.h
     ./src/p3d/commands.cpp
     ./src/p3d/gui/palette.h
+    ./src/p3d/gui/imgui_custom.h
+    ./src/p3d/gui/imgui_custom.cpp
 )
 
 set(SOURCES

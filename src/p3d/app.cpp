@@ -5,6 +5,7 @@
 #include "p3d/project_manager.h"
 #include "p3d/commands.h"
 #include "p3d/gui/palette.h"
+#include "p3d/gui/imgui_custom.h"
 
 #include "fonts/IconsFontAwesome5.h"
 
@@ -335,6 +336,13 @@ void Application::_drawTab_Image()
 {
     if (ImGui::BeginTabItem("Image"))
     {
+        bool disabled = false;
+        auto image = m_projectData.image(m_currentImage);
+        if (image == nullptr) disabled = true;
+        else if (!image->hasFeatures()) disabled = true;
+
+        if (disabled) ImGuiC::PushDisabled();
+
         ImGui::BeginColumns("columns", 1);//false);
         if (ImGui::Button("Extract features"))
         {
@@ -352,7 +360,7 @@ void Application::_drawTab_Image()
         }
         //ImGui::NextColumn();
 
-
+        if (disabled) ImGuiC::PopDisabled();
 
         //ImGui::NextColumn();
 
@@ -371,6 +379,10 @@ void Application::_drawTab_Stereo()
     if (ImGui::BeginTabItem("Stereo"))
     {
         int matchingWidgetW = 250;
+
+        bool disabled = false;
+        ImagePair * imPair = m_projectData.imagePair(m_currentImage);
+        if (!imPair) disabled = true;
 
         if (ImGui::BeginChild("Matching",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
         {
@@ -392,6 +404,13 @@ void Application::_drawTab_Stereo()
                     ProjectManager::get()->setSetting(p3dSetting_matcherFilterCoef,matcherFilterCoef);
             }
 
+            bool disableButtons = disabled;
+            auto imL = m_projectData.imagePairL(m_currentImage);
+            auto imR = m_projectData.imagePairR(m_currentImage);
+            disableButtons = !((imL != nullptr) && imL->hasFeatures());
+            disableButtons = !((imR != nullptr) && imR->hasFeatures());
+
+            if (disableButtons) ImGuiC::PushDisabled();
             if (ImGui::Button("Match features",ImVec2(0.6*matchingWidgetW,50)))
             {
                 auto f = [&]() {
@@ -408,14 +427,19 @@ void Application::_drawTab_Stereo()
                 };
                 _doHeavyTask(f);
             }
+            if (disableButtons) ImGuiC::PopDisabled();
             ImGui::EndChild();
         }
+
 
         ImGui::SameLine();
 
         if (ImGui::BeginChild("EpipolarGeometry",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
         {
             ImGui::BulletText("Epipolar geometry");
+
+            bool disableButtons = disabled || !imPair->hasMatches();
+            if (disableButtons) ImGuiC::PushDisabled();
 
             ImGui::SetNextItemWidth(matchingWidgetW);
             if (ImGui::Button("Find fundamental matrix"))
@@ -434,6 +458,8 @@ void Application::_drawTab_Stereo()
                 };
                 _doHeavyTask(f);
             }
+            if (disableButtons) ImGuiC::PopDisabled();
+
             ImGui::EndChild();
         }
 
@@ -442,6 +468,9 @@ void Application::_drawTab_Stereo()
         if (ImGui::BeginChild("Rectification",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
         {
             ImGui::BulletText("Rectification");
+
+            bool disableButtons = disabled || !imPair->hasF();
+            if (disableButtons) ImGuiC::PushDisabled();
 
             ImGui::SetNextItemWidth(matchingWidgetW);
             if (ImGui::Button("Rectify image pair"))
@@ -460,6 +489,8 @@ void Application::_drawTab_Stereo()
                 };
                 _doHeavyTask(f);
             }
+            if (disableButtons) ImGuiC::PopDisabled();
+
             ImGui::EndChild();
         }
 

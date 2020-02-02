@@ -1,3 +1,5 @@
+#pragma once
+
 // from https://iquilezles.org/www/articles/palettes/palettes.htm
 
 #include "p3d/core/core.h"
