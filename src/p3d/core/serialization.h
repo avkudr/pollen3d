@@ -6,6 +6,7 @@
 #include <opencv2/core/eigen.hpp>
 
 #include "p3d/core/core.h"
+#include "p3d/console_logger.h"
 
 namespace impl {
 
@@ -165,7 +166,7 @@ public:
                 entt::meta_any any = data.get(*ptr);
                 func.invoke(any,std::ref(fs),data.identifier(),any);
             } else {
-                std::cout << "not registered for write: " << data.identifier() << std::endl;
+                LOG_ERR("not registered for write: %i", data.identifier());
             }
         });
 
@@ -188,7 +189,7 @@ public:
                 func.invoke(ptr,nodeL,data.identifier(),any);
                 data.set(*ptr,any);
             } else {
-                std::cout << "not registered for read: " << data.identifier() << std::endl;
+                LOG_ERR("not registered for read: %i", data.identifier());
             }
         });
 

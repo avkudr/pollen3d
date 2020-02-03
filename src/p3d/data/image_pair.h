@@ -2,6 +2,7 @@
 #define IMAGE_PAIR_H
 
 #include <vector>
+#include <map>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
@@ -75,6 +76,7 @@ public:
     bool hasMatches() { return getNbMatches() > 0; }
     int getNbMatches() { return int(m_matches.size()); }
     const std::vector<Match> & getMatches() const { return m_matches; }
+    void getMatchesAsMap(std::map<int,int> & map) const;
     void setMatches(const std::vector<Match> & matches) { m_matches = matches; }
 
     inline bool operator==(const ImagePair& i) const{
@@ -131,7 +133,7 @@ public:
     }
 
     void readAdditional(const cv::FileNode &node) override {
-        LOG_WARN("Maybe there is no need to store rectified images");
+        LOG_DBG("Maybe there is no need to store rectified images");
         // we could just regenerate them on project loading ?
         node["im_p" + std::to_string(int(p3dImagePair_rectifiedImageLeft)) ] >> m_imLrectified;
         node["im_p" + std::to_string(int(p3dImagePair_rectifiedImageRight))] >> m_imRrectified;

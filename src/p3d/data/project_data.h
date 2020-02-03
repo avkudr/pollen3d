@@ -26,6 +26,8 @@ enum p3dData_
     p3dData_dummy       = 2002,
     p3dData_images      = 2003,
     p3dData_imagePairs  = 2004,
+    p3dData_measMat     = 2005,
+    p3dData_measMatFull = 2006,
 };
 
 class ProjectData : public Serializable<ProjectData>{
@@ -64,7 +66,7 @@ public:
     void estimateMeasurementMatrixFull();
     void estimateMeasurementMatrix();
     void estimateMeasurementMatrixKLT();
-    cv::Mat getMeasurementMatrix() const { return _measurementMatrix.clone();}
+    cv::Mat getMeasurementMatrixOLD() const { return _measurementMatrix.clone();}
 
     cv::Mat _Pm;
     void updateCameraMatrices();
@@ -102,6 +104,10 @@ public:
     void getEpipolarErrorsResidual(const std::size_t idx, Vec & errorsSquared);
     void getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances);
 
+    const Mat & getMeasurementMatrix() const { return m_measurementMatrix; }
+    void setMeasurementMatrix(const Mat & W) { m_measurementMatrix = W; }
+    const Mat & getMeasurementMatrixFull() const { return m_measurementMatrixFull; }
+    void setMeasurementMatrixFull(const Mat & Wf) { m_measurementMatrixFull = Wf; }
 private:
 
     Image * imagePairImage(const std::size_t idx, bool left) {
@@ -115,6 +121,8 @@ private:
     std::vector<ImagePair> m_imagesPairs{};
     std::string m_projectPath = "";
 
+    Mat m_measurementMatrix;
+    Mat m_measurementMatrixFull;
 
     cv::Mat _measurementMatrix;
     cv::Mat _measurementMatrixFull;

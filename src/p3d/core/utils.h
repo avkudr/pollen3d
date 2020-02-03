@@ -3,6 +3,8 @@
 
 #include <opencv2/core.hpp>
 
+#include <vector>
+#include <map>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -35,6 +37,7 @@ int nbAvailableThreads();
 
 std::pair<Vec2,Vec2> lineIntersectBox(const Vec3& line, double w, double h/*, double x = 0.0, double y = 0.0*/);
 
+void matchesMapsToTable(std::vector<std::map<int, int> > matchesMaps, Mati &table);
 }
 
 #endif // UTILS_H

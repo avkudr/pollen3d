@@ -30,12 +30,16 @@ public:
     // ***** Image
 
     void extractFeatures(ProjectData & data, std::vector<int> imIds = {});
+
+    // ***** Pairs
     void matchFeatures(ProjectData & data, std::vector<int> imPairsIds = {});
     void findFundamentalMatrix(ProjectData & data, std::vector<int> imPairsIds = {});
     void rectifyImagePairs(ProjectData & data, std::vector<int> imPairsIds = {});
 
+    // ***** Multiview
+    void findMeasurementMatrixFull(ProjectData & data);
+    void findMeasurementMatrix(ProjectData & data);
     entt::meta_any getSetting(const p3dSetting & name);
-
     void setSetting(const p3dSetting & name, const entt::meta_any &value);
     void setSettings(const ProjectSettings & settings){ m_settings = settings; }
 

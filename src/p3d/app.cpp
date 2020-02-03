@@ -27,8 +27,8 @@ void Application::initImGui(){
     ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
     io.Fonts->AddFontFromFileTTF( std::string(pathToFonts + FONT_ICON_FILE_NAME_FAS).c_str(), 16.0f, &icons_config, icons_ranges );
 
-    m_fontMonoSmall = io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "UbuntuMono-R.ttf").c_str(), 16.0f);
-    ConsoleLogger::get()->setFont(m_fontMonoSmall);
+    m_fontMono = io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "UbuntuMono-R.ttf").c_str(), 16.0f);
+    ConsoleLogger::get()->setFont(m_fontMono);
     m_fontMonoSmall = io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "UbuntuMono-R.ttf").c_str(), 14.0f);
 
     applyStyle();
@@ -69,7 +69,7 @@ void Application::draw(int width, int height){
     ImGui::Begin("Properties",nullptr, flags);
     _drawProperties();
     ImGui::End();
-    ImGui::Begin("CentralWidget",nullptr, flags);
+    ImGui::Begin("CentralWidget",nullptr, flags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     _drawCentral();
     ImGui::End();
     ImGui::Begin("Console",nullptr, flags);
@@ -225,14 +225,8 @@ void Application::_drawTab()
         _drawTab_General();
         _drawTab_Image();
         _drawTab_Stereo();
+        _drawTab_Multiview();
 
-        if (ImGui::BeginTabItem("Multiview"))
-        {
-            ImGui::Text("ID: 0123456789");
-            ImGui::EndTabItem();
-            if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
-            m_currentTab = Tab_Multiview;
-        }
         if (ImGui::BeginTabItem("Point cloud"))
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,0,0,1));
@@ -503,6 +497,33 @@ void Application::_drawTab_Stereo()
     }
 }
 
+void Application::_drawTab_Multiview()
+{
+    if (ImGui::BeginTabItem("Multiview"))
+    {
+        float matchingWidgetW = 250.0f;
+        if (ImGui::Button("Get full measurement matrix",ImVec2(0.6*matchingWidgetW,50)))
+        {
+            auto f = [&]() {
+                ProjectManager::get()->findMeasurementMatrixFull(m_projectData);
+            };
+            _doHeavyTask(f);
+        }
+        if (ImGui::Button("Get measurement matrix",ImVec2(0.6*matchingWidgetW,50)))
+        {
+            auto f = [&]() {
+                ProjectManager::get()->findMeasurementMatrix(m_projectData);
+            };
+            _doHeavyTask(f);
+        }
+
+        ImGui::EndTabItem();
+
+        if (m_currentTab != Tab_Multiview) _resetAppState();
+        m_currentTab = Tab_Multiview;
+    }
+}
+
 void Application::_drawData()
 {
     if (m_currentTab == Tab_General || m_currentTab == Tab_Image) {
@@ -617,6 +638,15 @@ void Application::_drawProperties()
         return;
     }
 
+    if (m_currentTab == Tab_Multiview)
+    {
+        const auto & Wfull = m_projectData.getMeasurementMatrixFull();
+        if (Wfull.rows() == 0 || Wfull.cols() == 0) return;
+
+        drawProperty_matrix(Wfull,"Wfull");
+        return;
+    }
+
     ImGui::Columns(1);
 }
 
@@ -641,32 +671,72 @@ void Application::drawProperty_basic(const Type &v, const std::string &name, con
 template<typename Scalar, int SizeX, int SizeY>
 void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &A, const std::string &name)
 {
+    static Eigen::IOFormat CleanFmt(5, 0, " ", "##", "", "");
+    static Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", " << ", ";");
+    static Eigen::IOFormat OctaveFmt(Eigen::StreamPrecision, 0, ", ", ";\n", "", "", "[", "];");
+
+    int rows = (SizeX == -1) ? static_cast<int>(A.rows()) : SizeX;
+    int cols = (SizeY == -1) ? static_cast<int>(A.cols()) : SizeY;
+
     bool hovered = false;
     ImGui::Text("%s %s", ICON_FA_BORDER_ALL, name.c_str());
     if (ImGui::IsItemHovered()) hovered = true;
+    ImGui::OpenPopupOnItemClick("##matrix_prop_popup", 1);
+
     ImGui::NextColumn();
-    ImGui::Text("[%ix%i]", SizeX, SizeY);
+    ImGui::Text("[%ix%i]", rows, cols);
     if (hovered || ImGui::IsItemHovered())
     {
         ImGui::BeginTooltip();
+
         int maxX = 12;
         int maxY = 12;
-        if (SizeX > maxX || SizeY > maxY) {
-            ImGui::Text("Matrix is too big to display\nshowing only the %ix%i top left corner", maxX, maxY);
+        if (rows > maxX || cols > maxY) {
+            ImGui::PushStyleColor(ImGuiCol_Text, COLOR_WARN);
+            ImGui::Text(ICON_FA_EXCLAMATION_TRIANGLE" Matrix is too big to display. Showing only the %ix%i top left corner\n\n", maxX, maxY);
+            ImGui::PopStyleColor();
+
+        }
+        ImGui::PushFont(m_fontMono);
+
+        maxX = std::min(maxX,rows);
+        maxY = std::min(maxY,cols);
+        const auto & block = A.block(0,0,maxX,maxY);
+        std::stringstream ss;
+        ss << block.format(CleanFmt);
+        std::string output = ss.str();
+
+        auto rows = utils::split(output,"##");
+        for (const auto & row : rows){
+            ImGui::Text("%s",row.c_str());
         }
 
-        maxX = std::min(maxX,SizeX);
-        maxY = std::min(maxY,SizeY);
-        ImGui::Indent();
-        for (int i = 0; i < maxX; ++i){
-            for (int j = 0; j < maxY; ++j){
-                ImGui::Text("%.5f",A(i,j));
-                if (j < maxY - 1) ImGui::SameLine();
-            }
-        }
-        ImGui::Unindent();
-
+        ImGui::PopFont();
         ImGui::EndTooltip();
+    }
+    if (ImGui::BeginPopupContextItem("##matrix_prop_popup"))
+    {
+        if(ImGui::Selectable("Copy to clipboard: Eigen")) {
+            std::stringstream ss;
+            ss << A.format(CommaInitFmt);
+            std::string output = ss.str();
+
+            ImGui::LogToClipboard();
+            ImGui::LogText("M.setZero(%li;%li);\nM %s", A.rows(), A.cols(), output.c_str());
+            LOG_OK("Matrix is copied to clipboard");
+            ImGui::CloseCurrentPopup();
+        }
+        if(ImGui::Selectable("Copy to clipboard: Octave/MATLAB")) {
+            std::stringstream ss;
+            ss << A.format(OctaveFmt);
+            std::string output = ss.str();
+
+            ImGui::LogToClipboard();
+            ImGui::LogText("M = %s", output.c_str());
+            LOG_OK("Matrix is copied to clipboard");
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
     ImGui::NextColumn();
 }
@@ -792,7 +862,7 @@ void Application::_drawCentral()
         const char * sliderText = (skipEvery == 1) ? "show all" : "skip every:%i";
         ImGui::SliderInt("##percentage_of_features", &skipEvery, 1, 10, sliderText);
         ImGui::SameLine();
-        ImGui::SliderFloat("##lineWidth", &lineWidth, 1.0f, 5.0f, "line width: %.1f");
+        ImGui::SliderFloat("##lineWidth", &lineWidth, 1.0f, 5.0f, "line width");
     }
     if (isOneOf(m_currentTab,{Tab_General,Tab_Image})/* || (display == SHOW_MATCHES)*/) {
         ImGui::SameLine();

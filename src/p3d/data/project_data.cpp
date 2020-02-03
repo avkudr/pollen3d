@@ -21,6 +21,8 @@ int ProjectData::initMeta()
         std::cout << "Reflecting: ProjectData" << std::endl;
         entt::meta<ProjectData>()
             .type("ProjectData"_hs)
+            .data<&ProjectData::setMeasurementMatrix,&ProjectData::getMeasurementMatrix>(P3D_ID_TYPE(p3dData_measMat))
+            .data<&ProjectData::setMeasurementMatrixFull,&ProjectData::getMeasurementMatrixFull>(P3D_ID_TYPE(p3dData_measMatFull))
             .data<&ProjectData::setImagePairs,&ProjectData::getImagePairs>(P3D_ID_TYPE(p3dData_imagePairs))
             .data<&ProjectData::setImageList,&ProjectData::getImageList>(P3D_ID_TYPE(p3dData_images))
             .data<&ProjectData::setProjectPath,&ProjectData::getProjectPath>(P3D_ID_TYPE(p3dData_projectPath));

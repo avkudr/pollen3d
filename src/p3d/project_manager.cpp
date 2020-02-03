@@ -5,6 +5,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include <vector>
+#include <map>
 
 #include "tinyfiledialogs/tinyfiledialogs.h"
 
@@ -400,6 +401,52 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
             LOG_INFO("- angleR: %.3f deg", angleR*180.0/CV_PI);
         }
     }
+}
+
+void ProjectManager::findMeasurementMatrixFull(ProjectData &data)
+{
+    Mat Wfull;
+    auto nbIm = data.nbImages();
+    auto nbPairs = data.nbImagePairs();
+    if (nbPairs == 0) return;
+
+    Mati table;
+    std::vector<std::map<int,int>> matchesMaps;
+    matchesMaps.resize(nbPairs);
+    for (auto i = 0 ; i < nbPairs; i++){
+        auto imPair = data.imagePair(i);
+        if (!imPair) continue;
+        imPair->getMatchesAsMap(matchesMaps[i]);
+    }
+
+    utils::matchesMapsToTable(matchesMaps,table);
+
+    auto nbLandmarks = table.cols();
+    Wfull.setZero(3*nbIm,nbLandmarks);
+    for (int i = 0; i < nbIm; ++i){
+        auto image = data.image(i);
+        if (!image) continue;
+        auto kpts = image->getKeyPoints();
+        for (int p = 0; p < nbLandmarks; ++p){
+            auto ptIdx = table(i,p);
+            if (ptIdx < 0) continue;
+            if (ptIdx >= kpts.size()) {
+                LOG_ERR("Full measurement matrix: wrong feature indices");
+                // most certainly features were reestimated afrer matches
+                return;
+            }
+            const double x = static_cast<double>(kpts[ptIdx].pt.x);
+            const double y = static_cast<double>(kpts[ptIdx].pt.y);
+            Wfull.block(3*i,p,3,1) << x,y,1.0;
+        }
+    }
+    data.setMeasurementMatrixFull(Wfull);
+    LOG_OK("Full measurement matrix: %ix%i",Wfull.rows(),Wfull.cols());
+}
+
+void ProjectManager::findMeasurementMatrix(ProjectData &data)
+{
+
 }
 
 entt::meta_any ProjectManager::getSetting(const p3dSetting &name) {

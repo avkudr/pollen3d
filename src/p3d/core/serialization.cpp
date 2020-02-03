@@ -29,6 +29,7 @@ int registerTypes() {
         SERIALIZE_TYPE_EIGEN(double,3,1, "Eigen__double31"_hs);
         SERIALIZE_TYPE_EIGEN(double,3,4, "Eigen__double34"_hs);
         SERIALIZE_TYPE_EIGEN(double,3,3, "Eigen__double33"_hs);
+        SERIALIZE_TYPE_EIGEN(double,-1,-1, "Eigen__doubleXX"_hs);
 
         //        SERIALIZE_TYPE_EIGEN(double,3,4, "Eigen_double34");
 

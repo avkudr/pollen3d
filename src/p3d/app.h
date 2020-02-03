@@ -52,6 +52,7 @@ protected:
     void _drawTab_General();
     void _drawTab_Image();
     void _drawTab_Stereo();
+    void _drawTab_Multiview();
     void _drawData();
     void _drawProperties();
     void _drawCentral();
@@ -112,6 +113,8 @@ protected:
     bool m_dockingNeedsReset = true;
 
     ImFont * m_fontMonoSmall = nullptr;
+    ImFont * m_fontMono = nullptr;
+
     int m_textureWidth  = 0;
     int m_textureHeight = 0;
     int m_textureScale = 1.0f;

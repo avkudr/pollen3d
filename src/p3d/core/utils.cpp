@@ -171,3 +171,36 @@ std::pair<Vec2, Vec2> utils::lineIntersectBox(const Vec3 &line, double w, double
 
     return {intesecPoints[0],intesecPoints[1]};
 }
+
+void utils::matchesMapsToTable(std::vector<std::map<int,int>> matchesMaps, Mati &table)
+{
+    auto nbPairs = matchesMaps.size();
+    auto nbIm = nbPairs + 1;
+
+    table.setZero(nbIm,0);
+
+    Veci landmark;
+    for (auto i = 0; i < nbPairs ; i++){
+        for (auto it1 = matchesMaps[i].begin(); it1 != matchesMaps[i].end(); ++it1) {
+            landmark.setOnes(nbIm);
+            landmark *= -1;
+            landmark[i] = it1->first;
+            auto j = i + 1;
+            auto final = it1->second;
+            while (1) {
+                landmark[j] = final;
+                if (j >= nbPairs) break;
+                if (matchesMaps[j].count(final) > 0) {
+                    auto newFinal = matchesMaps[j].at(final);
+                    matchesMaps[j].erase(final);
+                    final = newFinal;
+                }
+                else break;
+                ++j;
+            }
+
+            table.conservativeResize(Eigen::NoChange, table.cols()+1);
+            table.rightCols(1) = landmark;
+        }
+    }
+}

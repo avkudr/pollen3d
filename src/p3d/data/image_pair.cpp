@@ -38,6 +38,16 @@ ImagePair::~ImagePair()
     m_hasF = false;
 }
 
+void ImagePair::getMatchesAsMap(std::map<int, int> &map) const
+{
+    map.clear();
+    for (auto i = 0; i < m_matches.size(); ++i){
+        const auto idxL = m_matches[i].iPtL;
+        const auto idxR = m_matches[i].iPtR;
+        map.insert({idxL,idxR});
+    }
+}
+
 cv::Mat ImagePair::getOneStereoImage(cv::Mat im1, cv::Mat im2)
 {
     if (im1.type() == CV_8UC4){
