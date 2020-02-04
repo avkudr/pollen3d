@@ -2,11 +2,12 @@
 
 #include "gtest/gtest.h"
 
+#include "p3d/core/core.h"
+#include "p3d/core/utils.h"
 #include "p3d/core/serialization.h"
 #include "p3d/data/project_data.h"
 #include "p3d/project_manager.h"
 #include "p3d/commands.h"
-#include "p3d/core/core.h"
 
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"
@@ -15,14 +16,27 @@
 class A{
 public:
     A() {
-        entt::meta<A>()
-            .type(P3D_ID_TYPE(110520))
-            .data<&A::setValue,&A::getValue>(P3D_ID_TYPE(110521));
+        static bool firstCall = true;
+        if (firstCall) {
+            entt::meta<A>()
+                .type(P3D_ID_TYPE(110520))
+                .data<&A::setValue,&A::getValue>(P3D_ID_TYPE(110521));
+
+            firstCall = false;
+        }
     }
     int getValue() const { return m_value;}
     void setValue(int v) { m_value = v;}
+    const cv::Mat & getMatrixCV() const {
+        return m_matrixCV;
+    }
+    void setMatrixCV(const cv::Mat &matrixCV) {
+        m_matrixCV = matrixCV.clone();
+    }
+
 private:
     int m_value = 5;
+    cv::Mat m_matrixCV;
 };
 
 
@@ -290,7 +304,7 @@ TEST(META, meta_noDoubleReflect)
     ASSERT_EQ(1,1);
 }
 
-TEST(META, meta_setterGetter)
+TEST(COMMANDS, command_setProperty)
 {
     A a;
     a.setValue(15);
@@ -299,6 +313,38 @@ TEST(META, meta_setterGetter)
     EXPECT_EQ(a.getValue(),254);
     CommandManager::get()->undoCommand();
     EXPECT_EQ(a.getValue(),15);
+}
+
+TEST(COMMANDS, command_setPropertyGroup)
+{
+    A a;
+    a.setValue(15);
+    EXPECT_EQ(a.getValue(),15);
+    CommandGroup * grp = new CommandGroup();
+    grp->add(new CommandSetProperty(&a,110521,20));
+    grp->add(new CommandSetProperty(&a,110521,21));
+    grp->add(new CommandSetProperty(&a,110521,22));
+    grp->add(new CommandSetProperty(&a,110521,23));
+    CommandManager::get()->executeCommand(grp);
+    EXPECT_EQ(a.getValue(),23);
+    CommandManager::get()->undoCommand();
+    EXPECT_EQ(a.getValue(),15);
+}
+
+TEST(COMMANDS, command_setPropertyCV)
+{
+    using namespace std::placeholders;
+
+    A a;
+    cv::Mat B = (cv::Mat_<double>(3,3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
+    cv::Mat C = (cv::Mat_<double>(3,3) << 15,14,13,12,11,10,9,8,7);
+    a.setMatrixCV(B);
+
+    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(),B));
+    CommandManager::get()->executeCommand(new CommandSetPropertyCV(&a,&A::setMatrixCV,&A::getMatrixCV,C));
+    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(),C));
+    CommandManager::get()->undoCommand();
+    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(),B));
 }
 
 TEST(META, meta_setSettings)

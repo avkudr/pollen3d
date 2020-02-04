@@ -10,8 +10,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
-#include <Eigen/Core>
-
 #include "p3d/core/core.h"
 #include "p3d/data/image.h"
 #include "p3d/core/densematcher.h"

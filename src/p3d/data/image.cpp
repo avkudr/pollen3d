@@ -38,20 +38,6 @@ Image::Image(const std::string & path)
     }
 }
 
-cv::Mat Image::getFeaturePositions() const
-{
-    int nbPts = (int) _kpts.size();
-
-    cv::Mat W = cv::Mat::zeros(2,nbPts,cv::DataType<double>::type);
-
-    for (int i = 0; i < nbPts; i++){
-        W.at<double>(0,i) = _kpts[i].pt.x;
-        W.at<double>(1,i) = _kpts[i].pt.y;
-    }
-
-    return W;
-}
-
 void Image::setKeyPoints(std::vector<cv::KeyPoint> kpts){
     _kpts.clear();
     _kpts = kpts;

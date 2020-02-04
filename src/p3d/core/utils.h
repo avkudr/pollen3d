@@ -26,6 +26,8 @@ std::string baseNameFromPath(const std::string & path);
 bool endsWith(std::string const & value, std::string const & ending);
 std::vector<std::string> split(const std::string& str, const std::string& delim);
 
+bool equalsCvMat(const cv::Mat & lhs, const cv::Mat & rhs);
+
 enum{
     CONCAT_HORIZONTAL,
     CONCAT_VERTICAL,

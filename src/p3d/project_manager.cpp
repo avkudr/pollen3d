@@ -440,13 +440,35 @@ void ProjectManager::findMeasurementMatrixFull(ProjectData &data)
             Wfull.block(3*i,p,3,1) << x,y,1.0;
         }
     }
-    data.setMeasurementMatrixFull(Wfull);
+    //data.setMeasurementMatrixFull(Wfull);
+    CommandManager::get()->executeCommand(
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_measMatFull),Wfull)
+                );
     LOG_OK("Full measurement matrix: %ix%i",Wfull.rows(),Wfull.cols());
 }
 
 void ProjectManager::findMeasurementMatrix(ProjectData &data)
 {
+    const auto & Wf = data.getMeasurementMatrixFull();
+    if (Wf.cols() == 0 || Wf.rows() == 0) {
+        LOG_ERR("Full measurement matrix must be estimated first");
+        return;
+    }
 
+    Mat W;
+    W.setZero(Wf.rows(),0);
+    for (auto c = 0; c < Wf.cols(); ++c){
+        if (std::abs(Wf.col(c).prod()) > 1e-5){ // there is no zeros in the column
+            W.conservativeResize(Eigen::NoChange, W.cols()+1);
+            W.rightCols(1) = Wf.col(c);
+        }
+    }
+
+    //data.setMeasurementMatrix(W);
+    CommandManager::get()->executeCommand(
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_measMat),W)
+                );
+    LOG_OK("Measurement matrix: %ix%i",W.rows(),W.cols());
 }
 
 entt::meta_any ProjectManager::getSetting(const p3dSetting &name) {

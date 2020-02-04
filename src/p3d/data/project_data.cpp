@@ -203,9 +203,9 @@ void ProjectData::estimateMeasurementMatrixKLT()
         }
         LOG_INFO("First image point nb: %i", points[0].size());
     }else{
-        for (int i = 0; i < (int)this->getREFACTOR(0)->_kpts.size(); i++){
-            points[0].push_back(cv::Point2f((float)this->getREFACTOR(0)->_kpts[i].pt.x, (float)this->getREFACTOR(0)->_kpts[i].pt.y));
-        }
+//        for (int i = 0; i < (int)this->getREFACTOR(0)->_kpts.size(); i++){
+//            points[0].push_back(cv::Point2f((float)this->getREFACTOR(0)->_kpts[i].pt.x, (float)this->getREFACTOR(0)->_kpts[i].pt.y));
+//        }
         LOG_INFO("Using predefined points");
     }
 

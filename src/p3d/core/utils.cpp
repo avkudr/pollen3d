@@ -204,3 +204,12 @@ void utils::matchesMapsToTable(std::vector<std::map<int,int>> matchesMaps, Mati 
         }
     }
 }
+
+bool utils::equalsCvMat(const cv::Mat &lhs, const cv::Mat &rhs)
+{
+    if (lhs.rows != rhs.rows) return false;
+    if (lhs.cols != rhs.cols) return false;
+    if (lhs.type() != rhs.type()) return false;
+    if (lhs.empty() || rhs.empty()) return false;
+    return cv::norm(lhs - rhs) < 1e-5;
+}

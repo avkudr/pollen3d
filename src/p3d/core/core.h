@@ -17,6 +17,11 @@
 #define P3D_ID_TYPE std::size_t
 #endif
 
+// Unfortunately I have to do it because of the fact that
+// operator== throws an exception on comparing two Mat's
+#undef eigen_assert
+#define eigen_assert(x) if (!(x)) { printf("Eigen assertion failed\n"); }
+
 #include <Eigen/Core>
 
 using Vec2  = Eigen::Vector2d;
@@ -84,4 +89,3 @@ std::string format( const char* fmt, ... );
 #else
 #define p3d_DbgAssert(expr)
 #endif
-

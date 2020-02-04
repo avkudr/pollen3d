@@ -1,12 +1,10 @@
 #pragma once
 
-#include <Eigen/Core>
+#include "p3d/core/core.h"
+#include "p3d/console_logger.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/eigen.hpp>
-
-#include "p3d/core/core.h"
-#include "p3d/console_logger.h"
 
 namespace impl {
 

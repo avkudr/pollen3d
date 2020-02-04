@@ -8,6 +8,8 @@
 #include "p3d/core/core.h"
 #include "p3d/console_logger.h"
 
+#include <opencv2/core.hpp>
+
 class Command
 {
 public:
@@ -29,6 +31,7 @@ entt::meta<A>.
     .data<&A::setValue,&A::getValue>(hash("value"))
     .data<&A::setF,&A::getF>(hash("F"));
 */
+
 template <typename T>
 class CommandSetProperty : public Command
 {
@@ -46,7 +49,17 @@ public:
         }
 
         m_from = entt::meta_any{m_data.get(*instance)};
-        if (m_to.type() == m_data.type() && m_to != m_from){
+
+        // I have to do this because Eigen operator== throws an exception if
+        // matrices are of the different size...
+        bool areDifferent = false;
+        try {
+            areDifferent = (m_to != m_from);
+        } catch (const Exception & e) {
+            areDifferent = true;
+        }
+
+        if (m_to.type() == m_data.type() && areDifferent){
             m_isValid = true;
         }
     }
@@ -55,15 +68,26 @@ public:
     void execute(){
         if (!m_instance) return;
         if (!m_data) return;
-        if (m_to.type() == m_data.type()){
+
+        if (m_to.type() == m_data.type())
+        {
+            // next line is here to ensure that the *from* value is taken right before
+            // setting new value. It is important for group command when the previous
+            // state of the property should be taken here and not on the creation of the
+            // command
+            m_from = entt::meta_any{m_data.get(*m_instance)};
+
+            // setting new value
             m_data.set(*m_instance,m_to);
         }
         LOG_DBG("SetProperty: %i", m_propId);
+        //if (m_to.try_cast<int>()) printf("SetProperty: %i (%i)\n", m_propId, m_to.cast<int>());
     }
     void undo(){
         if (!m_instance) return;
         if (!m_data) return;
         m_data.set(*m_instance,m_from);
+        //if (m_from.try_cast<int>()) printf("Undo SetProperty: %i (%i)\n", m_propId, m_from.cast<int>());
     }
 
 private:
@@ -73,6 +97,75 @@ private:
     entt::meta_any m_from{};
     entt::meta_data m_data;
 };
+
+template<typename T, typename Setter, typename Getter>
+class CommandSetPropertyCV : public Command
+{
+public:
+    CommandSetPropertyCV(
+            T * instance,
+            Setter&& __setter,
+            Getter&& __getter,
+            const cv::Mat & value)
+    {
+        if (!instance) return;
+        setter = std::bind(__setter, instance, std::placeholders::_1);
+        getter = std::bind(__getter, instance);
+        m_from = getter().clone();
+        m_to = value.clone();
+        m_isValid = true;
+    }
+
+    ~CommandSetPropertyCV(){}
+    void execute(){
+        LOG_DBG("SetProperty: cv::Mat");
+        setter(m_to);
+    }
+    void undo(){
+        setter(m_from);
+    }
+
+private:
+    std::function<void(const cv::Mat &)> setter;
+    std::function<const cv::Mat &()> getter;
+    cv::Mat m_to{};
+    cv::Mat m_from{};
+};
+
+class CommandGroup : public Command
+{
+public:
+    CommandGroup() {}
+    virtual ~CommandGroup() {}
+    virtual void add(Command * cmd){
+        if (cmd->isValid()) {
+            m_commandStack.push_back(cmd);
+            m_isValid = true; // at least one valid command
+        }
+    }
+
+    virtual void undo(){
+        for ( int i = m_commandStack.size() - 1; i >= 0; --i){
+            auto & command = m_commandStack[i];
+            if (command) {
+                command->undo();
+                m_commandStack.pop_back();
+                delete command;
+            }
+        }
+    }
+
+    virtual void execute(){
+        for (auto & cmd : m_commandStack) {
+            cmd->execute();
+        }
+    }
+
+    bool isValid() const { return m_isValid; }
+protected:
+    std::vector<Command*> m_commandStack;
+};
+
 
 class CommandManager{
 

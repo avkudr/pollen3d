@@ -407,7 +407,7 @@ void Application::_drawTab_Stereo()
             disableButtons = !((imR != nullptr) && imR->hasFeatures());
 
             if (disableButtons) ImGuiC::PushDisabled();
-            if (ImGui::Button("Match features",ImVec2(0.6*matchingWidgetW,50)))
+            if (ImGui::Button("Match features",ImVec2(0.6f*matchingWidgetW,50)))
             {
                 auto f = [&]() {
                     ProjectManager::get()->matchFeatures(m_projectData, {m_currentImage});
@@ -416,7 +416,7 @@ void Application::_drawTab_Stereo()
             }
 
             ImGui::SameLine();
-            if (ImGui::Button("ALL",ImVec2(0.25*matchingWidgetW,50)))
+            if (ImGui::Button("ALL",ImVec2(0.25f*matchingWidgetW,50)))
             {
                 auto f = [&]() {
                     ProjectManager::get()->matchFeatures(m_projectData);
@@ -501,15 +501,15 @@ void Application::_drawTab_Multiview()
 {
     if (ImGui::BeginTabItem("Multiview"))
     {
-        float matchingWidgetW = 250.0f;
-        if (ImGui::Button("Get full measurement matrix",ImVec2(0.6*matchingWidgetW,50)))
+        float matchingWidgetW = 400.0f;
+        if (ImGui::Button("Get full measurement matrix",ImVec2(0.6f*matchingWidgetW,50)))
         {
             auto f = [&]() {
                 ProjectManager::get()->findMeasurementMatrixFull(m_projectData);
             };
             _doHeavyTask(f);
         }
-        if (ImGui::Button("Get measurement matrix",ImVec2(0.6*matchingWidgetW,50)))
+        if (ImGui::Button("Get measurement matrix",ImVec2(0.6f*matchingWidgetW,50)))
         {
             auto f = [&]() {
                 ProjectManager::get()->findMeasurementMatrix(m_projectData);
@@ -642,8 +642,11 @@ void Application::_drawProperties()
     {
         const auto & Wfull = m_projectData.getMeasurementMatrixFull();
         if (Wfull.rows() == 0 || Wfull.cols() == 0) return;
-
         drawProperty_matrix(Wfull,"Wfull");
+
+        const auto & W = m_projectData.getMeasurementMatrix();
+        if (W.rows() == 0 || W.cols() == 0) return;
+        drawProperty_matrix(W,"W");
         return;
     }
 
@@ -722,8 +725,8 @@ void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> 
             std::string output = ss.str();
 
             ImGui::LogToClipboard();
-            ImGui::LogText("M.setZero(%li;%li);\nM %s", A.rows(), A.cols(), output.c_str());
-            LOG_OK("Matrix is copied to clipboard");
+            ImGui::LogText("%s.setZero(%li;%li);\nM %s", name.c_str(), A.rows(), A.cols(), output.c_str());
+            LOG_OK("Matrix %s is copied to clipboard", name.c_str());
             ImGui::CloseCurrentPopup();
         }
         if(ImGui::Selectable("Copy to clipboard: Octave/MATLAB")) {
@@ -732,8 +735,8 @@ void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> 
             std::string output = ss.str();
 
             ImGui::LogToClipboard();
-            ImGui::LogText("M = %s", output.c_str());
-            LOG_OK("Matrix is copied to clipboard");
+            ImGui::LogText("%s = %s", name.c_str(), output.c_str());
+            LOG_OK("Matrix %s is copied to clipboard", name.c_str());
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();

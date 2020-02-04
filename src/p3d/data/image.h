@@ -54,7 +54,6 @@ public:
 
     bool hasFeatures(){ return _kpts.size() > 0; }
     int getNbFeatures() const { return _kpts.size();}
-    cv::Mat getFeaturePositions() const;
     const vector<cv::KeyPoint> & getKeyPoints(){ return _kpts;}
     void setKeyPoints(std::vector<cv::KeyPoint> kpts);
 
