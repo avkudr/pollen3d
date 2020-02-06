@@ -49,7 +49,7 @@ void normalizePoints(std::vector<cv::Point2d> &pts, cv::Mat &transformMatrix)
     }
 }
 
-Mat3 FundMatAlgorithms::findFundMatGS(const std::vector<Vec2> &ptsL, const std::vector<Vec2> &ptsR)
+Mat3 fundmat::findFundMatGS(const std::vector<Vec2> &ptsL, const std::vector<Vec2> &ptsR)
 {
     Mat3 F;
     F.setZero(3,3);
@@ -108,7 +108,7 @@ struct FundamentalMatrixResidual {
         const T & c = p[2];
         const T & d = p[3];
         T err1, err2;
-        FundMatAlgorithms::epiporalDistances(
+        fundmat::epiporalDistances(
                     a,b,c,d,T(1.0),
                     T(xl),T(yl),T(xr),T(yr),
                     &err1,&err2);
@@ -124,7 +124,7 @@ private:
     const double yr;
 };
 
-Mat3 FundMatAlgorithms::findFundMatCeres(const std::vector<Vec2> &ptsL, const std::vector<Vec2> &ptsR)
+Mat3 fundmat::findFundMatCeres(const std::vector<Vec2> &ptsL, const std::vector<Vec2> &ptsR)
 {
     Mat3 Fgs = findFundMatGS(ptsL,ptsR);
 
@@ -158,7 +158,7 @@ Mat3 FundMatAlgorithms::findFundMatCeres(const std::vector<Vec2> &ptsL, const st
     return F;
 }
 
-Vec2 FundMatAlgorithms::epiporalDistancesF(const Mat3 &F, const Vec2 &qL, const Vec2 &qR)
+Vec2 fundmat::epiporalDistancesF(const Mat3 &F, const Vec2 &qL, const Vec2 &qR)
 {
     const auto & a = F(0,2);
     const auto & b = F(1,2);
@@ -172,7 +172,7 @@ Vec2 FundMatAlgorithms::epiporalDistancesF(const Mat3 &F, const Vec2 &qL, const 
     const auto & qyL = qL[1];
 
     double errL,errR;
-    FundMatAlgorithms::epiporalDistances(a,b,c,d,e,
+    fundmat::epiporalDistances(a,b,c,d,e,
                                          qxL,qyL,qxR,qyR,
                                          &errL,&errR);
 
@@ -181,10 +181,37 @@ Vec2 FundMatAlgorithms::epiporalDistancesF(const Mat3 &F, const Vec2 &qL, const 
     return errs;
 }
 
+/*
+ * so that x2' * F * x1 = 0
+ *
+ */
+Mat3 fundmat::affineFromP(const Mat34 &Pl, const Mat34 &Pr)
+{
+
+    // https://www.ijcai.org/Proceedings/97-2/Papers/102.pdf
+    // A General Expression of the Fundamental Matrix for Both Perspective and Affine Cameras
+    // Zhengyou Zhang, Gang Xu
+
+    Vec3 p11 = Pr.block(0,0,1,3).transpose();
+    Vec3 p12 = Pr.block(1,0,1,3).transpose();
+    Vec3 p21 = Pl.block(0,0,1,3).transpose();
+    Vec3 p22 = Pl.block(1,0,1,3).transpose();
+
+    Vec3 p23 = p21.cross(p22);
+
+    Vec3 Pp;
+    Pp << p11.transpose()*p23,p12.transpose()*p23,0;
+
+    Mat3 temp = Pr * (Pl.transpose() * (Pl * Pl.transpose()).inverse());
+    Mat3 F = utils::skewSym(Pp) * temp;
+    F = F / F.norm();
+    return F;
+}
+
 template<typename T>
-void FundMatAlgorithms::epiporalDistances(const T a, const T b, const T c, const T d, const T e,
-                                       const T qxL, const T qyL, const T qxR, const T qyR,
-                                       T *errorL, T *errorR)
+void fundmat::epiporalDistances(const T a, const T b, const T c, const T d, const T e,
+                                const T qxL, const T qyL, const T qxR, const T qyR,
+                                T *errorL, T *errorR)
 {
     if (!errorL || !errorR) return;
     T error = abs(a*qxR +b*qyR + c*qxL + d*qyL + e);

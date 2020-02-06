@@ -161,6 +161,7 @@ public:
         }
     }
 
+    bool empty() { return m_commandStack.size() == 0; }
     bool isValid() const { return m_isValid; }
 protected:
     std::vector<Command*> m_commandStack;

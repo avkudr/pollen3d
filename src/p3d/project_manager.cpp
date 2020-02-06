@@ -101,6 +101,7 @@ void ProjectManager::loadImages(ProjectData *list, const std::vector<std::string
     }
 
     LOG_OK("Loaded %i/%i", imgs.size(), imPaths.size());
+    LOG_WARN("No Undo functionnality");
 
     list->setImageList(imgs);
 }
@@ -161,12 +162,12 @@ void ProjectManager::extractFeatures(ProjectData &data, std::vector<int> imIds)
     if (imIds.empty())
         for (int i = 0; i < data.nbImages(); ++i) imIds.push_back(i);
 
-    int nbImgs = imIds.size();
+    auto nbImgs = static_cast<int>(imIds.size());
 #ifdef WITH_OPENMP
     omp_set_num_threads(std::min(nbImgs,utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
-    for (int i = 0; i < nbImgs; i++) {
+    for (auto i = 0; i < nbImgs; i++) {
         Image * im = data.image(imIds[i]);
         if (!im) continue;
         if (im->cvMat().empty()){
@@ -244,8 +245,13 @@ void ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsId
 
         imPair->setMatches(matchesPair);
 
-        LOG_OK("Pair %i, matched %i features", imPairsIds[i], matchesPair.size());
+        #pragma omp critical
+        {
+            LOG_OK("Pair %i, matched %i features", imPairsIds[i], matchesPair.size());
+        }
     }
+
+    LOG_WARN("No Undo functionnality");
 }
 
 void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> imPairsIds)
@@ -253,6 +259,8 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
     if (data.nbImagePairs() == 0) return;
     if (imPairsIds.empty())
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
+
+    CommandGroup * groupCmd = new CommandGroup();
 
 #ifdef WITH_OPENMP
     omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
@@ -267,11 +275,18 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
             continue;
         }
 
-        Mat3 F = FundMatAlgorithms::findFundMatCeres(ptsL,ptsR);
-        data.imagePair(i)->setFundMat(F);
+        Mat3 F = fundmat::findFundMatCeres(ptsL,ptsR);
 
-        LOG_OK("Pair %i, estimated F (ceres)", i);
+        auto cmd = new CommandSetProperty(data.imagePair(i),p3dImagePair_fundMat,F);
+        #pragma omp critical
+        {
+            groupCmd->add(cmd);
+            LOG_OK("Pair %i, estimated F (ceres)", i);
+        }
     }
+
+    if (groupCmd->empty()) delete groupCmd;
+    else CommandManager::get()->executeCommand(groupCmd);
 }
 
 void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPairsIds)
@@ -280,10 +295,10 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
     if (imPairsIds.empty())
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
-//#ifdef WITH_OPENMP
-//    omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
-//    #pragma omp parallel for
-//#endif
+#ifdef WITH_OPENMP
+    omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
+    #pragma omp parallel for
+#endif
     for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
         auto i = imPairsIds[idx];
 
@@ -401,6 +416,8 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
             LOG_INFO("- angleR: %.3f deg", angleR*180.0/CV_PI);
         }
     }
+
+    LOG_WARN("No Undo functionnality");
 }
 
 void ProjectManager::findMeasurementMatrixFull(ProjectData &data)

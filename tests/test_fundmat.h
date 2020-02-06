@@ -24,12 +24,12 @@ TEST(FUNDMAT, fundmat_testData)
         ptsR.emplace_back(Vec2(xR[i],yR[i]));
     }
 
-    Mat3 F = FundMatAlgorithms::findFundMatCeres(ptsL,ptsR);
+    Mat3 F = fundmat::findFundMatCeres(ptsL,ptsR);
 
     Mat2X distances;
     distances.setZero(2,ptsL.size());
     for (int i = 0; i < ptsL.size(); ++i) {
-        Vec2 errs = FundMatAlgorithms::epiporalDistancesF(F,ptsL[i],ptsR[i]);
+        Vec2 errs = fundmat::epiporalDistancesF(F,ptsL[i],ptsR[i]);
         distances.col(i) = errs;
     }
     EXPECT_GE(2.0,distances.mean());

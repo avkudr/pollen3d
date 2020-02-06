@@ -12,8 +12,9 @@
 
 #include <opencv2/core.hpp>
 #include "p3d/core/core.h"
+#include "p3d/core/utils.h"
 
-struct FundMatAlgorithms{
+struct fundmat{
     static Mat3 findFundMatGS(const std::vector<Vec2> & ptsL,const std::vector<Vec2> & ptsR);
     static Mat3 findFundMatCeres(const std::vector<Vec2> & ptsL, const std::vector<Vec2> & ptsR);
 
@@ -22,6 +23,8 @@ struct FundMatAlgorithms{
                                const T qxL, const T qyL, const T qxR, const T qyR,
                                T * errorL, T * errorR);
     static Vec2 epiporalDistancesF(const Mat3 & F, const Vec2 & qL, const Vec2 & qR);
+
+    static Mat3 affineFromP(const Mat34 & Pl, const Mat34 & Pr);
 };
 
 void normalizePoints(std::vector<cv::Point2d> & pts, cv::Mat & transformMatrix);

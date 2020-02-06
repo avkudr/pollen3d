@@ -26,14 +26,6 @@ void utils::saveFileToMatlab(std::string fileName, cv::Mat a, std::string varNam
 }
 
 
-double utils::rad2deg(double angRad){
-    return angRad / M_PI * 180.0;
-}
-
-double utils::deg2rad(double angDeg){
-    return angDeg / 180.0 * M_PI;
-}
-
 /*! Make matrix non-homogenious. It is mainly used for measurement matrix \f$W\f$.
  * If ((W mod 3) == 0) it will supress every third row
  */
@@ -212,4 +204,58 @@ bool utils::equalsCvMat(const cv::Mat &lhs, const cv::Mat &rhs)
     if (lhs.type() != rhs.type()) return false;
     if (lhs.empty() || rhs.empty()) return false;
     return cv::norm(lhs - rhs) < 1e-5;
+}
+
+Mat3 utils::RfromEulerZYZ(double t1, double rho, double t2){
+    double c0,c1,c2,s0,s1,s2;
+
+    c0 = cos(t1);
+    c1 = cos(rho);
+    c2 = cos(t2);
+    s0 = sin(t1);
+    s1 = sin(rho);
+    s2 = sin(t2);
+
+    Mat3 R;
+    R(0,0) = c0*c1*c2 - s0*s2;
+    R(0,1) = -c0*c1*s2 - s0*c2;
+    R(0,2) = c0*s1;
+    R(1,0) = s0*c1*c2+c0*s2 ;
+    R(1,1) = -s0*c1*s2 + c0*c2 ;
+    R(1,2) = s0*s1;
+    R(2,0) = -s1*c2;
+    R(2,1) = s1*s2;
+    R(2,2) = c1;
+    return R;
+}
+
+void utils::EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2){
+    const auto &rotmat = R;
+
+    if (rotmat(2,2) < 1){
+        if (rotmat(2,2) > -1){
+            rho = acos(rotmat(2,2));
+            t1  = atan2(rotmat(1,2),rotmat(0,2));
+            t2  = atan2(rotmat(2,1),-rotmat(2,0));
+        }
+        else{
+            rho = M_PI;
+            t1  = -atan2(rotmat(1,0),rotmat(1,1));
+            t2  = 0;
+        }
+    }
+    else{
+        rho = 0;
+        t1  = atan2(rotmat(1,0),rotmat(1,1));
+        t2  = 0;
+    }
+}
+
+Mat3 utils::skewSym(const Vec3 &a)
+{
+    Mat3 out;
+    out <<    0, -a(2),  a(1),
+           a(2),     0, -a(0),
+          -a(1),  a(0),     0;
+    return out;
 }

@@ -15,8 +15,15 @@ namespace utils{
 
 void saveFileToMatlab(std::string fileName, cv::Mat a, std::string varName);
 
-double rad2deg(double angRad);
-double deg2rad(double angDeg);
+template<typename T>
+static T rad2deg(const T& angRad){
+    return angRad * 180.0 / M_PI;
+}
+
+template<typename T>
+static T deg2rad(const T& angDeg){
+    return angDeg * M_PI / 180.0;
+}
 
 void makeNonHomogenious(cv::Mat & m);
 void copyMatElementsToVector(const cv::Mat & mat, const cv::Mat & idx, std::vector<double> & vec);
@@ -40,6 +47,11 @@ int nbAvailableThreads();
 std::pair<Vec2,Vec2> lineIntersectBox(const Vec3& line, double w, double h/*, double x = 0.0, double y = 0.0*/);
 
 void matchesMapsToTable(std::vector<std::map<int, int> > matchesMaps, Mati &table);
+
+Mat3 RfromEulerZYZ(double t1, double rho, double t2);
+void EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2);
+
+Mat3 skewSym(const Vec3 & a);
 }
 
 #endif // UTILS_H

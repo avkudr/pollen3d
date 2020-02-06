@@ -99,9 +99,8 @@ public:
     // ***** Epipolar geometry
 
     bool hasF() const;
-    void setHasF(bool hasF);
     const Mat3 & getFundMat() const { return F; }
-    void setFundMat(const Mat3 & f) { F = f; m_hasF = true;}
+    void setFundMat(const Mat3 & f) { F = f; }
     void getEpilines(const std::vector<Vec2> & pts, std::vector<Vec3> & epilines, bool transpose) const;
     void getEpilinesLeft(const std::vector<Vec2> & ptsR, std::vector<Vec3> & epilinesL) const { getEpilines(ptsR, epilinesL, true);}
     void getEpilinesRight(const std::vector<Vec2> & ptsL, std::vector<Vec3> & epilinesR) const { getEpilines(ptsL, epilinesR, false); }
@@ -144,7 +143,6 @@ private:
     std::vector<Match> m_matches;
 
     Eigen::Matrix<double,3,3> F;
-    bool m_hasF = false;
 
     Mat3 m_rectifyingTransformL;
     Mat3 m_rectifyingTransformR;

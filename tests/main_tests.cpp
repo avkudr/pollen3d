@@ -3,6 +3,7 @@
 #include "test_paths.h"
 #include "test_meta.h"
 #include "test_fundmat.h"
+#include "test_diamond.h"
 
 #include "p3d/core/serialization.h"
 

@@ -13,7 +13,6 @@ int ImagePair::initMeta()
                 .data<&ImagePair::setLeftImage,&ImagePair::imL>(P3D_ID_TYPE(p3dImagePair_imL))
                 .data<&ImagePair::setRightImage,&ImagePair::imR>(P3D_ID_TYPE(p3dImagePair_imR))
                 .data<&ImagePair::setFundMat,&ImagePair::getFundMat>(P3D_ID_TYPE(p3dImagePair_fundMat))
-                .data<&ImagePair::setHasF,&ImagePair::hasF>(P3D_ID_TYPE(p3dImagePair_hasF))
                 .data<&ImagePair::setRectifyingTransformL,&ImagePair::getRectifyingTransformL>(P3D_ID_TYPE(p3dImagePair_rectifyingTransformLeft))
                 .data<&ImagePair::setRectifyingTransformR,&ImagePair::getRectifyingTransformR>(P3D_ID_TYPE(p3dImagePair_rectifyingTransformRight));
 
@@ -26,7 +25,7 @@ int ImagePair::initMeta()
 
 ImagePair::ImagePair(int imL, int imR) : _imL(imL), _imR(imR)
 {
-    F.setIdentity(3,3);
+    F.setZero(3,3);
     m_imLrectified = cv::Mat();
     m_imRrectified = cv::Mat();
     m_rectifyingTransformL.setIdentity(3,3);
@@ -35,7 +34,7 @@ ImagePair::ImagePair(int imL, int imR) : _imL(imL), _imR(imR)
 
 ImagePair::~ImagePair()
 {
-    m_hasF = false;
+
 }
 
 void ImagePair::getMatchesAsMap(std::map<int, int> &map) const
@@ -93,16 +92,9 @@ void ImagePair::getEpilines(const std::vector<Vec2> &pts, std::vector<Vec3> &epi
     }
 }
 
-
-
 bool ImagePair::hasF() const
 {
-    return m_hasF;
-}
-
-void ImagePair::setHasF(bool isFready)
-{
-    m_hasF = isFready;
+    return !F.isApprox(Mat3::Zero());
 }
 
 int Match::initMeta() {

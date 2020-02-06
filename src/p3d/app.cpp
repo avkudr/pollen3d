@@ -335,7 +335,6 @@ void Application::_drawTab_Image()
         bool disabled = false;
         auto image = m_projectData.image(m_currentImage);
         if (image == nullptr) disabled = true;
-        else if (!image->hasFeatures()) disabled = true;
 
         if (disabled) ImGuiC::PushDisabled();
 
@@ -633,8 +632,11 @@ void Application::_drawProperties()
         auto imPair = m_projectData.imagePair(m_currentImage);
         if (!imPair) return;
 
-        drawProperty_basic(imPair->getNbMatches(),"matches","%i");
-        drawProperty_matrix(imPair->getFundMat(),"fund. matrix");
+        if (imPair->hasMatches())
+            drawProperty_basic(imPair->getNbMatches(),"matches","%i");
+
+        if (imPair->hasF())
+            drawProperty_matrix(imPair->getFundMat(),"fund. matrix");
         return;
     }
 
