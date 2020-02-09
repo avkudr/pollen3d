@@ -42,7 +42,7 @@ public:
     void postLoop() override;
 
     virtual void textureBind(const cv::Mat & im) override;
-    virtual void textureDisplay(float w, float h) override;
+    virtual void textureDisplay(const ImVec2 & size, ImVec2 uv0 = ImVec2(0,0), ImVec2 uv1 = ImVec2(1,1)) override;
 
 private:
     GLFWwindow* m_window = nullptr;

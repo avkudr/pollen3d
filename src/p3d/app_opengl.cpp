@@ -132,9 +132,9 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
 
 }
 
-void ApplicationOpenGL::textureDisplay(float w, float h)
+void ApplicationOpenGL::textureDisplay(const ImVec2 &size, ImVec2 uv0, ImVec2 uv1)
 {
     if (m_textureId && isTextureReady()) {
-        ImGui::Image(ImTextureID(m_textureId), ImVec2(w, h));
+        ImGui::Image(ImTextureID(m_textureId), size, uv0, uv1);
     }
 }

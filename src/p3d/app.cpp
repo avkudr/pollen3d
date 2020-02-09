@@ -763,8 +763,7 @@ void Application::_drawCentral()
     static int display = SHOW_MATCHES;
 
     static bool showFeatures = true;
-    static bool showEpilines = true;
-    static bool showMatches = true;
+    static bool showAnimated = false;
     int controlBottomBarHeight = 35;
     static float imageOpacity = 1.0f;
     static int skipEvery = 1;
@@ -824,7 +823,7 @@ void Application::_drawCentral()
 
         ImGui::SetCursorPos(ImVec2(imStartX,imStartY));
         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, imageOpacity);
-        textureDisplay(newW, newH);
+        textureDisplay(ImVec2(newW, newH),ImVec2(0,0),ImVec2(1,1));
         ImGui::PopStyleVar();
 
         ImVec2 winPos = ImGui::GetWindowPos();

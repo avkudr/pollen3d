@@ -39,7 +39,7 @@ public:
 
     bool isTextureReady() const { return m_textureWidth > 0 && m_textureHeight > 0; }
     virtual void textureBind(const cv::Mat & im) = 0;
-    virtual void textureDisplay(float w, float h) = 0;
+    virtual void textureDisplay(const ImVec2 & size, ImVec2 uv0 = ImVec2(0,0), ImVec2 uv1 = ImVec2(1,1)) = 0;
 
     void initImGui();
     void applyStyle();
