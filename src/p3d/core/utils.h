@@ -48,10 +48,41 @@ std::pair<Vec2,Vec2> lineIntersectBox(const Vec3& line, double w, double h/*, do
 
 void matchesMapsToTable(std::vector<std::map<int, int> > matchesMaps, Mati &table);
 
-Mat3 RfromEulerZYZ(double t1, double rho, double t2);
+// **** Rotations
+
+template<typename T>
+Eigen::Matrix<T, 3, 3> RfromEulerZYZ(const T& t1, const T& rho, const T& t2){
+    auto c0 = std::cos(t1);
+    auto c1 = std::cos(rho);
+    auto c2 = std::cos(t2);
+    auto s0 = std::sin(t1);
+    auto s1 = std::sin(rho);
+    auto s2 = std::sin(t2);
+
+    Eigen::Matrix<T, 3, 3> R;
+    R(0,0) = c0*c1*c2 - s0*s2;
+    R(0,1) = -c0*c1*s2 - s0*c2;
+    R(0,2) = c0*s1;
+    R(1,0) = s0*c1*c2+c0*s2 ;
+    R(1,1) = -s0*c1*s2 + c0*c2 ;
+    R(1,2) = s0*s1;
+    R(2,0) = -s1*c2;
+    R(2,1) = s1*s2;
+    R(2,2) = c1;
+    return R;
+}
+
+// [1] page(42) eq(2.17)
+template<typename T>
+Eigen::Matrix<T, 3, 3> RfromEulerZYZt(const T& thetaT, const T& rho, const T& theta){
+    return RfromEulerZYZ(thetaT,rho,-theta);
+}
+
 void EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2);
 
+// **** Math
 Mat3 skewSym(const Vec3 & a);
+
 }
 
 #endif // UTILS_H

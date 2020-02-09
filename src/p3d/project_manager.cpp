@@ -275,7 +275,7 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
             continue;
         }
 
-        Mat3 F = fundmat::findFundMatCeres(ptsL,ptsR);
+        Mat3 F = fundmat::findAffineCeres(ptsL,ptsR);
 
         auto cmd = new CommandSetProperty(data.imagePair(i),p3dImagePair_fundMat,F);
         #pragma omp critical

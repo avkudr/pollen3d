@@ -12,7 +12,6 @@
 #include <Eigen/Eigen>
 
 using utils::deg2rad;
-using utils::RfromEulerZYZ;
 
 struct Diamond {
     Diamond() {
@@ -41,13 +40,17 @@ struct Diamond {
         -134.40,-146.40,1.60, 1.0;
         vertices.transposeInPlace();
 
-        K << 1,0,0,0,1,0,0,0,1;
+        K << 1,0,220,0,1,200,0,0,1;
+
+        slopes.resize(2,4);
+        slopes << 0, -42.0,  4.0, -32.0,
+                  0, -24.0, 10.0, -16.0;
 
         R.resize(4);
-        R[0] = RfromEulerZYZ(           0.0,             0.0,            0.0);
-        R[1] = RfromEulerZYZ(deg2rad( -45.0), deg2rad(  -8.0),deg2rad( -45.0));
-        R[2] = RfromEulerZYZ(deg2rad(   0.0), deg2rad( -13.0),deg2rad(   0.0));
-        R[3] = RfromEulerZYZ(deg2rad( -20.0), deg2rad( -18.0),deg2rad( -20.0));
+        R[0].setIdentity();
+        R[1] = utils::RfromEulerZYZt(deg2rad(slopes(0,1)), deg2rad(  -8.0),deg2rad(slopes(1,1)));
+        R[2] = utils::RfromEulerZYZt(deg2rad(slopes(0,2)), deg2rad( -13.0),deg2rad(slopes(1,2)));
+        R[3] = utils::RfromEulerZYZt(deg2rad(slopes(0,3)), deg2rad( -18.0),deg2rad(slopes(1,3)));
 
         t = std::vector<Vec2>(R.size(),{500,250});
 
@@ -66,6 +69,15 @@ struct Diamond {
         }
     }
 
+    std::vector<Vec2> pts(int imId) {
+        std::vector<Vec2> pts1;
+        auto W_ = W();
+        for (int i = 0; i < W_.cols(); i++){
+            pts1.emplace_back(W_.block(3*imId,i,2,1));
+        }
+        return pts1;
+    }
+
     int nbIm() { return static_cast<int>(R.size()); }
     Mat W() {
         Mat W;
@@ -81,27 +93,75 @@ struct Diamond {
     std::vector<Mat34> P;
     std::vector<Mat3> R;
     std::vector<Vec2> t;
+    Mat2X slopes;
 };
 
-TEST(DIAMOND, test_fundMat)
+/*
+TEST(DIAMOND, draw)
 {
+    cv::namedWindow("image");
+    cv::resizeWindow("image",1280,1024);
+    cv::Mat im = cv::Mat(1024,1280,CV_8UC3);
+
     Diamond d;
     auto W = d.W();
-
-    int id1 = 1;
-    int id2 = 3;
+    int id1 = 0;
+    int id2 = 2;
     std::vector<Vec2> pts1;
     std::vector<Vec2> pts2;
     for (int i = 0; i < W.cols(); i++){
-        pts1.emplace_back(W.block(3*id1,i,2,1));
-        pts2.emplace_back(W.block(3*id2,i,2,1));
+        Vec2 pt1 = W.block(3*id1,i,2,1);
+        Vec2 pt2 = W.block(3*id2,i,2,1);
+
+        cv::circle(im,cv::Point(pt1(0),pt1(1)),3,cv::Scalar(255,0,0));
+        cv::circle(im,cv::Point(pt2(0),pt2(1)),3,cv::Scalar(0,255,0));
     }
-    Mat3 Fe = fundmat::findFundMatCeres(pts1,pts2);
-    Mat3 F  = fundmat::affineFromP(d.P[id1],d.P[id2]);
 
-    EXPECT_TRUE(Fe.isApprox(F,1e-5));
+    cv::imshow("image",im);
+    cv::waitKeyEx(0);
+}
+*/
 
-    // x2' * F * x1
-    auto residual = (W.block(3*id2,0,3,1).transpose() * F * W.block(3*id1,0,3,1));
-    EXPECT_GE(1e-10,residual(0,0));
+TEST(DIAMOND, test_fundMatCeres)
+{
+    Diamond d;
+
+    int id1 = 0;
+    int id2 = 2;
+    std::vector<Vec2> pts1 = d.pts(id1);
+    std::vector<Vec2> pts2 = d.pts(id2);
+    Mat3 F = fundmat::findAffineCeres(pts1,pts2);
+
+    double maxErrDistance = -1.0;
+    double maxErrResidual = -1.0;
+
+    for (int i = 0; i < pts1.size(); ++i) {
+        // **** distance error
+        Vec2 errs = fundmat::epiporalDistancesF(F,pts1[i],pts2[i]);
+        if (errs.norm() > maxErrDistance) maxErrDistance = errs.norm();
+
+        // **** residual error
+        Vec3 pt1H; pt1H << pts1[i], 1;
+        Vec3 pt2H; pt2H << pts2[i], 1;
+        auto errResidual = pt2H.transpose() * F * pt1H;
+        if (abs(errResidual(0,0)) > maxErrResidual) maxErrResidual = abs(errResidual(0,0));
+    }
+    EXPECT_LT(maxErrDistance,1e-5);
+    EXPECT_LT(maxErrResidual,1e-5);
+}
+
+TEST(DIAMOND, test_slopAngles)
+{
+    Diamond d;
+
+    int id1 = 0;
+    std::vector<Vec2> pts1 = d.pts(id1);
+    for (int id2 = 1; id2 < d.nbIm(); ++id2) {
+        std::vector<Vec2> pts2 = d.pts(id2);
+        Mat3 F = fundmat::findAffineCeres(pts1,pts2);
+
+        auto angles = fundmat::slopAngles(F);
+        EXPECT_FLOAT_EQ(utils::rad2deg(angles.first) , d.slopes(0,id2));
+        EXPECT_FLOAT_EQ(utils::rad2deg(angles.second), d.slopes(1,id2));
+    }
 }

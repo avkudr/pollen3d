@@ -49,22 +49,22 @@ void normalizePoints(std::vector<cv::Point2d> &pts, cv::Mat &transformMatrix)
     }
 }
 
-Mat3 fundmat::findFundMatGS(const std::vector<Vec2> &ptsL, const std::vector<Vec2> &ptsR)
+Mat3 fundmat::findAffineGS(const std::vector<Vec2> &ptsX, const std::vector<Vec2> &ptsXt)
 {
     Mat3 F;
     F.setZero(3,3);
     F(2,2) = 1;
 
     int nbPts = 0;
-    nbPts = (int)ptsR.size();
+    nbPts = (int)ptsXt.size();
 
     Mat W;
     W.setZero(4,nbPts);
     for (int i = 0; i < nbPts; i++){
-        W(0,i) = ptsR[i][0];
-        W(1,i) = ptsR[i][1];
-        W(2,i) = ptsL[i][0];
-        W(3,i) = ptsL[i][1];
+        W(0,i) = ptsX[i][0];
+        W(1,i) = ptsX[i][1];
+        W(2,i) = ptsXt[i][0];
+        W(3,i) = ptsXt[i][1];
     }
 
     Vec4 meanW;
@@ -84,6 +84,7 @@ Mat3 fundmat::findFundMatGS(const std::vector<Vec2> &ptsL, const std::vector<Vec
     F(2,2) = Mat(-1*N.transpose()*meanW)(0,0);
 
     F = F / F.norm();
+    //if (F(2,2) < 0) F *= -1;
     return F;
 }
 
@@ -97,8 +98,8 @@ using ceres::Solve;
 using ceres::Solver;
 
 struct FundamentalMatrixResidual {
-    FundamentalMatrixResidual(const Vec2 qL, const Vec2 & qR)
-        : xl(qL[0]), yl(qL[1]), xr(qR[0]), yr(qR[1]) {}
+    FundamentalMatrixResidual(const Vec2 X, const Vec2 & Xt)
+        : x(X[0]), y(X[1]), xt(Xt[0]), yt(Xt[1]) {}
 
     template <typename T>
     bool operator()(const T* const p,  T* residual) const {
@@ -107,10 +108,12 @@ struct FundamentalMatrixResidual {
         const T & b = p[1];
         const T & c = p[2];
         const T & d = p[3];
+        const T & e = p[4];
         T err1, err2;
+        err1 = err2 = T(100000);
         fundmat::epiporalDistances(
-                    a,b,c,d,T(1.0),
-                    T(xl),T(yl),T(xr),T(yr),
+                    a,b,c,d,e,
+                    T(x),T(y),T(xt),T(yt),
                     &err1,&err2);
         residual[0] = err1;
         residual[1] = err2;
@@ -118,24 +121,25 @@ struct FundamentalMatrixResidual {
     }
 
 private:
-    const double xl;
-    const double yl;
-    const double xr;
-    const double yr;
+    const double x;
+    const double y;
+    const double xt;
+    const double yt;
 };
 
-Mat3 fundmat::findFundMatCeres(const std::vector<Vec2> &ptsL, const std::vector<Vec2> &ptsR)
+Mat3 fundmat::findAffineCeres(const std::vector<Vec2> &ptsX, const std::vector<Vec2> &ptsXt)
 {
-    Mat3 Fgs = findFundMatGS(ptsL,ptsR);
+    //Mat3 Fgs = findAffineGS(ptsX,ptsXt);
+    //std::vector<double> params = {Fgs(0,2), Fgs(1,2), Fgs(2,0), Fgs(2,1), Fgs(2,2)};
+    std::vector<double> params = {1.0,1.0,1.0,1.0,1.0};
 
     Problem problem;
-    const int nbPts = static_cast<int>(ptsL.size());
+    const int nbPts = static_cast<int>(ptsX.size());
 
-    std::vector<double> params = {Fgs(0,2) / Fgs(2,2), Fgs(1,2) / Fgs(2,2), Fgs(2,0) / Fgs(2,2), Fgs(2,1) / Fgs(2,2)};
     for (int i = 0; i < nbPts; ++i) {
         CostFunction* cost_function =
-           new AutoDiffCostFunction<FundamentalMatrixResidual, 2, 4>(
-               new FundamentalMatrixResidual(ptsL[i], ptsR[i]));
+           new AutoDiffCostFunction<FundamentalMatrixResidual, 2, 5>(
+               new FundamentalMatrixResidual(ptsX[i], ptsXt[i]));
         problem.AddResidualBlock(cost_function, new CauchyLoss(2.0), &params[0]);
     }
 
@@ -146,19 +150,20 @@ Mat3 fundmat::findFundMatCeres(const std::vector<Vec2> &ptsL, const std::vector<
     Solver::Summary summary;
     Solve(options, &problem, &summary);
     LOG_INFO("Ceres. Init: %.10e; final: %.10e",summary.initial_cost,summary.final_cost);
+    //printf("Ceres. Init: %.10e; final: %.10e\n",summary.initial_cost,summary.final_cost);
     Mat3 F;
     F.setZero(3,3);
     F(0,2) = params[0];
     F(1,2) = params[1];
     F(2,0) = params[2];
     F(2,1) = params[3];
-    F(2,2) = 1.0;
+    F(2,2) = params[4];
 
     F = F / F.norm();
     return F;
 }
 
-Vec2 fundmat::epiporalDistancesF(const Mat3 &F, const Vec2 &qL, const Vec2 &qR)
+Vec2 fundmat::epiporalDistancesF(const Mat3 &F, const Vec2 &q, const Vec2 &qT)
 {
     const auto & a = F(0,2);
     const auto & b = F(1,2);
@@ -166,25 +171,23 @@ Vec2 fundmat::epiporalDistancesF(const Mat3 &F, const Vec2 &qL, const Vec2 &qR)
     const auto & d = F(2,1);
     const auto & e = F(2,2);
 
-    const auto & qxR = qR[0];
-    const auto & qyR = qR[1];
-    const auto & qxL = qL[0];
-    const auto & qyL = qL[1];
+    const auto & qTx = qT[0];
+    const auto & qTy = qT[1];
+    const auto & qx = q[0];
+    const auto & qy = q[1];
 
-    double errL,errR;
-    fundmat::epiporalDistances(a,b,c,d,e,
-                                         qxL,qyL,qxR,qyR,
-                                         &errL,&errR);
+    double err,errT;
+    fundmat::epiporalDistances(a,b,c,d,e,qx,qy,qTx,qTy,&err,&errT);
 
     Vec2 errs;
-    errs << errL, errR;
+    errs << err, errT;
     return errs;
 }
 
 /*
  * so that x2' * F * x1 = 0
  *
- */
+
 Mat3 fundmat::affineFromP(const Mat34 &Pl, const Mat34 &Pr)
 {
 
@@ -205,16 +208,30 @@ Mat3 fundmat::affineFromP(const Mat34 &Pl, const Mat34 &Pr)
     Mat3 temp = Pr * (Pl.transpose() * (Pl * Pl.transpose()).inverse());
     Mat3 F = utils::skewSym(Pp) * temp;
     F = F / F.norm();
+    if (F(2,2) < 0) F *= -1;
     return F;
+}
+ */
+
+std::pair<double, double> fundmat::slopAngles(const Mat3 &F)
+{
+    std::pair<double, double> angles;
+    const auto & a = F(0,2);
+    const auto & b = F(1,2);
+    const auto & c = F(2,0);
+    const auto & d = F(2,1);
+    angles.first  = std::atan(-a/b); // theta'
+    angles.second = std::atan(-c/d); // theta
+    return angles;
 }
 
 template<typename T>
 void fundmat::epiporalDistances(const T a, const T b, const T c, const T d, const T e,
-                                const T qxL, const T qyL, const T qxR, const T qyR,
+                                const T qx, const T qy, const T qTx, const T qTy,
                                 T *errorL, T *errorR)
 {
     if (!errorL || !errorR) return;
-    T error = abs(a*qxR +b*qyR + c*qxL + d*qyL + e);
+    T error = abs(a*qTx +b*qTy + c*qx + d*qy + e);
     *errorL = 1.0/sqrt( a*a + b*b ) * error;
     *errorR = 1.0/sqrt( c*c + d*d ) * error;
 }

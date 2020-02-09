@@ -206,29 +206,6 @@ bool utils::equalsCvMat(const cv::Mat &lhs, const cv::Mat &rhs)
     return cv::norm(lhs - rhs) < 1e-5;
 }
 
-Mat3 utils::RfromEulerZYZ(double t1, double rho, double t2){
-    double c0,c1,c2,s0,s1,s2;
-
-    c0 = cos(t1);
-    c1 = cos(rho);
-    c2 = cos(t2);
-    s0 = sin(t1);
-    s1 = sin(rho);
-    s2 = sin(t2);
-
-    Mat3 R;
-    R(0,0) = c0*c1*c2 - s0*s2;
-    R(0,1) = -c0*c1*s2 - s0*c2;
-    R(0,2) = c0*s1;
-    R(1,0) = s0*c1*c2+c0*s2 ;
-    R(1,1) = -s0*c1*s2 + c0*c2 ;
-    R(1,2) = s0*s1;
-    R(2,0) = -s1*c2;
-    R(2,1) = s1*s2;
-    R(2,2) = c1;
-    return R;
-}
-
 void utils::EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2){
     const auto &rotmat = R;
 

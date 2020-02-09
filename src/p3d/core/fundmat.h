@@ -15,16 +15,17 @@
 #include "p3d/core/utils.h"
 
 struct fundmat{
-    static Mat3 findFundMatGS(const std::vector<Vec2> & ptsL,const std::vector<Vec2> & ptsR);
-    static Mat3 findFundMatCeres(const std::vector<Vec2> & ptsL, const std::vector<Vec2> & ptsR);
+    static Mat3 findAffineGS(const std::vector<Vec2> & ptsL,const std::vector<Vec2> & ptsR);
+    static Mat3 findAffineCeres(const std::vector<Vec2> & ptsL, const std::vector<Vec2> & ptsR);
 
     template<typename T>
     static void epiporalDistances(const T a, const T b, const T c, const T d, const T e,
-                               const T qxL, const T qyL, const T qxR, const T qyR,
+                               const T qx, const T qy, const T qTx, const T qTy,
                                T * errorL, T * errorR);
     static Vec2 epiporalDistancesF(const Mat3 & F, const Vec2 & qL, const Vec2 & qR);
 
-    static Mat3 affineFromP(const Mat34 & Pl, const Mat34 & Pr);
+    // Mat3 affineFromP(const Mat34 & Pl, const Mat34 & Pr);
+    static std::pair<double,double> slopAngles(const Mat3 & F);
 };
 
 void normalizePoints(std::vector<cv::Point2d> & pts, cv::Mat & transformMatrix);

@@ -24,7 +24,7 @@ TEST(FUNDMAT, fundmat_testData)
         ptsR.emplace_back(Vec2(xR[i],yR[i]));
     }
 
-    Mat3 F = fundmat::findFundMatCeres(ptsL,ptsR);
+    Mat3 F = fundmat::findAffineCeres(ptsL,ptsR);
 
     Mat2X distances;
     distances.setZero(2,ptsL.size());
