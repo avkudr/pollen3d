@@ -44,15 +44,30 @@ void Application::applyStyle() {
     style.IndentSpacing = 8.0f;
     style.WindowMenuButtonPosition = ImGuiDir_Right;
     style.Colors[ImGuiCol_TitleBg] = style.Colors[ImGuiCol_TitleBgActive];
+
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.11f,0.11f,0.11f,1.0f);
+    style.Colors[ImGuiCol_ChildBg] = ImVec4(0.145f,0.145f,0.145f,1.0f);
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(0.2f,0.2f,0.2f,1.0f);
+    style.Colors[ImGuiCol_TitleBgActive] = style.Colors[ImGuiCol_TitleBg];
+    style.Colors[ImGuiCol_TabUnfocusedActive] = style.Colors[ImGuiCol_TitleBg];
+    style.Colors[ImGuiCol_Header] = ImVec4(0.216f,0.216f,0.239f,1.0f);
+    //style.Colors[ImGuiCol_WindowBg] = ImVec4(0.2f,0.2f,0.2f,1.0f);
+
 }
 
 void Application::draw(int width, int height){
+
+    ImVec4 colorBg2 = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+    colorBg2.w = 1.0f;
+
     ImGui::NewFrame();
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,0);
 
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSizeConstraints(ImVec2(width, m_heightTabSection),ImVec2(width, m_heightTabSection));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, colorBg2);
     _drawTab();
+    ImGui::PopStyleColor();
 
     ImGui::SetNextWindowPos(ImVec2(0, m_heightTabSection));
     ImGui::SetNextWindowSizeConstraints(ImVec2(width, height - m_heightTabSection),ImVec2(width, height - m_heightTabSection));
@@ -62,16 +77,23 @@ void Application::draw(int width, int height){
         ImGui::End();
     }
 
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    ImGuiWindowFlags flags =
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_NoBringToFrontOnFocus;
+
     ImGui::Begin("DataWidget",nullptr, flags);
     _drawData();
     ImGui::End();
     ImGui::Begin("Properties",nullptr, flags);
     _drawProperties();
     ImGui::End();
+
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, colorBg2);
     ImGui::Begin("CentralWidget",nullptr, flags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     _drawCentral();
     ImGui::End();
+    ImGui::PopStyleColor();
+
     ImGui::Begin("Console",nullptr, flags);
     ConsoleLogger::get()->render();
     ImGui::End();
@@ -489,6 +511,37 @@ void Application::_drawTab_Stereo()
             ImGui::EndChild();
         }
 
+        ImGui::SameLine();
+
+        if (ImGui::BeginChild("DenseMatching",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
+        {
+            ImGui::BulletText("Dense matching");
+
+            bool disableButtons = disabled || !imPair->hasF();
+            if (disableButtons) ImGuiC::PushDisabled();
+
+            ImGui::SetNextItemWidth(matchingWidgetW);
+            if (ImGui::Button("Dense match"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->findDisparityMap(m_projectData, {m_currentImage});
+                };
+                _doHeavyTask(f);
+            }
+
+            ImGui::SetNextItemWidth(matchingWidgetW);
+            if (ImGui::Button("ALL"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->findDisparityMap(m_projectData);
+                };
+                _doHeavyTask(f);
+            }
+            if (disableButtons) ImGuiC::PopDisabled();
+
+            ImGui::EndChild();
+        }
+
         ImGui::EndTabItem();
 
         if (m_currentTab != Tab_Stereo) _resetAppState();
@@ -600,6 +653,32 @@ void Application::_drawData()
                     if (m_currentImage != n || m_currentSection != Section_Rectified) {
                         m_currentImage = n;
                         m_currentSection = Section_Rectified;
+                        m_textureNeedsUpdate = true;
+                        LOG_DBG("Selection changed: %i", n);
+                        LOG_DBG(" - section: %i", m_currentSection);
+
+                    }
+                }
+            }
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Disparity:", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            for (auto n = 0; n < (int)m_projectData.nbImagePairs(); n++)
+            {
+                auto imPair = m_projectData.imagePair(n);
+                if (!imPair || !imPair->hasDisparityMap()) continue;
+
+                auto imL = m_projectData.imagePairL(n);
+                auto imR = m_projectData.imagePairR(n);
+                if (!imL) continue;
+                if (!imR) continue;
+
+                std::string entry = ICON_FA_ALIGN_CENTER" " + imL->name() + " <> " + imR->name();
+                if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
+                    if (m_currentImage != n || m_currentSection != Section_DisparityMap) {
+                        m_currentImage = n;
+                        m_currentSection = Section_DisparityMap;
                         m_textureNeedsUpdate = true;
                         LOG_DBG("Selection changed: %i", n);
                         LOG_DBG(" - section: %i", m_currentSection);
@@ -793,6 +872,8 @@ void Application::_drawCentral()
                     const auto & imR = imPair->getRectifiedImageR();
                     if (!imL.empty() && !imR.empty())
                         matToBind = utils::concatenateMat({imL,imR},utils::CONCAT_HORIZONTAL);
+                } else if (m_currentSection == Section_DisparityMap) {
+                    matToBind = imPair->getDisparityMapPlot();
                 }
             }
         }

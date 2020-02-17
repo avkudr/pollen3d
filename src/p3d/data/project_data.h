@@ -4,7 +4,6 @@
 
 #include <vector>
 
-#include "p3d/core/imageproperties.h"
 #include "p3d/data/image.h"
 #include "p3d/data/image_pair.h"
 #include "p3d/console_logger.h"
@@ -84,8 +83,6 @@ public:
         std::vector<cv::Mat> P;
         return P;
     }
-
-    vector<Property*> _properties;
 
     Image * image(const std::size_t idx) {
         if (idx >= m_images.size()) return nullptr;

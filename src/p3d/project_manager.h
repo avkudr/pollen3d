@@ -35,6 +35,7 @@ public:
     void matchFeatures(ProjectData & data, std::vector<int> imPairsIds = {});
     void findFundamentalMatrix(ProjectData & data, std::vector<int> imPairsIds = {});
     void rectifyImagePairs(ProjectData & data, std::vector<int> imPairsIds = {});
+    void findDisparityMap(ProjectData & data, std::vector<int> imPairsIds = {});
 
     // ***** Multiview
     void findMeasurementMatrixFull(ProjectData & data);

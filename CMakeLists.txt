@@ -125,14 +125,8 @@ set(SOURCES
     ./src/p3d/core/core.h
     ./src/p3d/core/serialization.h
     ./src/p3d/core/serialization.cpp
-    ./src/p3d/core/densematcher.cpp
-    ./src/p3d/core/densematcher.h
     ./src/p3d/core/fundmat.cpp
     ./src/p3d/core/fundmat.h
-    ./src/p3d/core/imageproperties.cpp
-    ./src/p3d/core/imageproperties.h
-    ./src/p3d/core/rectification.cpp
-    ./src/p3d/core/rectification.h
     ./src/p3d/core/robust_estim.hpp
     ./src/p3d/core/utils.cpp
     ./src/p3d/core/utils.h

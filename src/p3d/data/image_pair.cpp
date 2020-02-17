@@ -28,6 +28,7 @@ ImagePair::ImagePair(int imL, int imR) : _imL(imL), _imR(imR)
     F.setZero(3,3);
     m_imLrectified = cv::Mat();
     m_imRrectified = cv::Mat();
+    m_disparityMap = cv::Mat();
     m_rectifyingTransformL.setIdentity(3,3);
     m_rectifyingTransformR.setIdentity(3,3);
 }
@@ -73,11 +74,6 @@ cv::Mat ImagePair::getOneStereoImage(cv::Mat im1, cv::Mat im2)
     return outImg;
 }
 
-cv::Mat ImagePair::plotStereoRectified()
-{
-    return getOneStereoImage(rectifier->imLrect,rectifier->imRrect);
-}
-
 void ImagePair::getEpilines(const std::vector<Vec2> &pts, std::vector<Vec3> &epilines, bool transpose) const
 {
     if (pts.empty()) return;
@@ -90,6 +86,12 @@ void ImagePair::getEpilines(const std::vector<Vec2> &pts, std::vector<Vec3> &epi
         else pt = F*pt;
         epilines.emplace_back(pt);
     }
+}
+
+cv::Mat ImagePair::getDisparityMapPlot() const {
+    cv::Mat disp8;
+    cv::normalize(m_disparityMap, disp8, 0, 255, CV_MINMAX, CV_8U);
+    return disp8;
 }
 
 bool ImagePair::hasF() const

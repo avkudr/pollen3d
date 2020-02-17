@@ -9,9 +9,9 @@
 #include <opencv2/calib3d.hpp>
 
 #include "p3d/core/core.h"
+#include "p3d/core/utils.h"
 #include "p3d/console_logger.h"
 #include "p3d/core/serialization.h"
-#include "p3d/core/imageproperties.h"
 
 using std::vector;
 using std::string;
@@ -59,8 +59,6 @@ public:
 
     const cv::Mat & getDescriptors() const { return _desc; }
     void setDescriptors(cv::Mat desc) { _desc = desc.clone(); }
-
-    vector<Property*> _properties; 
 
     void writeAdditional(cv::FileStorage &fs) override {
         fs << "im_p" + std::to_string(int(p3dImage_descriptors)) << _desc;

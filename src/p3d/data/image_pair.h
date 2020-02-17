@@ -12,9 +12,7 @@
 
 #include "p3d/core/core.h"
 #include "p3d/data/image.h"
-#include "p3d/core/densematcher.h"
 #include "p3d/core/fundmat.h"
-#include "p3d/core/rectification.h"
 #include "p3d/core/serialization.h"
 
 using std::vector;
@@ -59,6 +57,7 @@ enum p3dImagePair_
     p3dImagePair_rectifyingTransformRight,
     p3dImagePair_rectifiedImageLeft,
     p3dImagePair_rectifiedImageRight,
+    p3dImagePair_disparityMap,
 };
 
 class ImagePair : public Serializable<ImagePair>{
@@ -81,15 +80,7 @@ public:
         return m_matches.size() == i.m_matches.size();
     }
 
-    Rectifier * rectifier;
-    DenseMatcher * denseMatcher;
-
     cv::Mat getOneStereoImage(cv::Mat im1, cv::Mat im2);
-
-    cv::Mat plotStereoRectified();
-
-    vector<Property*> _properties;
-    //void updatePsssroperties();
 
     int imL() { return _imL; }
     int imR() { return _imR; }
@@ -115,18 +106,27 @@ public:
 
     const cv::Mat & getRectifiedImageL() const { return m_imLrectified; }
     const cv::Mat & getRectifiedImageR() const { return m_imRrectified; }
-    void setRectifiedImageL(cv::Mat & im) { m_imLrectified = im; }
-    void setRectifiedImageR(cv::Mat & im) { m_imRrectified = im; }
+
+    void setRectifiedImageL(const cv::Mat & im) { m_imLrectified = im; }
+    void setRectifiedImageR(const cv::Mat & im) { m_imRrectified = im; }
 
     Mat3 getRectifyingTransformL() const { return m_rectifyingTransformL;}
     Mat3 getRectifyingTransformR() const { return m_rectifyingTransformR;}
     void setRectifyingTransformL(const Mat3 & m) { m_rectifyingTransformL = m;}
     void setRectifyingTransformR(const Mat3 & m) { m_rectifyingTransformR = m;}
 
+    // ***** Dense matching
+
+    bool hasDisparityMap() { return !m_disparityMap.empty(); }
+
+    const cv::Mat & getDisparityMap() const { return m_disparityMap; }
+    void setDisparityMap(const cv::Mat & im) { m_disparityMap = im; }
+    cv::Mat getDisparityMapPlot() const;
 
     void writeAdditional(cv::FileStorage &fs) override {
         fs << "im_p" + std::to_string(int(p3dImagePair_rectifiedImageLeft))  << m_imLrectified;
         fs << "im_p" + std::to_string(int(p3dImagePair_rectifiedImageRight)) << m_imRrectified;
+        fs << "im_p" + std::to_string(int(p3dImagePair_disparityMap)) << m_disparityMap;
     }
 
     void readAdditional(const cv::FileNode &node) override {
@@ -134,6 +134,7 @@ public:
         // we could just regenerate them on project loading ?
         node["im_p" + std::to_string(int(p3dImagePair_rectifiedImageLeft)) ] >> m_imLrectified;
         node["im_p" + std::to_string(int(p3dImagePair_rectifiedImageRight))] >> m_imRrectified;
+        node["im_p" + std::to_string(int(p3dImagePair_disparityMap))] >> m_disparityMap;
     }
 
 private:
@@ -149,6 +150,7 @@ private:
 
     cv::Mat m_imLrectified;
     cv::Mat m_imRrectified;
+    cv::Mat m_disparityMap;
 };
 
 #endif // IMAGE_PAIR_H

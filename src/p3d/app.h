@@ -102,7 +102,7 @@ protected:
     enum Section_{
         Section_Default = 0,
         Section_Rectified,
-        Section_DepthMap,
+        Section_DisparityMap,
     };
 
     int m_currentSection = Section_Default;

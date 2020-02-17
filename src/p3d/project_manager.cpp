@@ -311,17 +311,11 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
 
         auto imL = data.image(imPair->imL());
         auto imR = data.image(imPair->imR());
-
         if (!imL || !imR) continue;
 
-        // we can get epipolar lines for any point as
-        // they are all parallel for affine camera
-        std::vector<Vec3> epiL,epiR;
-        imPair->getEpilinesLeft({Vec2(100,100)},epiL);
-        imPair->getEpilinesRight({Vec2(100,100)},epiR);
-
-        double angleL = std::atan(-epiL[0](0)/epiL[0](1));
-        double angleR = std::atan(-epiR[0](0)/epiR[0](1));
+        auto angles = fundmat::slopAngles(imPair->getFundMat());
+        double angleL = angles.first;
+        double angleR = angles.second;
 
         Mat3 Tl,Tr;
         cv::Mat imLrect, imRrect;
@@ -418,6 +412,82 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
     }
 
     LOG_WARN("No Undo functionnality");
+}
+
+struct Params{
+    int lowerBound = -1;
+    int upperBound = 2;
+    int blockSize  = 9;
+};
+
+struct ParamsFilter{
+    int newVal = 0; // The disparity value used to paint-off the speckles
+    int maxSpeckleSize = 260; // The maximum speckle size to consider it a speckle. Larger blobs are not affected by the algorithm
+    int maxDiff = 10; // Maximum difference between neighbor disparity pixels to put them into the same blob. Note that since StereoBM,
+    //StereoSGBM and may be other algorithms return a fixed-point disparity map, where disparity values are multiplied by 16,
+    //this scale factor should be taken into account when specifying this parameter value.
+};
+
+void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPairsIds)
+{
+    Params _params;
+    ParamsFilter _paramsFilter;
+
+    int _method = cv::StereoSGBM::MODE_SGBM; // Default method
+
+    if (data.nbImagePairs() == 0) return;
+    if (imPairsIds.empty())
+        for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
+
+    CommandGroup * groupCmd = new CommandGroup();
+
+#ifdef WITH_OPENMP
+    omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
+    #pragma omp parallel for
+#endif
+    for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
+        auto i = imPairsIds[idx];
+        if (!data.imagePair(i)) continue;
+        if (!data.imagePair(i)->isRectified()) continue;
+
+        const auto & imLeftR = data.imagePair(i)->getRectifiedImageL();
+        const auto & imRightR = data.imagePair(i)->getRectifiedImageR();
+
+        cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create( 16*_params.lowerBound,
+                                                               16*_params.upperBound, //number of disparities
+                                                                  _params.blockSize);
+        sgbm->setMode(_method);
+
+        int cn = imLeftR.channels();
+        sgbm->setP1(8*cn*_params.blockSize*_params.blockSize);
+        sgbm->setP2(32*cn*_params.blockSize*_params.blockSize);
+
+        try{
+            cv::Mat disparityMap;
+            sgbm->compute(imLeftR, imRightR, disparityMap);
+
+            cv::Mat_<float> temp = disparityMap;
+            temp = temp / 16;
+
+            //cv::bilateralFilter(temp,_dispValues,21,180,180); //use bilateral filter ?
+            //_dispValues = temp; // no filter
+
+            auto cmd = new CommandSetPropertyCV(
+                        data.imagePair(i),
+                        &ImagePair::setDisparityMap,&ImagePair::getDisparityMap,disparityMap);
+
+            #pragma omp critical
+            {
+                groupCmd->add(cmd);
+                LOG_OK("Pair %i, estimated disparity", i);
+            }
+        } catch(...) {
+            LOG_ERR("Pair %i, estimated disparity failed", i);
+        }
+    }
+
+    if (groupCmd->empty()) delete groupCmd;
+    else CommandManager::get()->executeCommand(groupCmd);
 }
 
 void ProjectManager::findMeasurementMatrixFull(ProjectData &data)

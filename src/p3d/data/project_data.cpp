@@ -9,7 +9,6 @@
 #include <opencv2/calib3d.hpp>
 
 #include "p3d/core/fundmat.h"
-#include "p3d/core/rectification.h"
 #include "p3d/core/core.h"
 
 int dummyProjectData_ = ProjectData::initMeta();
