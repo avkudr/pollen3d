@@ -866,12 +866,12 @@ void Application::_drawCentral()
                     auto imR = m_projectData.image(imIdxR);
 
                     if (imL && imR)
-                        matToBind = utils::concatenateMat({imL->cvMat(),imR->cvMat()},utils::CONCAT_HORIZONTAL);
+                        matToBind = utils::concatenateCvMat({imL->cvMat(),imR->cvMat()},utils::CONCAT_HORIZONTAL);
                 } else if (m_currentSection == Section_Rectified) {
                     const auto & imL = imPair->getRectifiedImageL();
                     const auto & imR = imPair->getRectifiedImageR();
                     if (!imL.empty() && !imR.empty())
-                        matToBind = utils::concatenateMat({imL,imR},utils::CONCAT_HORIZONTAL);
+                        matToBind = utils::concatenateCvMat({imL,imR},utils::CONCAT_HORIZONTAL);
                 } else if (m_currentSection == Section_DisparityMap) {
                     matToBind = imPair->getDisparityMapPlot();
                 }

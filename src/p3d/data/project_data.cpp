@@ -280,7 +280,7 @@ void ProjectData::updateCameraMatrices()
             Parray[i] = this->getREFACTOR(i)->P;
         }
 
-        _Pm = utils::concatenateMat(Parray);
+        _Pm = utils::concatenateCvMat(Parray);
     }
 }
 

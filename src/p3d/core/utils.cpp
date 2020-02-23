@@ -29,51 +29,51 @@ void utils::saveFileToMatlab(std::string fileName, cv::Mat a, std::string varNam
 /*! Make matrix non-homogenious. It is mainly used for measurement matrix \f$W\f$.
  * If ((W mod 3) == 0) it will supress every third row
  */
-void utils::makeNonHomogenious(cv::Mat &m)
+void utils::makeNonHomogenious(Mat &m)
 {
     // Make W non-homogenious
-    bool isNonHomogenious = !( (m.rows % 3) == 0 && (m.at<double>(2,0) == 1));
+    bool isNonHomogenious = !( (m.rows() % 3) == 0 && (m(2,0) == 1));
     if (isNonHomogenious)
         return;
 
-    cv::Mat newM;
+    Mat newM;
+    newM.setOnes(2*m.rows()/3,m.cols());
 
-    for (int i = 0 ; i < m.rows / 3 ; i++){
-        newM.push_back(m.row(3*i));
-        newM.push_back(m.row(3*i + 1));
+    for (int i = 0 ; i < m.rows() / 3 ; i++){
+        newM.row(2*i    ) = m.row(3*i    );
+        newM.row(2*i + 1) = m.row(3*i + 1);
     }
 
-    m.release();
-    m = newM.clone();
+    m = newM;
 }
 
 /*! Copy elements of matrix with indices idx to vector
  * Equivalent to MATLAB: v = M(idx);
  */
-void utils::copyMatElementsToVector(const cv::Mat &mat, const cv::Mat &idx, std::vector<double> &vec)
+void utils::copyMatElementsToVector(const Mat &mat, const std::vector<Vec2> &idx, std::vector<double> &vec)
 {
-    int nbIdx = (int) idx.total();
+    int nbIdx = (int) idx.size();
 
     for (int i = 0; i < nbIdx; i++){
-        int col = (int) idx.at<cv::Point>(i).x;
-        int row = (int) idx.at<cv::Point>(i).y;
+        int row = (int) idx[i](0);
+        int col = (int) idx[i](1);
 
-        vec[i] = mat.at<double>(row,col);
+        vec[i] = mat(row,col);
     }
 }
 
 /*! Copy vector to matrix elements with indices idx
  * Equivalent to MATLAB: M(idx) = v;
  */
-void utils::copyVectorToMatElements(const std::vector<double> &vec, const cv::Mat &idx, cv::Mat &mat)
+void utils::copyVectorToMatElements(const std::vector<double> & vec, const std::vector<Vec2> &idx, Mat &mat)
 {
-    int nbIdx = (int) idx.total();
+    int nbIdx = (int) idx.size();
 
     for (int i = 0; i < nbIdx; i++){
-        int col = (int) idx.at<cv::Point>(i).x;
-        int row = (int) idx.at<cv::Point>(i).y;
+        int row = (int) idx[i](0);
+        int col = (int) idx[i](1);
 
-        mat.row(row).col(col) = vec[i];
+        mat(row,col) = vec[i];
     }
 }
 
@@ -83,7 +83,7 @@ void utils::copyVectorToMatElements(const std::vector<double> &vec, const cv::Ma
  * - CONCAT_HORIZONTAL (Horizontally) : M = [M1 M2 M3 M4]
  * - CONCAT_VERTICAL (Vertically)  : M = [M1;M2;M3;M4]
  */
-cv::Mat utils::concatenateMat(const std::vector<cv::Mat> &matArray, int method)
+cv::Mat utils::concatenateCvMat(const std::vector<cv::Mat> &matArray, int method)
 {
     cv::Mat outMat;
     if (method == CONCAT_VERTICAL){
@@ -99,7 +99,6 @@ cv::Mat utils::concatenateMat(const std::vector<cv::Mat> &matArray, int method)
     }
     return outMat.clone();
 }
-
 
 std::string utils::baseNameFromPath(const std::string &path) {
     std::string name = path;

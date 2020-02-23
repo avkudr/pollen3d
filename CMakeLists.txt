@@ -82,6 +82,13 @@ if (Ceres_FOUND)
     include_directories(${CERES_INCLUDE_DIRS})
 endif()
 
+# ----- Add Ceres --------------------------------------------
+
+find_package(NLopt REQUIRED)
+if (NLOPT_FOUND)
+    include_directories(${NLOPT_INCLUDE_DIRS})
+endif()
+
 # ----- Add ImGui --------------------------------------------
 
 find_package(ImGui REQUIRED)
@@ -130,6 +137,8 @@ set(SOURCES
     ./src/p3d/core/robust_estim.hpp
     ./src/p3d/core/utils.cpp
     ./src/p3d/core/utils.h
+    ./src/p3d/core/autocalib.cpp
+    ./src/p3d/core/autocalib.h
     ./src/p3d/data/project_data.cpp
     ./src/p3d/data/project_data.h
     ./src/p3d/data/project_settings.cpp
@@ -173,6 +182,9 @@ if(Eigen_FOUND)
 endif()
 if(Ceres_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} ${CERES_LIBRARIES})
+endif()
+if(NLOPT_FOUND)
+    set(TARGET_LIBS ${TARGET_LIBS} ${NLOPT_LIBRARIES})
 endif()
 if(OpenMP_CXX_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} OpenMP::OpenMP_CXX)

@@ -25,9 +25,9 @@ static T deg2rad(const T& angDeg){
     return angDeg * M_PI / 180.0;
 }
 
-void makeNonHomogenious(cv::Mat & m);
-void copyMatElementsToVector(const cv::Mat & mat, const cv::Mat & idx, std::vector<double> & vec);
-void copyVectorToMatElements(const std::vector<double> & vec, const cv::Mat & idx, cv::Mat & mat);
+void makeNonHomogenious(Mat & m);
+void copyMatElementsToVector(const Mat &mat, const std::vector<Vec2> &idx, std::vector<double> &vec);
+void copyVectorToMatElements(const std::vector<double> & vec, const std::vector<Vec2> &idx, Mat &mat);
 
 std::string baseNameFromPath(const std::string & path);
 bool endsWith(std::string const & value, std::string const & ending);
@@ -40,7 +40,29 @@ enum{
     CONCAT_VERTICAL,
 };
 
-cv::Mat concatenateMat(const std::vector<cv::Mat> & matArray, int method = CONCAT_VERTICAL);
+cv::Mat concatenateCvMat(const std::vector<cv::Mat> & matArray, int method = CONCAT_VERTICAL);
+
+template<typename T, int SizeX, int SizeY>
+Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> concatenateMat(const std::vector<Eigen::Matrix<T,SizeX,SizeY>> & matArray, int method = CONCAT_VERTICAL)
+{
+    Mat outMat;
+    if (method == CONCAT_VERTICAL){
+        outMat.setZero(SizeX * matArray.size(), SizeY);
+        int row = 0;
+        for(auto& m:matArray) {
+            outMat.block(row,0,SizeX,SizeY) = m;
+            row += SizeX;
+        }
+    }else{
+        outMat.setZero(SizeX, SizeY * matArray.size());
+        int col = 0;
+        for(auto& m:matArray) {
+            outMat.block(col,0,SizeX,SizeY) = m;
+            col += SizeY;
+        }
+    }
+    return outMat;
+}
 
 int nbAvailableThreads();
 

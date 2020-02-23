@@ -17,8 +17,8 @@
 #define P3D_ID_TYPE std::size_t
 #endif
 
-// Unfortunately I have to do it because of the fact that
-// operator== throws an exception on comparing two Mat's
+// Unfortunately, we have to do it because of the fact that
+// operator== throws an exception on comparing two Eigen::Matrix's
 #undef eigen_assert
 #define eigen_assert(x) if (!(x)) { printf("Eigen assertion failed\n"); }
 
@@ -28,6 +28,8 @@ using Vec2  = Eigen::Vector2d;
 using Vec3  = Eigen::Vector3d;
 using Vec3f = Eigen::Vector3f;
 using Vec4  = Eigen::Matrix<double,4,1>;
+using Mat2  = Eigen::Matrix<double,2,2>;
+using Mat23 = Eigen::Matrix<double,2,3>;
 using Mat3  = Eigen::Matrix3d;
 using Mat34 = Eigen::Matrix<double,3,4>;
 using Mat4  = Eigen::Matrix<double,4,4>;

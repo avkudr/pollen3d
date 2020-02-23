@@ -6,6 +6,7 @@
 
 #include "p3d/core/utils.h"
 #include "p3d/core/core.h"
+#include "p3d/core/autocalib.h"
 #include "p3d/project_manager.h"
 #include "p3d/data/project_data.h"
 
@@ -46,11 +47,13 @@ struct Diamond {
         slopes << 0, -42.0,  4.0, -32.0,
                   0, -24.0, 10.0, -16.0;
 
+        rhos = {0.0, 8.0, 13.0, 18.0};
+
         R.resize(4);
         R[0].setIdentity();
-        R[1] = utils::RfromEulerZYZt(deg2rad(slopes(0,1)), deg2rad(  -8.0),deg2rad(slopes(1,1)));
-        R[2] = utils::RfromEulerZYZt(deg2rad(slopes(0,2)), deg2rad( -13.0),deg2rad(slopes(1,2)));
-        R[3] = utils::RfromEulerZYZt(deg2rad(slopes(0,3)), deg2rad( -18.0),deg2rad(slopes(1,3)));
+        R[1] = utils::RfromEulerZYZt(deg2rad(slopes(0,1)), deg2rad(rhos[1]),deg2rad(slopes(1,1))) * R[0];
+        R[2] = utils::RfromEulerZYZt(deg2rad(slopes(0,2)), deg2rad(rhos[2]),deg2rad(slopes(1,2))) * R[1];
+        R[3] = utils::RfromEulerZYZt(deg2rad(slopes(0,3)), deg2rad(rhos[3]),deg2rad(slopes(1,3))) * R[2];
 
         t = std::vector<Vec2>(R.size(),{500,250});
 
@@ -94,6 +97,7 @@ struct Diamond {
     std::vector<Mat3> R;
     std::vector<Vec2> t;
     Mat2X slopes;
+    std::vector<double> rhos;
 };
 
 /*
@@ -122,7 +126,7 @@ TEST(DIAMOND, draw)
 }
 */
 
-TEST(DIAMOND, test_fundMatCeres)
+TEST(DIAMOND, test1_fundMatCeres)
 {
     Diamond d;
 
@@ -150,18 +154,47 @@ TEST(DIAMOND, test_fundMatCeres)
     EXPECT_LT(maxErrResidual,1e-5);
 }
 
-TEST(DIAMOND, test_slopAngles)
+TEST(DIAMOND, test2_slopAngles)
 {
     Diamond d;
-
-    int id1 = 0;
-    std::vector<Vec2> pts1 = d.pts(id1);
-    for (int id2 = 1; id2 < d.nbIm(); ++id2) {
+    for (int id1 = 0; id1 < d.nbIm() -1; ++id1) {
+        int id2 = id1 + 1;
+        std::vector<Vec2> pts1 = d.pts(id1);
         std::vector<Vec2> pts2 = d.pts(id2);
         Mat3 F = fundmat::findAffineCeres(pts1,pts2);
 
         auto angles = fundmat::slopAngles(F);
         EXPECT_FLOAT_EQ(utils::rad2deg(angles.first) , d.slopes(0,id2));
         EXPECT_FLOAT_EQ(utils::rad2deg(angles.second), d.slopes(1,id2));
+    }
+}
+
+TEST(DIAMOND, test3_autocalib)
+{
+    std::cout.setstate(std::ios_base::failbit);
+
+    Diamond d;
+    auto W = d.W();
+
+    AutoCalibrator autocalib;
+
+    autocalib.setMaxTimeStep1( 60 );
+    autocalib.setMaxTimeStep2( 2 );
+
+    autocalib.setMeasurementMatrix(W);
+    autocalib.setSlopeAngles(utils::deg2rad(d.slopes));
+    autocalib.run();
+
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    std::cout << autocalib.paramResult.format(CleanFmt) << "\n\n";
+    std::cout << "Calibration     :\n" << autocalib.getCalibrationMatrix().format(CleanFmt) << std::endl;
+    std::cout << "Camera matrices :\n" << utils::concatenateMat(autocalib.getCameraMatrices()).format(CleanFmt) << std::endl;
+    auto rot = utils::rad2deg(autocalib.getRotationAngles());
+    std::cout << "Rotation angles :\n" << rot.format(CleanFmt) << std::endl;
+
+    for (int i = 0; i < d.nbIm(); ++i){
+        EXPECT_NEAR(rot(i,0),d.slopes(0,i),1e-3);
+        EXPECT_NEAR(rot(i,1),d.rhos[i],1e-3);
+        EXPECT_NEAR(rot(i,2),d.slopes(1,i),1e-3);
     }
 }
