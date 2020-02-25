@@ -178,15 +178,13 @@ TEST(DIAMOND, test3_autocalib)
 
     AutoCalibrator autocalib(d.nbIm());
 
-    autocalib.setMaxTimeStep1( 60 );
-    autocalib.setMaxTimeStep2( 2 );
+    autocalib.setMaxTime( 60 );
 
     autocalib.setMeasurementMatrix(W);
     autocalib.setSlopeAngles(utils::deg2rad(d.slopes));
     autocalib.run();
 
     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-    std::cout << autocalib.paramResult.format(CleanFmt) << "\n\n";
     std::cout << "Calibration     :\n" << autocalib.getCalibrationMatrix().format(CleanFmt) << std::endl;
     std::cout << "Camera matrices :\n" << utils::concatenateMat(autocalib.getCameraMatrices()).format(CleanFmt) << std::endl;
     auto rot = utils::rad2deg(autocalib.getRotationAngles());

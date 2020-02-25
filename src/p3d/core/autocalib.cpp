@@ -30,18 +30,13 @@ PseudoInverseType<MatType> pseudoInverse(const MatType &a, double epsilon = std:
 #include "p3d/core/utils.h"
 #include "p3d/console_logger.h"
 
-AutoCalibrator::AutoCalibrator(const int nbIm) :
-    m_pars(BundleParams(nbIm))
+AutoCalibrator::AutoCalibrator(const int nbCams) :
+    m_pars(BundleParams(nbCams))
 {
-    nbCams = nbIm;
-    nbParams = -1;
-
-
-    //paramConst.setOnes(nbCams,nbParsPerCam); // 1 for varying parameter
-    paramBounds.setOnes(nbCams,nbParsPerCam);
+    paramBounds.setOnes(nbCams,BundleIdx_TOTAL);
     paramBounds *= M_PI/2;
-    paramOffset.setZero(nbCams,nbParsPerCam);
-    paramInitial.setZero(nbCams,nbParsPerCam);
+    paramOffset.setZero(nbCams,BundleIdx_TOTAL);
+    paramInitial.setZero(nbCams,BundleIdx_TOTAL);
 
     // Define default constant parameters:
     m_pars.setVaryingAll();
@@ -65,35 +60,28 @@ AutoCalibrator::AutoCalibrator(const int nbIm) :
     std::cout << paramInitial << std::endl;
 }
 
-void AutoCalibrator::setMeasurementMatrix(const Mat & inW)
-{
-    Win = inW;
-
-    tm.clear();
-
-    Mat Wmean;
-    computeWmean(Win, Wmean, tm);
-
-    utils::makeNonHomogenious(Wmean);
-    W = Wmean;
-
-    nbCams = W.rows() / 2;
-    nbPts  = W.cols() ;
-}
-
-void AutoCalibrator::init(){
-
-}
-
 AutoCalibrator::~AutoCalibrator()
 {
 
 }
 
+void AutoCalibrator::setMeasurementMatrix(const Mat & inW)
+{
+    Win = inW;
+
+    m_tm.clear();
+
+    Mat Wmean;
+    computeWmean(Win, Wmean, m_tm);
+
+    utils::makeNonHomogenious(Wmean);
+    W = Wmean;
+}
+
 void AutoCalibrator::setSlopeAngles(const Mat2X & slopes)
 {
-    if (slopes.cols() != nbCams) throw "Bad slope angles";
-    for (int i = 0; i < nbCams; ++i) {
+    if (slopes.cols() != m_pars.nbCams()) throw "Bad slope angles";
+    for (int i = 0; i < m_pars.nbCams(); ++i) {
         paramOffset(i,BundleIdx_Theta1) = slopes(0,i);
         paramOffset(i,BundleIdx_Theta2) = slopes(1,i);
         paramBounds(i,BundleIdx_Theta1) = utils::deg2rad(5.0); // +- 5 degrees
@@ -105,16 +93,17 @@ void AutoCalibrator::run()
 {
     LOG_INFO("Autocalibration...");
 
-    _minf = INFINITY;
-    _bestObjValue = INFINITY;
+    m_iterCnt = 0;
+    m_minf = INFINITY;
+    m_bestObjValue = INFINITY;
 
     std::vector<double> x0,lb,ub;
     this->getInitialConditionsAndBounds(x0, lb, ub);
-    this->setObjectiveFunction(AutoCalibrator::OBJFUNC_Rectification);
-    //this->setObjectiveFunction(Optimization::OBJFUNC_PseudoInverse);
+    this->setObjectiveFunction(AutoCalibrator::ObjFuncMethod_WminusMMW);
+    //this->setObjectiveFunction(Optimization::ObjFuncMethod_PseudoInverse);
 
     //nlopt::opt optimizer(nlopt::GN_CRS2_LM, this->getParametersNumber()); // 1
-    nlopt::opt optimizer(nlopt::GN_CRS2_LM, this->getParametersNumber()); // 1
+    nlopt::opt optimizer(nlopt::GN_CRS2_LM, m_nbParams); // 1
     optimizer.set_lower_bounds(lb);
     optimizer.set_upper_bounds(ub);
     optimizer.set_min_objective( *AutoCalibrator::wrap, this);
@@ -123,11 +112,11 @@ void AutoCalibrator::run()
     optimizer.set_ftol_abs(1e-10);
     optimizer.set_xtol_abs(1e-10);
 //    optimizer.set_xtol_rel(1e-8);
-    optimizer.set_maxtime(_maxTimeStep1);
+    optimizer.set_maxtime(m_maxTime);
 
-    optimizer.optimize(x0, _minf);
+    optimizer.optimize(x0, m_minf);
 
-    LOG_INFO("Found minimum: %.3f", _minf);
+    LOG_INFO("Found minimum: %.3f", m_minf);
 
     Mat paramX = 0 * paramOffset;
     auto paramVarIdx = m_pars.getVaryingPairsCamParam();
@@ -137,23 +126,22 @@ void AutoCalibrator::run()
 
 double AutoCalibrator::operator() (const std::vector<double> &x, std::vector<double> &grad)
 {
+    (void)(grad);
+    return distanceWminusMMW(x);
+    /*
     (void)(grad); // remove warning for unused variable
     switch (_objFuncMethod) {
-        case OBJFUNC_DistanceSquared: return distanceSquared(x); break;
-        case OBJFUNC_Distance       : return testFunction(x); break;
-        case OBJFUNC_PseudoInverse  : return distancePseudoInverse(x); break;
-        case OBJFUNC_Rectification  : return distanceWminusMMW(x); break;
+        case ObjFuncMethod_WminusMMW  : return distanceWminusMMW(x); break;
         default: break;
     }
     return 0;
-}
-
-double AutoCalibrator::testFunction (const std::vector<double> &x){
-    return (x[0]*x[0] + x[1]*x[1] + 20*sin(x[0]) + 20*sin(x[1]));
+    */
 }
 
 std::vector<Mat23> AutoCalibrator::getMfromParams(const std::vector<double> &x){
     std::vector<Mat23> M;
+
+    const auto nbCams = m_pars.nbCams();
     M.resize(nbCams);
     for (int i = 0; i < nbCams; i++) M[i].setZero();
 
@@ -190,81 +178,6 @@ std::vector<Mat23> AutoCalibrator::getMfromParams(const std::vector<double> &x){
     return M;
 }
 
-Mat AutoCalibrator::getPoints3DfromParams(const std::vector<double> &x){
-    Mat X;
-    X.setZero(3, nbPts);
-    for (int i = 0 ; i < nbPts ; i++){
-        X(0,i) = x[3 + 3*(nbCams-1) + 3*i];
-        X(1,i) = x[3 + 3*(nbCams-1) + 3*i + 1];
-        X(2,i) = x[3 + 3*(nbCams-1) + 3*i + 2];
-    }
-    return X;
-}
-
-double AutoCalibrator::distanceSquared(const std::vector<double> &x)
-{
-    _iterCnt++;
-
-    std::vector<Mat23> a = getMfromParams(x);
-    Mat M;
-    M.setZero(2*a.size(),3);
-    for (int i = 0; i < (int)a.size(); i++){
-        M.block(0,2*i, 2,3) = a[i];
-    }
-
-    Mat X = getPoints3DfromParams(x);
-
-    Mat reprojErrorMat = W - M*X;
-    double reprojError = reprojErrorMat.array().square().sum();
-    double s = x[2];
-
-    double objValue = std::abs( reprojError + s );
-
-    if (_iterCnt % nbParams * 500 == 0){
-        if ( objValue < _bestObjValue) _bestObjValue = objValue ;
-        std::stringstream stream;
-        std::cout << "  *  " << std::setw(15) << _iterCnt
-                  << "  *  " << std::setw(12) <<  std::setprecision(5) << _bestObjValue
-                  << "  *  " << std::setw(12) <<  std::setprecision(5) << objValue
-                  << std::endl << std::flush;
-    }
-
-    return objValue;
-}
-
-double AutoCalibrator::distancePseudoInverse(const std::vector<double> &x)
-{
-    _iterCnt++;
-
-    auto a = getMfromParams(x);
-    Mat M;
-    M.setZero(2*a.size(),3);
-    for (int i = 0; i < (int)a.size(); i++){
-        M.block(0,2*i, 2,3) = a[i];
-    }
-
-    Mat X = getPoints3DfromParams(x);
-
-    Mat Minv = pseudoInverse(M);
-
-    Mat reprojErrorMat = W - M*X;
-    double reprojError = reprojErrorMat.array().square().sum();
-    double s = x[2];
-
-    double objValue = std::abs( reprojError + s );
-
-    if (_iterCnt % nbParams * 500 == 0){
-        if ( objValue < _bestObjValue) _bestObjValue = objValue ;
-        std::stringstream stream;
-        std::cout << "  :  " << std::setw(15) << _iterCnt
-                  << "  :  " << std::setw(12) <<  std::setprecision(5) << _bestObjValue
-                  << "  :  " << std::setw(12) <<  std::setprecision(5) << objValue
-                  << std::endl << std::flush;
-    }
-
-    return objValue;
-}
-
 Mat2 AutoCalibrator::getCalibrationMatrixFromParamTable(const Mat &paramTable ) const{
     double k     = paramTable(0,BundleIdx_Focal);
     double alpha = paramTable(0,BundleIdx_Alpha);
@@ -277,6 +190,7 @@ Mat2 AutoCalibrator::getCalibrationMatrixFromParamTable(const Mat &paramTable ) 
 
 double AutoCalibrator::distanceWminusMMW(const std::vector<double> &x)
 {
+    const auto & nbCams = m_pars.nbCams();
     auto paramVarIdx = m_pars.getVaryingPairsCamParam();
     Mat paramX = 0 * paramOffset;
     utils::copyVectorToMatElements( x, paramVarIdx, paramX);
@@ -304,39 +218,34 @@ double AutoCalibrator::distanceWminusMMW(const std::vector<double> &x)
     Mat errorMat = W - M*pinvM*W;
     double objValue = errorMat.array().square().sum();
 
-    _iterCnt++;
-    if ( _iterCnt % 1000 == 0){
-        if ( objValue < _bestObjValue) _bestObjValue = objValue ;
+    m_iterCnt++;
+    if ( m_iterCnt % 1000 == 0){
+        if ( objValue < m_bestObjValue) m_bestObjValue = objValue ;
         std::stringstream stream;
-        std::cout << "  :  " << std::setw(15) << _iterCnt
-                  << "  :  " << std::setw(12) <<  std::setprecision(5) << _bestObjValue
+        std::cout << "  :  " << std::setw(15) << m_iterCnt
+                  << "  :  " << std::setw(12) <<  std::setprecision(5) << m_bestObjValue
                   << "  :  " << std::setw(12) <<  std::setprecision(5) << objValue
                   << std::endl << std::flush;
-        LOG_INFO("Iter: %5i, %5e, %5e", _iterCnt, _bestObjValue, objValue);
+        LOG_INFO("Iter: %5i, %5e, %5e", m_iterCnt, m_bestObjValue, objValue);
     }
 
     return objValue;
-}
-
-int AutoCalibrator::getParametersNumber()
-{
-    return nbParams;
 }
 
 void AutoCalibrator::getInitialConditionsAndBounds(std::vector<double> &_x0, std::vector<double> &_lb, std::vector<double> &_ub)
 {
     //paramVarIdx.clear();
     auto paramVarIdx = m_pars.getVaryingPairsCamParam();
-    nbParams = (int) paramVarIdx.size();
-    LOG_INFO("Number of parameters: %i", nbParams);
+    m_nbParams = (int) paramVarIdx.size();
+    LOG_INFO("Number of parameters: %i", m_nbParams);
 
     _x0.clear();
     _lb.clear();
     _ub.clear();
 
-    _x0 = std::vector<double>(nbParams);
-    _lb = std::vector<double>(nbParams);
-    _ub = std::vector<double>(nbParams);
+    _x0 = std::vector<double>(m_nbParams);
+    _lb = std::vector<double>(m_nbParams);
+    _ub = std::vector<double>(m_nbParams);
 
     Mat lbMat = -paramBounds;
     Mat ubMat =  paramBounds;
@@ -351,6 +260,7 @@ void AutoCalibrator::getInitialConditionsAndBounds(std::vector<double> &_x0, std
 
 std::vector<Mat34> AutoCalibrator::getCameraMatrices() const
 {
+    const auto & nbCams = m_pars.nbCams();
     std::vector<Mat34> Parray(nbCams);
 
     Mat2 A = getCalibrationMatrixFromParamTable(paramResult);
@@ -378,8 +288,8 @@ std::vector<Mat34> AutoCalibrator::getCameraMatrices() const
         P(1,1) = M(1,1);
         P(1,2) = M(1,2);
 
-        P(0,3) = tm[i](0,0);
-        P(1,3) = tm[i](1,0);
+        P(0,3) = m_tm[i](0,0);
+        P(1,3) = m_tm[i](1,0);
         P(2,3) = 1;
 
         Parray[i] = P;

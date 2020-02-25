@@ -46,6 +46,7 @@ public:
         m_constCams = std::vector<unsigned int>(nbCams,0);
     }
 
+    inline int nbCams() const { return m_constCams.size(); }
     int getParIdx(BundleParam_ p) { return 0; }
 
     bool isConst(BundleParam_ param, size_t camIdx) const { return ((m_constCams[camIdx] & param) != 0);}

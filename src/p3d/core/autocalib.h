@@ -8,59 +8,57 @@
 class AutoCalibrator
 {
 public:
+    enum ObjFuncMethod_{
+        ObjFuncMethod_WminusMMW
+    };
+
     AutoCalibrator() = delete;
     AutoCalibrator(const int nbIm);
 
     ~AutoCalibrator();
 
-    static double wrap(const std::vector<double> &x, std::vector<double> &grad, void *data) {
-        return (*reinterpret_cast<AutoCalibrator*>(data))(x, grad);
-    }
-
-    void setSlopeAngles(const Mat2X & slopes);
-    void setMeasurementMatrix(const Mat & inW);
-    void init();
     bool isInit() const { return W.rows() > 0 && W.cols() > 0; }
 
-    int _objFuncMethod = OBJFUNC_Rectification;
+    // ***** setters and getters
 
-    enum ObjFuncMethod{
-        OBJFUNC_DistanceSquared,
-        OBJFUNC_Distance,
-        OBJFUNC_PseudoInverse,
-        OBJFUNC_Rectification
-    };
+    void setObjectiveFunction(ObjFuncMethod_ objFuncMethod) { _objFuncMethod = objFuncMethod;}
+    void setSlopeAngles(const Mat2X & slopes);
+    void setMeasurementMatrix(const Mat & inW);
+    void setMaxTime(int maxTime){ m_maxTime = maxTime; }
 
-    double _minf;
-    double getMinf() const{ return _minf;}
+    std::vector<Mat34> getCameraMatrices() const;
+    std::vector<Vec2>  getTranslations() const { return m_tm; }
+    Mat2 getCalibrationMatrix() const;
+    Mat  getRotationAngles() const;
+    double getMinf() const{ return m_minf;}
 
-    int _maxTimeStep1 = 15;
-    int _maxTimeStep2 = 60;
-
-    void setMaxTimeStep1(int maxTime){ _maxTimeStep1 = maxTime; }
-    void setMaxTimeStep2(int maxTime){ _maxTimeStep2 = maxTime; }
+    // ***** magic happens here
 
     void run();
 
+private:
+
+    static double wrap(const std::vector<double> &x, std::vector<double> &grad, void *data) {
+        return (*reinterpret_cast<AutoCalibrator*>(data))(x, grad);
+    }
     double operator() (const std::vector<double> &x, std::vector<double> &grad);
-    double testFunction (const std::vector<double> &x);
-    double distanceSquared       (const std::vector<double> &x);
-    double distancePseudoInverse (const std::vector<double> &x);
-    double distanceWminusMMW     (const std::vector<double> &x);
+    double distanceWminusMMW (const std::vector<double> &x);
 
-    int getParametersNumber();
     void getInitialConditionsAndBounds(std::vector<double> & _x0, std::vector<double> & _lb, std::vector<double> & _ub);
-    void setObjectiveFunction(int objFuncMethod) { _objFuncMethod = objFuncMethod; _iterCnt = 0;}
 
-    bool isFeaturerScaled = true;
-    void useFeatureScaling(bool b) { isFeaturerScaled = b; }
+    void computeWmean(const Mat & Win, Mat & Wmean, std::vector<Vec2> & m_tm);
+    std::vector<Mat23> getMfromParams(const std::vector<double> &x);
+    Mat2 getCalibrationMatrixFromParamTable(const Mat &paramTable) const;
 
-    double _bestObjValue = HUGE_VAL;
-    int _iterCnt = 0;
+    int _objFuncMethod = ObjFuncMethod_WminusMMW;
+    double m_minf{HUGE_VAL};
+    double m_bestObjValue{HUGE_VAL};
+    int m_iterCnt{0};
+    int m_maxTime{15};
 
-    int nbCams, nbPts;
     Mat W;
     Mat Win;
+
     /** matrix defining optimization bounds. Size = number of images \f$\times\f$ number of parameters.
     *  lower bounds = -paramBounds;
     *  upper bounds = +paramBounds;
@@ -70,22 +68,11 @@ public:
      *  Actual value is calculated as offset + initial
      */
     Mat paramOffset;
-
     Mat paramInitial; ///< Initial values of parameters. Size = number of images \f$\times\f$ number of parameters
     Mat paramResult; ///< Resulting values of parameters. Offset + optimization results
-    int nbParams;
 
-    std::vector<Mat34> getCameraMatrices() const;
-    Mat2 getCalibrationMatrix() const;
-    Mat getRotationAngles() const;
-    Mat getPoints3D(const std::vector<double> &x) { return getPoints3DfromParams(x);}
+    int m_nbParams{-1};
 
-private:
-    const int nbParsPerCam = BundleIdx_TOTAL;
     BundleParams m_pars;
-    std::vector<Vec2> tm;
-    void computeWmean(const Mat & Win, Mat & Wmean, std::vector<Vec2> & tm);
-    std::vector<Mat23> getMfromParams(const std::vector<double> &x);
-    Mat getPoints3DfromParams(const std::vector<double> &x);
-    Mat2 getCalibrationMatrixFromParamTable(const Mat &paramTable) const;
+    std::vector<Vec2> m_tm;
 };
