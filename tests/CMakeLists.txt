@@ -16,6 +16,7 @@ include_directories(${GTEST_INCLUDE_DIR})
 add_executable(pollen3d_tests
     ./tests/test_paths.h
     ./tests/test_meta.h
+    ./tests/test_misc.h
     ./tests/test_fundmat.h
     ./tests/test_diamond.h
     ./tests/main_tests.cpp

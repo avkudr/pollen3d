@@ -1,5 +1,7 @@
 #include "console_logger.h"
 
+#ifdef LOG_TO_GUI
+
 ConsoleLogger *ConsoleLogger::m_instance = nullptr;
 
 void ConsoleLogger::render(ImGuiWindowFlags flags) {
@@ -75,3 +77,5 @@ void ConsoleLogger::render(ImGuiWindowFlags flags) {
     if (flags) ImGui::End();
     else ImGui::EndChild();
 }
+
+#endif

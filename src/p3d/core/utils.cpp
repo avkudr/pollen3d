@@ -50,13 +50,13 @@ void utils::makeNonHomogenious(Mat &m)
 /*! Copy elements of matrix with indices idx to vector
  * Equivalent to MATLAB: v = M(idx);
  */
-void utils::copyMatElementsToVector(const Mat &mat, const std::vector<Vec2> &idx, std::vector<double> &vec)
+void utils::copyMatElementsToVector(const Mat &mat, const std::vector<std::pair<int,int>> &idx, std::vector<double> &vec)
 {
     int nbIdx = (int) idx.size();
 
     for (int i = 0; i < nbIdx; i++){
-        int row = (int) idx[i](0);
-        int col = (int) idx[i](1);
+        int row = (int) idx[i].first;
+        int col = (int) idx[i].second;
 
         vec[i] = mat(row,col);
     }
@@ -65,13 +65,13 @@ void utils::copyMatElementsToVector(const Mat &mat, const std::vector<Vec2> &idx
 /*! Copy vector to matrix elements with indices idx
  * Equivalent to MATLAB: M(idx) = v;
  */
-void utils::copyVectorToMatElements(const std::vector<double> & vec, const std::vector<Vec2> &idx, Mat &mat)
+void utils::copyVectorToMatElements(const std::vector<double> & vec, const std::vector<std::pair<int, int> > &idx, Mat &mat)
 {
     int nbIdx = (int) idx.size();
 
     for (int i = 0; i < nbIdx; i++){
-        int row = (int) idx[i](0);
-        int col = (int) idx[i](1);
+        int row = (int) idx[i].first;
+        int col = (int) idx[i].second;
 
         mat(row,col) = vec[i];
     }

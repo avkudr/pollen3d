@@ -26,8 +26,8 @@ static T deg2rad(const T& angDeg){
 }
 
 void makeNonHomogenious(Mat & m);
-void copyMatElementsToVector(const Mat &mat, const std::vector<Vec2> &idx, std::vector<double> &vec);
-void copyVectorToMatElements(const std::vector<double> & vec, const std::vector<Vec2> &idx, Mat &mat);
+void copyMatElementsToVector(const Mat &mat, const std::vector<std::pair<int, int>> &idx, std::vector<double> &vec);
+void copyVectorToMatElements(const std::vector<double> & vec, const std::vector<std::pair<int, int>> &idx, Mat &mat);
 
 std::string baseNameFromPath(const std::string & path);
 bool endsWith(std::string const & value, std::string const & ending);

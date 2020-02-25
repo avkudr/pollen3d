@@ -12,6 +12,7 @@
 #include "p3d/console_logger.h"
 #include "p3d/data/image.h"
 #include "p3d/core/utils.h"
+#include "p3d/core/autocalib.h"
 #include "p3d/commands.h"
 
 #define P3D_PROJECT_EXTENSION ".yml.gz"
@@ -556,6 +557,49 @@ void ProjectManager::findMeasurementMatrix(ProjectData &data)
                 new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_measMat),W)
                 );
     LOG_OK("Measurement matrix: %ix%i",W.rows(),W.cols());
+}
+
+void ProjectManager::autocalibrate(ProjectData &data)
+{
+    auto W = data.getMeasurementMatrix();
+    if (W.cols() == 0 || W.rows() == 0) {
+        LOG_ERR("Meas mat should be estimated before autocalibration");
+        return;
+    }
+
+    Mat2X slopes;
+    slopes.setZero(2,data.nbImages());
+    for (auto i = 0; i < data.nbImagePairs(); ++i) {
+        auto F = data.imagePair(i)->getFundMat();
+        auto angles = fundmat::slopAngles(F);
+        slopes(0,i+1) = angles.first;
+        slopes(1,i+1) = angles.second;
+    }
+
+    AutoCalibrator autocalib(data.nbImages());
+
+    autocalib.setMaxTimeStep1( 60 );
+    autocalib.setMaxTimeStep2( 2 );
+
+    autocalib.setMeasurementMatrix(W);
+    autocalib.setSlopeAngles(slopes);
+    autocalib.run();
+
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    std::cout << autocalib.paramResult.format(CleanFmt) << "\n\n";
+    std::cout << "Calibration     :\n" << autocalib.getCalibrationMatrix().format(CleanFmt) << std::endl;
+    std::cout << "Camera matrices :\n" << utils::concatenateMat(autocalib.getCameraMatrices()).format(CleanFmt) << std::endl;
+    auto rot = utils::rad2deg(autocalib.getRotationAngles());
+
+    LOG_OK("Angles: [theta rho theta']");
+    std::stringstream ss;
+    ss << rot.format(CleanFmt);
+    auto rows = utils::split(ss.str(),"\n");
+    for (auto i = 0; i < rot.rows(); ++i) {
+        LOG_OK("Pair %i: %s", i, rows[i].c_str());
+    }
+
+    std::cout << "Rotation angles :\n" << rot.format(CleanFmt) << std::endl;
 }
 
 entt::meta_any ProjectManager::getSetting(const p3dSetting &name) {

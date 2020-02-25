@@ -137,6 +137,7 @@ set(SOURCES
     ./src/p3d/core/robust_estim.hpp
     ./src/p3d/core/utils.cpp
     ./src/p3d/core/utils.h
+    ./src/p3d/core/bundle_params.h
     ./src/p3d/core/autocalib.cpp
     ./src/p3d/core/autocalib.h
     ./src/p3d/data/project_data.cpp

@@ -40,6 +40,9 @@ public:
     // ***** Multiview
     void findMeasurementMatrixFull(ProjectData & data);
     void findMeasurementMatrix(ProjectData & data);
+    void autocalibrate(ProjectData & data);
+
+    // ***** Settings
     entt::meta_any getSetting(const p3dSetting & name);
     void setSetting(const p3dSetting & name, const entt::meta_any &value);
     void setSettings(const ProjectSettings & settings){ m_settings = settings; }

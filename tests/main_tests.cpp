@@ -2,6 +2,7 @@
 
 #include "test_paths.h"
 #include "test_meta.h"
+#include "test_misc.h"
 #include "test_fundmat.h"
 #include "test_diamond.h"
 

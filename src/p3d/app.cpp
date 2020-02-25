@@ -568,7 +568,13 @@ void Application::_drawTab_Multiview()
             };
             _doHeavyTask(f);
         }
-
+        if (ImGui::Button("Autocalibrate",ImVec2(0.6f*matchingWidgetW,50)))
+        {
+            auto f = [&]() {
+                ProjectManager::get()->autocalibrate(m_projectData);
+            };
+            _doHeavyTask(f);
+        }
         ImGui::EndTabItem();
 
         if (m_currentTab != Tab_Multiview) _resetAppState();
@@ -714,20 +720,26 @@ void Application::_drawProperties()
         if (imPair->hasMatches())
             drawProperty_basic(imPair->getNbMatches(),"matches","%i");
 
-        if (imPair->hasF())
-            drawProperty_matrix(imPair->getFundMat(),"fund. matrix");
+        if (imPair->hasF()) {
+            drawProperty_matrix(imPair->getFundMat(),"F","Fundamental matrix");
+            auto slopeAngles = fundmat::slopAngles(imPair->getFundMat());
+            drawProperty_basic(utils::rad2deg(slopeAngles.first),"theta","%0.3f");
+            drawProperty_basic(utils::rad2deg(slopeAngles.second),"theta'","%0.3f");
+        }
+
         return;
     }
 
     if (m_currentTab == Tab_Multiview)
     {
         const auto & Wfull = m_projectData.getMeasurementMatrixFull();
-        if (Wfull.rows() == 0 || Wfull.cols() == 0) return;
-        drawProperty_matrix(Wfull,"Wfull");
+        if (Wfull.rows() > 0 && Wfull.cols() > 0)
+            drawProperty_matrix(Wfull,"Wfull","Full measurement matrix");
 
         const auto & W = m_projectData.getMeasurementMatrix();
-        if (W.rows() == 0 || W.cols() == 0) return;
-        drawProperty_matrix(W,"W");
+        if (W.rows() > 0 && W.cols() > 0)
+            drawProperty_matrix(W,"W","Measurement matrix");
+
         return;
     }
 
@@ -736,10 +748,11 @@ void Application::_drawProperties()
 
 
 template<typename Type>
-void Application::drawProperty_basic(const Type &v, const std::string &name, const char *fmt)
+void Application::drawProperty_basic(const Type &v, const std::string &name, const char *fmt, const char *icon)
 {
     bool hovered = false;
-    ImGui::Text("%s %s", ICON_FA_CUBE, name.c_str());
+    auto icone = (icon != nullptr) ? icon : ICON_FA_CUBE;
+    ImGui::Text("%s %s", icone, name.c_str());
     if (ImGui::IsItemHovered()) hovered = true;
     ImGui::NextColumn();
     ImGui::Text(fmt,v);
@@ -753,7 +766,9 @@ void Application::drawProperty_basic(const Type &v, const std::string &name, con
 }
 
 template<typename Scalar, int SizeX, int SizeY>
-void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &A, const std::string &name)
+void Application::drawProperty_matrix(
+        const Eigen::Matrix<Scalar, SizeX, SizeY> &A,
+        const std::string &name, const std::string &longName)
 {
     static Eigen::IOFormat CleanFmt(5, 0, " ", "##", "", "");
     static Eigen::IOFormat CommaInitFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", ", ", "", "", " << ", ";");
@@ -772,6 +787,9 @@ void Application::drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> 
     if (hovered || ImGui::IsItemHovered())
     {
         ImGui::BeginTooltip();
+
+        if (longName != "")
+            ImGui::Text("%s\n", longName.c_str());
 
         int maxX = 12;
         int maxY = 12;

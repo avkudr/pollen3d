@@ -176,7 +176,7 @@ TEST(DIAMOND, test3_autocalib)
     Diamond d;
     auto W = d.W();
 
-    AutoCalibrator autocalib;
+    AutoCalibrator autocalib(d.nbIm());
 
     autocalib.setMaxTimeStep1( 60 );
     autocalib.setMaxTimeStep2( 2 );
