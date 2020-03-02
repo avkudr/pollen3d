@@ -12,6 +12,7 @@
 #include "p3d/core/utils.h"
 #include "p3d/console_logger.h"
 #include "p3d/core/serialization.h"
+#include "p3d/data/affine_camera.h"
 
 using std::vector;
 using std::string;
@@ -21,6 +22,7 @@ enum p3dImage_
     p3dImage_path = 0,
     p3dImage_descriptors = 1,
     p3dImage_keypoints = 2,
+    p3dImage_camera = 3,
 };
 
 class Image : public Serializable<Image>{
@@ -79,14 +81,23 @@ public:
     }
 
     inline bool operator==(const Image& i) const{
-        return _path == i._path;
+        if ( _path != i._path ) return false;
+        if (!(getCamera() == i.getCamera())) return false;
+        return true;
     }
+
+    // ***** camera parameters
+
+    void setCamera(const AffineCamera & c) { m_camera = c; }
+    const AffineCamera & getCamera() const { return m_camera; }
+    const Mat3 & getRrelative() const { return m_camera.getRrelative(); }
 
 private:
 
     std::string EMPTY_PATH = "<not found>";
     std::string _path = "<not found>";
     cv::Mat _imageCV;
+    AffineCamera m_camera{};
 
 public:
     std::vector<cv::KeyPoint> _kpts{};

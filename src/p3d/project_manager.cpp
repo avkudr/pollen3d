@@ -587,7 +587,17 @@ void ProjectManager::autocalibrate(ProjectData &data)
     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
     std::cout << "Calibration     :\n" << autocalib.getCalibrationMatrix().format(CleanFmt) << std::endl;
     std::cout << "Camera matrices :\n" << utils::concatenateMat(autocalib.getCameraMatrices()).format(CleanFmt) << std::endl;
-    auto rot = utils::rad2deg(autocalib.getRotationAngles());
+    auto rotRad = autocalib.getRotationAngles();
+
+    for (int i = 0; i < data.nbImages(); ++i) {
+        AffineCamera c;
+        c.setTheta1(rotRad(i,0));
+        c.setRho(rotRad(i,1));
+        c.setTheta2(rotRad(i,2));
+        data.image(i)->setCamera(c);
+    }
+
+    auto rot = utils::rad2deg(rotRad);
 
     LOG_OK("Angles: [theta rho theta']");
     std::stringstream ss;

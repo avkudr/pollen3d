@@ -91,6 +91,7 @@ TEST(META, meta_serializedTypes)
     EXPECT_TYPE_SERIALIZABLE(std::vector<double>);
 
     EXPECT_TYPE_SERIALIZABLE(Eigen::MatrixXf);
+    EXPECT_TYPE_SERIALIZABLE(AffineCamera);
 
 }
 
@@ -211,6 +212,60 @@ TEST(META, meta_serializeEigen)
         }
     }
 
+}
+
+TEST(META, meta_serializeAffineCamera)
+{
+    AffineCamera cSave;
+    cSave.setAlpha(1.1);
+    cSave.setFocal(2.0);
+    cSave.setSkew(-0.005);
+
+    {
+        cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
+        fs << "AffineCamera" << "{";
+        cSave.write(fs);
+        fs << "}";
+        fs.release();
+    }
+
+    AffineCamera cRead;
+    {
+        cv::FileStorage fs("test.yml", cv::FileStorage::READ);
+        cRead.read(fs["AffineCamera"]);
+        fs.release();
+    }
+    EXPECT_EQ(cSave, cRead);
+}
+
+TEST(META, meta_serializeImage)
+{
+    AffineCamera c;
+    c.setAlpha(1.1);
+    c.setFocal(2.0);
+    c.setSkew(-0.005);
+
+    Image imSave;
+    imSave.setCamera(c);
+    imSave.setPath("dummyPath");
+
+    {
+        cv::FileStorage fs("testSaveImage.yml", cv::FileStorage::WRITE);
+        fs << "Image" << "{";
+        imSave.write(fs);
+        fs << "}";
+        fs.release();
+    }
+
+    Image imRead;
+    {
+        cv::FileStorage fs("testSaveImage.yml", cv::FileStorage::READ);
+        imRead.read(fs["Image"]);
+        fs.release();
+    }
+    std::cout << imRead.getCamera().getA() << std::endl;
+    EXPECT_EQ(imSave.getPath(), imRead.getPath());
+    EXPECT_EQ(imSave.getCamera(), imRead.getCamera());
 }
 
 TEST(META, meta_serializeVecFloat)

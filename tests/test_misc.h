@@ -9,6 +9,7 @@
 #include "p3d/core/bundle_params.h"
 #include "p3d/project_manager.h"
 #include "p3d/data/project_data.h"
+#include "p3d/data/affine_camera.h"
 
 TEST(MISC, test_matchesToTable)
 {
@@ -38,28 +39,28 @@ TEST(MISC, test_bundleParams)
     const int nbCams = 3;
     BundleParams p(nbCams);
 
-    EXPECT_EQ(p.isConst(BundleParam_K,0),false);
-    EXPECT_EQ(p.isConst(BundleParam_K,1),false);
-    EXPECT_EQ(p.isConst(BundleParam_K,2),false);
+    EXPECT_EQ(p.isConst(p3dBundleParam_K,0),false);
+    EXPECT_EQ(p.isConst(p3dBundleParam_K,1),false);
+    EXPECT_EQ(p.isConst(p3dBundleParam_K,2),false);
 
-    p.setConstAllCams(BundleParam_K);
+    p.setConstAllCams(p3dBundleParam_K);
 
-    EXPECT_EQ(p.isConst(BundleParam_K,0),true);
-    EXPECT_EQ(p.isConst(BundleParam_K,1),true);
-    EXPECT_EQ(p.isConst(BundleParam_K,2),true);
+    EXPECT_EQ(p.isConst(p3dBundleParam_K,0),true);
+    EXPECT_EQ(p.isConst(p3dBundleParam_K,1),true);
+    EXPECT_EQ(p.isConst(p3dBundleParam_K,2),true);
 
-    EXPECT_EQ(p.isConst(BundleParam_Alpha,1),true);
-    EXPECT_EQ(p.isConst(BundleParam_Skew,1),true);
-    EXPECT_EQ(p.isConst(BundleParam_R,1),false);
+    EXPECT_EQ(p.isConst(p3dBundleParam_Alpha,1),true);
+    EXPECT_EQ(p.isConst(p3dBundleParam_Skew,1),true);
+    EXPECT_EQ(p.isConst(p3dBundleParam_R,1),false);
 
-    p.setVarying(BundleParam_R,{0});
-    EXPECT_EQ(p.isVarying(BundleParam_R,0),true);
-    EXPECT_EQ(p.isConst(BundleParam_R,0),false);
+    p.setVarying(p3dBundleParam_R,{0});
+    EXPECT_EQ(p.isVarying(p3dBundleParam_R,0),true);
+    EXPECT_EQ(p.isConst(p3dBundleParam_R,0),false);
 
-    p.setConst(BundleParam_t,{1,2});
-    EXPECT_EQ(p.isVarying(BundleParam_t,0),true);
-    EXPECT_EQ(p.isConst(BundleParam_t,1),true);
-    EXPECT_EQ(p.isConst(BundleParam_t,2),true);
+    p.setConst(p3dBundleParam_t,{1,2});
+    EXPECT_EQ(p.isVarying(p3dBundleParam_t,0),true);
+    EXPECT_EQ(p.isConst(p3dBundleParam_t,1),true);
+    EXPECT_EQ(p.isConst(p3dBundleParam_t,2),true);
 
     p.setConstPts();
     EXPECT_EQ(p.isConstPts(),true);
@@ -67,3 +68,23 @@ TEST(MISC, test_bundleParams)
     EXPECT_EQ(p.isConstPts(),false);
 
 }
+
+TEST(MISC, test_affineCamera)
+{
+    AffineCamera c;
+    EXPECT_TRUE(c.getA().isApprox(Mat2::Identity()));
+
+    Mat2 c1;
+    c1 << 2.2, -0.005, 0.0, 2.0;
+    c.setAlpha(1.1);
+    c.setFocal(2.0);
+    c.setSkew(-0.005);
+    EXPECT_TRUE(c.getA().isApprox(c1));
+
+    auto R1 = utils::RfromEulerZYZt(0.1,0.2,0.3);
+    c.setTheta1(0.1);
+    c.setRho(0.2);
+    c.setTheta2(0.3);
+    EXPECT_TRUE(c.getRrelative().isApprox(R1));
+}
+

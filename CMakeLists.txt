@@ -140,6 +140,8 @@ set(SOURCES
     ./src/p3d/core/bundle_params.h
     ./src/p3d/core/autocalib.cpp
     ./src/p3d/core/autocalib.h
+    ./src/p3d/data/affine_camera.h
+    ./src/p3d/data/affine_camera.cpp
     ./src/p3d/data/project_data.cpp
     ./src/p3d/data/project_data.h
     ./src/p3d/data/project_settings.cpp
@@ -200,3 +202,4 @@ endif()
 
 add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES})
 target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
+

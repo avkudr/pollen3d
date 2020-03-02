@@ -33,29 +33,29 @@ PseudoInverseType<MatType> pseudoInverse(const MatType &a, double epsilon = std:
 AutoCalibrator::AutoCalibrator(const int nbCams) :
     m_pars(BundleParams(nbCams))
 {
-    paramBounds.setOnes(nbCams,BundleIdx_TOTAL);
+    paramBounds.setOnes(nbCams,p3dBundleIdx_TOTAL);
     paramBounds *= M_PI/2;
-    paramOffset.setZero(nbCams,BundleIdx_TOTAL);
-    paramInitial.setZero(nbCams,BundleIdx_TOTAL);
+    paramOffset.setZero(nbCams,p3dBundleIdx_TOTAL);
+    paramInitial.setZero(nbCams,p3dBundleIdx_TOTAL);
 
     // Define default constant parameters:
     m_pars.setVaryingAll();
-    m_pars.setConstAllCams(BundleParam_K);
-    m_pars.setConstAllCams(BundleParam_t);
-    m_pars.setConst(BundleParam_R,{0});
+    m_pars.setConstAllCams(p3dBundleParam_K);
+    m_pars.setConstAllCams(p3dBundleParam_t);
+    m_pars.setConst(p3dBundleParam_R,{0});
 //    paramConst.col(K)     *= 0;
 //    paramConst.col(ALPHA) *= 0;
 //    paramConst.col(S)     *= 0;
 //    paramConst.block(0,RT1,1,3) *= 0;
 
     // Define default offset parameters:
-    paramOffset.col(BundleIdx_Focal).array() += 1;
-    paramOffset.col(BundleIdx_Alpha).array() += 1;
+    paramOffset.col(p3dBundleIdx_Focal).array() += 1;
+    paramOffset.col(p3dBundleIdx_Alpha).array() += 1;
 
     // Define default bounds (considered symmetric):
 
     // Define initial values. Actual value of parameter: offset + initial
-    paramInitial.block(1,BundleIdx_Rho,nbCams-1,1).array() = utils::deg2rad(5.0);
+    paramInitial.block(1,p3dBundleIdx_Rho,nbCams-1,1).array() = utils::deg2rad(5.0);
 
     std::cout << paramInitial << std::endl;
 }
@@ -82,10 +82,10 @@ void AutoCalibrator::setSlopeAngles(const Mat2X & slopes)
 {
     if (slopes.cols() != m_pars.nbCams()) throw "Bad slope angles";
     for (int i = 0; i < m_pars.nbCams(); ++i) {
-        paramOffset(i,BundleIdx_Theta1) = slopes(0,i);
-        paramOffset(i,BundleIdx_Theta2) = slopes(1,i);
-        paramBounds(i,BundleIdx_Theta1) = utils::deg2rad(5.0); // +- 5 degrees
-        paramBounds(i,BundleIdx_Theta2) = utils::deg2rad(5.0); // +- 5 degrees
+        paramOffset(i,p3dBundleIdx_Theta1) = slopes(0,i);
+        paramOffset(i,p3dBundleIdx_Theta2) = slopes(1,i);
+        paramBounds(i,p3dBundleIdx_Theta1) = utils::deg2rad(5.0); // +- 5 degrees
+        paramBounds(i,p3dBundleIdx_Theta2) = utils::deg2rad(5.0); // +- 5 degrees
     }
 }
 
@@ -179,9 +179,9 @@ std::vector<Mat23> AutoCalibrator::getMfromParams(const std::vector<double> &x){
 }
 
 Mat2 AutoCalibrator::getCalibrationMatrixFromParamTable(const Mat &paramTable ) const{
-    double k     = paramTable(0,BundleIdx_Focal);
-    double alpha = paramTable(0,BundleIdx_Alpha);
-    double s     = paramTable(0,BundleIdx_Skew);
+    double k     = paramTable(0,p3dBundleIdx_Focal);
+    double alpha = paramTable(0,p3dBundleIdx_Alpha);
+    double s     = paramTable(0,p3dBundleIdx_Skew);
     Mat2 A;
     A << alpha, s, 0, 1.;
     A *= k;
@@ -202,9 +202,9 @@ double AutoCalibrator::distanceWminusMMW(const std::vector<double> &x)
     std::vector<Mat3> Rarray(nbCams);
 
     for (auto i = 0; i < nbCams; i++){
-        double t1  = paramTable(i,BundleIdx_Theta1);
-        double rho = paramTable(i,BundleIdx_Rho);
-        double t2  = paramTable(i,BundleIdx_Theta2);
+        double t1  = paramTable(i,p3dBundleIdx_Theta1);
+        double rho = paramTable(i,p3dBundleIdx_Rho);
+        double t2  = paramTable(i,p3dBundleIdx_Theta2);
 
         Rarray[i] = utils::RfromEulerZYZt(t1,rho,t2);
         if (i != 0) Rarray[i] = Rarray[i] * Rarray[i-1];
@@ -250,7 +250,7 @@ void AutoCalibrator::getInitialConditionsAndBounds(std::vector<double> &_x0, std
     Mat lbMat = -paramBounds;
     Mat ubMat =  paramBounds;
 
-    lbMat(1,BundleIdx_Rho) = 0;
+    lbMat(1,p3dBundleIdx_Rho) = 0;
 
     utils::copyMatElementsToVector( paramInitial, paramVarIdx, _x0);
     utils::copyMatElementsToVector(       lbMat , paramVarIdx, _lb);
@@ -268,9 +268,9 @@ std::vector<Mat34> AutoCalibrator::getCameraMatrices() const
     std::vector<Mat3> Rarray(nbCams);
 
     for (auto i = 0; i < nbCams; i++){
-        double t1  = paramResult(i,BundleIdx_Theta1);
-        double rho = paramResult(i,BundleIdx_Rho);
-        double t2  = paramResult(i,BundleIdx_Theta2);
+        double t1  = paramResult(i,p3dBundleIdx_Theta1);
+        double rho = paramResult(i,p3dBundleIdx_Rho);
+        double t2  = paramResult(i,p3dBundleIdx_Theta2);
 
         Rarray[i] = utils::RfromEulerZYZt(t1,rho,t2);
         if (i != 0) Rarray[i] = Rarray[i] * Rarray[i-1];
@@ -305,7 +305,7 @@ Mat2 AutoCalibrator::getCalibrationMatrix() const
 
 Mat AutoCalibrator::getRotationAngles() const
 {
-    return paramResult.middleCols(BundleIdx_Theta1,3);
+    return paramResult.middleCols(p3dBundleIdx_Theta1,3);
 }
 
 void AutoCalibrator::computeWmean(const Mat & W, Mat & Wmean, std::vector<Vec2> & t){

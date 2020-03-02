@@ -12,7 +12,8 @@ int Image::initMeta()
         std::cout << "Reflecting: Image" << std::endl;
         entt::meta<Image>()
             .type("Image"_hs)
-            .data<&Image::setPath,&Image::getPath>(P3D_ID_TYPE(p3dImage_path));
+            .data<&Image::setPath,&Image::getPath>(P3D_ID_TYPE(p3dImage_path))
+            .data<&Image::setCamera,&Image::getCamera>(P3D_ID_TYPE(p3dImage_camera));
         SERIALIZE_TYPE_VECS(Image,"vector_Image"_hs);
         firstCall = false;
     }

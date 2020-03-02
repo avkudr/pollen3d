@@ -17,6 +17,11 @@ class Serializable;
             .func<&impl::_read<x>>("_read"_hs) \
             .func<&impl::_write<x>>("_write"_hs)
 
+#define SERIALIZED_ADD_READ_WRITE(x,name) \
+    entt::meta<x>() \
+            .func<&impl::_readCustom<x>>("_read"_hs) \
+            .func<&impl::_writeCustom<x>>("_write"_hs)
+
 #define SERIALIZE_TYPE_VEC(x,name) \
     entt::meta<std::vector<x>>() \
             .type(name) \
@@ -49,6 +54,16 @@ static void _read(cv::FileNode& node, P3D_ID_TYPE & id, Type & v){
     }
     node[name] >> t;
     v = t;
+}
+
+template <typename Type>
+static void _writeCustom(cv::FileStorage& fs, P3D_ID_TYPE & id, Type & f){
+    f.write(fs);
+}
+
+template <typename Type>
+static void _readCustom(cv::FileNode& node, P3D_ID_TYPE & id, Type & v){
+    v.read(node);
 }
 
 static void _readBool(cv::FileNode& node, P3D_ID_TYPE & id, bool & v){
@@ -147,6 +162,7 @@ class Serializable{
 
 public:
     Serializable(){
+
     }
 
     virtual ~Serializable(){}
@@ -179,12 +195,12 @@ public:
         cv::FileNode nodeL = node[nodeName];
 
         entt::resolve<T>().data([&](entt::meta_data data) {
-            entt::meta_func func = data.type().func("_read"_hs);
+            entt::meta_func func  = data.type().func("_read"_hs);
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
                 entt::meta_any old = data.get(*ptr);
                 entt::meta_any any = *old;
-                func.invoke(ptr,nodeL,data.identifier(),any);
+                func.invoke(old, nodeL, data.identifier(), any);
                 data.set(*ptr,any);
             } else {
                 LOG_ERR("not registered for read: %i", data.identifier());

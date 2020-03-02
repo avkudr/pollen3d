@@ -25,6 +25,11 @@ static T deg2rad(const T& angDeg){
     return angDeg * M_PI / 180.0;
 }
 
+template<typename T>
+static inline bool floatEq(const T& a, const T& b, double eps = 1e-5) {
+    return std::abs(a - b) < eps;
+}
+
 void makeNonHomogenious(Mat & m);
 void copyMatElementsToVector(const Mat &mat, const std::vector<std::pair<int, int>> &idx, std::vector<double> &vec);
 void copyVectorToMatElements(const std::vector<double> & vec, const std::vector<std::pair<int, int>> &idx, Mat &mat);

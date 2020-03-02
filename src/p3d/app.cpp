@@ -709,6 +709,7 @@ void Application::_drawProperties()
 
         drawProperty_basic(im->getPath().c_str(),"path","%s");
         drawProperty_basic(im->getNbFeatures(),"features","%i");
+        drawProperty_matrix(im->getRrelative(),"R","Rotation relative to previous image");
         return;
     }
 
