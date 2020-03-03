@@ -51,5 +51,4 @@ private:
     ProjectManager() {}
     static ProjectManager * m_instance;
     ProjectSettings m_settings;
-
 };

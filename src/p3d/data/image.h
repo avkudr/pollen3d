@@ -23,6 +23,7 @@ enum p3dImage_
     p3dImage_descriptors = 1,
     p3dImage_keypoints = 2,
     p3dImage_camera = 3,
+    p3dImage_translation = 4,
 };
 
 class Image : public Serializable<Image>{
@@ -83,14 +84,19 @@ public:
     inline bool operator==(const Image& i) const{
         if ( _path != i._path ) return false;
         if (!(getCamera() == i.getCamera())) return false;
+        if (!utils::floatEq(m_t[0],i.getTranslation()[0])) return false;
+        if (!utils::floatEq(m_t[1],i.getTranslation()[1])) return false;
         return true;
     }
 
     // ***** camera parameters
 
+    bool hasCamera() { return !m_camera.getA().isApprox(Mat2::Identity()); }
     void setCamera(const AffineCamera & c) { m_camera = c; }
     const AffineCamera & getCamera() const { return m_camera; }
-    const Mat3 & getRrelative() const { return m_camera.getRrelative(); }
+
+    void setTranslation(const Vec2 & t) { m_t = t; }
+    Vec2 getTranslation() const { return m_t; }
 
 private:
 
@@ -98,6 +104,7 @@ private:
     std::string _path = "<not found>";
     cv::Mat _imageCV;
     AffineCamera m_camera{};
+    Vec2 m_t{0,0};
 
 public:
     std::vector<cv::KeyPoint> _kpts{};
@@ -105,6 +112,7 @@ public:
 
     cv::Mat K;
     cv::Mat P;
+
     cv::Mat getIntrinsic() const {return K.clone();}
     cv::Mat getCameraMatrix() const {return P.clone();}
 };

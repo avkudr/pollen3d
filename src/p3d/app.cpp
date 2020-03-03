@@ -494,6 +494,7 @@ void Application::_drawTab_Stereo()
             {
                 auto f = [&]() {
                     ProjectManager::get()->rectifyImagePairs(m_projectData, {m_currentImage});
+                    m_textureNeedsUpdate = true;
                 };
                 _doHeavyTask(f);
             }
@@ -503,6 +504,7 @@ void Application::_drawTab_Stereo()
             {
                 auto f = [&]() {
                     ProjectManager::get()->rectifyImagePairs(m_projectData);
+                    m_textureNeedsUpdate = true;
                 };
                 _doHeavyTask(f);
             }
@@ -525,6 +527,7 @@ void Application::_drawTab_Stereo()
             {
                 auto f = [&]() {
                     ProjectManager::get()->findDisparityMap(m_projectData, {m_currentImage});
+                    m_textureNeedsUpdate = true;
                 };
                 _doHeavyTask(f);
             }
@@ -534,6 +537,7 @@ void Application::_drawTab_Stereo()
             {
                 auto f = [&]() {
                     ProjectManager::get()->findDisparityMap(m_projectData);
+                    m_textureNeedsUpdate = true;
                 };
                 _doHeavyTask(f);
             }
@@ -709,7 +713,10 @@ void Application::_drawProperties()
 
         drawProperty_basic(im->getPath().c_str(),"path","%s");
         drawProperty_basic(im->getNbFeatures(),"features","%i");
-        drawProperty_matrix(im->getRrelative(),"R","Rotation relative to previous image");
+        if (!im->getTranslation().isApprox(Vec2(0,0))){
+            drawProperty_matrix(im->getCamera().getK(),"K","Calibration matrix (intrinsic parameters)");
+            drawProperty_matrix(im->getTranslation(),"t","Camera translation (extrinsic parameters)");
+        }
         return;
     }
 
@@ -723,11 +730,14 @@ void Application::_drawProperties()
 
         if (imPair->hasF()) {
             drawProperty_matrix(imPair->getFundMat(),"F","Fundamental matrix");
-            auto slopeAngles = fundmat::slopAngles(imPair->getFundMat());
-            drawProperty_basic(utils::rad2deg(slopeAngles.first),"theta","%0.3f");
-            drawProperty_basic(utils::rad2deg(slopeAngles.second),"theta'","%0.3f");
+            drawProperty_basic(utils::rad2deg(imPair->getTheta1()),"theta","%0.3f deg");
+            drawProperty_basic(utils::rad2deg(imPair->getTheta2()),"theta'","%0.3f deg");
         }
 
+        if (imPair->hasRrelative()) {
+            drawProperty_basic(utils::rad2deg(imPair->getRho()),"rho","%0.3f deg");
+            drawProperty_matrix(imPair->getRrelative(),"R","Relative rotation between images");
+        }
         return;
     }
 
@@ -992,6 +1002,7 @@ void Application::_processKeyboardInput()
             };
             _doHeavyTask(f);
         } else if (ImGui::IsKeyPressed(ImGuiKey_Z)){
+            m_textureNeedsUpdate = true;
             CommandManager::get()->undoCommand();
         } else if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
 

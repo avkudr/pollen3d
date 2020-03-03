@@ -13,7 +13,9 @@ int Image::initMeta()
         entt::meta<Image>()
             .type("Image"_hs)
             .data<&Image::setPath,&Image::getPath>(P3D_ID_TYPE(p3dImage_path))
-            .data<&Image::setCamera,&Image::getCamera>(P3D_ID_TYPE(p3dImage_camera));
+            .data<&Image::setCamera,&Image::getCamera>(P3D_ID_TYPE(p3dImage_camera))
+            .data<&Image::setTranslation,&Image::getTranslation>(P3D_ID_TYPE(p3dImage_translation))
+                ;
         SERIALIZE_TYPE_VECS(Image,"vector_Image"_hs);
         firstCall = false;
     }

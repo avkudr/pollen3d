@@ -58,6 +58,9 @@ enum p3dImagePair_
     p3dImagePair_rectifiedImageLeft,
     p3dImagePair_rectifiedImageRight,
     p3dImagePair_disparityMap,
+    p3dImagePair_Theta1, // theta_1
+    p3dImagePair_Rho   , // rho
+    p3dImagePair_Theta2, // theta_2
 };
 
 class ImagePair : public Serializable<ImagePair>{
@@ -69,16 +72,14 @@ public:
     ImagePair(int imL = -1, int imR = -1);
     ~ImagePair() override;
 
+    inline bool operator==(const ImagePair& i) const;
+
     bool isValid() { return _imL >= 0 && _imR >= 0;}
     bool hasMatches() { return getNbMatches() > 0; }
     int getNbMatches() { return int(m_matches.size()); }
     const std::vector<Match> & getMatches() const { return m_matches; }
     void getMatchesAsMap(std::map<int,int> & map) const;
     void setMatches(const std::vector<Match> & matches) { m_matches = matches; }
-
-    inline bool operator==(const ImagePair& i) const{
-        return m_matches.size() == i.m_matches.size();
-    }
 
     cv::Mat getOneStereoImage(cv::Mat im1, cv::Mat im2);
 
@@ -123,6 +124,20 @@ public:
     void setDisparityMap(const cv::Mat & im) { m_disparityMap = im; }
     cv::Mat getDisparityMapPlot() const;
 
+    // **** rotation parameters
+
+    void setTheta1(double a) { m_theta1 = a; }
+    void setRho   (double a) { m_rho    = a; }
+    void setTheta2(double a) { m_theta2 = a; }
+
+    bool  hasRrelative() { return !utils::floatEq(m_rho,0.0); }
+    const Mat3 getRrelative() const { return utils::RfromEulerZYZt(m_theta1,m_rho,m_theta2); }
+    double getTheta1() const { return m_theta1; }
+    double getRho   () const { return m_rho   ; }
+    double getTheta2() const { return m_theta2; }
+
+    // **** serialization
+
     void writeAdditional(cv::FileStorage &fs) override {
         fs << "im_p" + std::to_string(int(p3dImagePair_rectifiedImageLeft))  << m_imLrectified;
         fs << "im_p" + std::to_string(int(p3dImagePair_rectifiedImageRight)) << m_imRrectified;
@@ -151,6 +166,10 @@ private:
     cv::Mat m_imLrectified;
     cv::Mat m_imRrectified;
     cv::Mat m_disparityMap;
+
+    double m_theta1{0.0};
+    double m_rho{0.0};
+    double m_theta2{0.0};
 };
 
 #endif // IMAGE_PAIR_H

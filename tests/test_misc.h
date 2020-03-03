@@ -80,11 +80,5 @@ TEST(MISC, test_affineCamera)
     c.setFocal(2.0);
     c.setSkew(-0.005);
     EXPECT_TRUE(c.getA().isApprox(c1));
-
-    auto R1 = utils::RfromEulerZYZt(0.1,0.2,0.3);
-    c.setTheta1(0.1);
-    c.setRho(0.2);
-    c.setTheta2(0.3);
-    EXPECT_TRUE(c.getRrelative().isApprox(R1));
 }
 

@@ -277,11 +277,18 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
         }
 
         Mat3 F = fundmat::findAffineCeres(ptsL,ptsR);
+        auto angles = fundmat::slopAngles(F);
+        double theta1 = angles.first;
+        double theta2 = angles.second;
 
-        auto cmd = new CommandSetProperty(data.imagePair(i),p3dImagePair_fundMat,F);
+        auto cmd1 = new CommandSetProperty(data.imagePair(i),p3dImagePair_fundMat,F);
+        auto cmd2 = new CommandSetProperty(data.imagePair(i),p3dImagePair_Theta1,theta1);
+        auto cmd3 = new CommandSetProperty(data.imagePair(i),p3dImagePair_Theta2,theta2);
         #pragma omp critical
         {
-            groupCmd->add(cmd);
+            groupCmd->add(cmd1);
+            groupCmd->add(cmd2);
+            groupCmd->add(cmd3);
             LOG_OK("Pair %i, estimated F (ceres)", i);
         }
     }
@@ -305,18 +312,15 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
 
         auto imPair = data.imagePair(i);
         if (!imPair) continue;
-        if (!imPair->hasF()) {
-            LOG_ERR("Pair %i, no fundamental matrix", i);
-            continue;
-        }
 
         auto imL = data.image(imPair->imL());
         auto imR = data.image(imPair->imR());
         if (!imL || !imR) continue;
 
-        auto angles = fundmat::slopAngles(imPair->getFundMat());
-        double angleL = angles.first;
-        double angleR = angles.second;
+        double angleL = imPair->getTheta1();
+        double angleR = imPair->getTheta2();
+
+        if (utils::floatEq(angleL,0.0) && utils::floatEq(angleR,0.0)) continue;
 
         Mat3 Tl,Tr;
         cv::Mat imLrect, imRrect;
@@ -587,14 +591,22 @@ void ProjectManager::autocalibrate(ProjectData &data)
     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
     std::cout << "Calibration     :\n" << autocalib.getCalibrationMatrix().format(CleanFmt) << std::endl;
     std::cout << "Camera matrices :\n" << utils::concatenateMat(autocalib.getCameraMatrices()).format(CleanFmt) << std::endl;
-    auto rotRad = autocalib.getRotationAngles();
 
-    for (int i = 0; i < data.nbImages(); ++i) {
+    AffineCamera c(autocalib.getCalibrationMatrix());
+    auto tvec = autocalib.getTranslations();
+
+    for (auto i = 0; i < data.nbImages(); ++i) {
         AffineCamera c;
-        c.setTheta1(rotRad(i,0));
-        c.setRho(rotRad(i,1));
-        c.setTheta2(rotRad(i,2));
         data.image(i)->setCamera(c);
+        data.image(i)->setTranslation(tvec[i]);
+    }
+
+    auto rotRad = autocalib.getRotationAngles();
+    // first line of rotRad is [0,0,0]
+    for (auto i = 0; i < data.nbImagePairs(); ++i) {
+        data.imagePair(i)->setTheta1(rotRad(i+1,0));
+        data.imagePair(i)->setRho(rotRad(i+1,1));
+        data.imagePair(i)->setTheta2(rotRad(i+1,2));
     }
 
     auto rot = utils::rad2deg(rotRad);

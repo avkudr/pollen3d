@@ -14,7 +14,10 @@ int ImagePair::initMeta()
                 .data<&ImagePair::setRightImage,&ImagePair::imR>(P3D_ID_TYPE(p3dImagePair_imR))
                 .data<&ImagePair::setFundMat,&ImagePair::getFundMat>(P3D_ID_TYPE(p3dImagePair_fundMat))
                 .data<&ImagePair::setRectifyingTransformL,&ImagePair::getRectifyingTransformL>(P3D_ID_TYPE(p3dImagePair_rectifyingTransformLeft))
-                .data<&ImagePair::setRectifyingTransformR,&ImagePair::getRectifyingTransformR>(P3D_ID_TYPE(p3dImagePair_rectifyingTransformRight));
+                .data<&ImagePair::setRectifyingTransformR,&ImagePair::getRectifyingTransformR>(P3D_ID_TYPE(p3dImagePair_rectifyingTransformRight))
+                .data<&ImagePair::setTheta1,&ImagePair::getTheta1>(P3D_ID_TYPE(p3dImagePair_Theta1))
+                .data<&ImagePair::setRho,   &ImagePair::getRho>   (P3D_ID_TYPE(p3dImagePair_Rho))
+                .data<&ImagePair::setTheta2,&ImagePair::getTheta2>(P3D_ID_TYPE(p3dImagePair_Theta2));
 
         SERIALIZE_TYPE_VECS(ImagePair,"vector_ImagePair"_hs);
 
@@ -36,6 +39,14 @@ ImagePair::ImagePair(int imL, int imR) : _imL(imL), _imR(imR)
 ImagePair::~ImagePair()
 {
 
+}
+
+bool ImagePair::operator==(const ImagePair &i) const{
+    if (m_matches.size() != i.m_matches.size()) return false;
+    if (!utils::floatEq(getTheta1(),i.getTheta1())) return false;
+    if (!utils::floatEq(getRho()   ,i.getRho()   )) return false;
+    if (!utils::floatEq(getTheta2(),i.getTheta2())) return false;
+    return true;
 }
 
 void ImagePair::getMatchesAsMap(std::map<int, int> &map) const
