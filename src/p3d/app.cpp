@@ -283,6 +283,7 @@ void Application::_drawTab_General()
     {
         auto f = [&]() {
             ProjectManager::get()->saveProject(&m_projectData,m_projectData.getProjectPath());
+            _resetAppState();
         };
         _doHeavyTask(f);
     }
@@ -291,6 +292,7 @@ void Application::_drawTab_General()
     {
         auto file = ProjectManager::get()->saveProjectDialog();
         ProjectManager::get()->saveProject(&m_projectData, file);
+        _resetAppState();
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FOLDER_OPEN"",ImVec2(70, buttonH)))
@@ -999,6 +1001,7 @@ void Application::_processKeyboardInput()
         if (ImGui::IsKeyPressed('s') || ImGui::IsKeyPressed('S')) {
             auto f = [&]() {
                 ProjectManager::get()->saveProject(&m_projectData,m_projectData.getProjectPath());
+                _resetAppState();
             };
             _doHeavyTask(f);
         } else if (ImGui::IsKeyPressed(ImGuiKey_Z)){

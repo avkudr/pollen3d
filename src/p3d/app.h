@@ -25,6 +25,13 @@ public:
     virtual void destroy() {}
 
     virtual void init() = 0;
+
+    void setWindowTitle(std::string str){
+        if (str == "") str = "*";
+        std::string title = "Pollen3D: " + str;
+        setWindowTitleImpl(title);
+    }
+
     void run(){
         while(isRunning()){
             preLoop();
@@ -46,6 +53,8 @@ public:
     void draw(int width, int height);
 
 protected:
+
+    virtual void setWindowTitleImpl(std::string str) = 0;
 
     void _drawMenuBar();
     void _drawTab();
@@ -75,6 +84,7 @@ protected:
     }
 
     void _resetAppState() {
+        setWindowTitle(m_projectData.getProjectPath());
         m_currentSection = Section_Default;
         m_textureNeedsUpdate = true;
     }

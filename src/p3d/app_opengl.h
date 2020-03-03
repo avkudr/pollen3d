@@ -37,6 +37,8 @@ public:
     void destroy() override;
 
     void init() override;
+    void setWindowTitleImpl(std::string str) override;
+
     bool isRunning() override{ return !glfwWindowShouldClose(m_window);}
     void preLoop() override;
     void postLoop() override;

@@ -21,6 +21,20 @@ void ApplicationOpenGL::init() {
     glfwMakeContextCurrent(m_window);
     glfwSwapInterval(1); // Enable vsync
 
+    auto loadIcon = [](GLFWimage * im, std::string path){
+        cv::Mat icon1 = cv::imread(path,CV_LOAD_IMAGE_UNCHANGED);
+        cv::Mat icon2;
+        cv::cvtColor(icon1,icon2,CV_BGR2RGBA);
+        im->width  = icon2.cols;
+        im->height = icon2.rows;
+        im->pixels = icon2.clone().data;
+    };
+
+    GLFWimage images[1];
+    loadIcon(&images[0],"../../assets/pollen3d_icon64.png");
+    //loadIcon(&images[1],"../../assets/pollen3d_icon32.png");
+    glfwSetWindowIcon(m_window, 1, images);
+
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
     bool err = gl3wInit() != 0;
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
@@ -43,6 +57,11 @@ void ApplicationOpenGL::init() {
 
     ImGui_ImplGlfw_InitForOpenGL(m_window, true);
     ImGui_ImplOpenGL3_Init(P3D_GLSL_VERSION);
+}
+
+void ApplicationOpenGL::setWindowTitleImpl(std::string str)
+{
+    glfwSetWindowTitle(m_window, str.c_str());
 }
 
 void ApplicationOpenGL::destroy() {
