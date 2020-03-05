@@ -25,13 +25,14 @@ int registerTypes() {
         SERIALIZE_TYPE_EIGEN(float, 3, 4, "Eigen__float34"_hs);
         SERIALIZE_TYPE_EIGEN(float,-1,-1, "Eigen__floatXX"_hs);
 
-        SERIALIZE_TYPE_EIGEN(double,2,1, "Eigen__double21"_hs);
-        SERIALIZE_TYPE_EIGEN(double,3,1, "Eigen__double31"_hs);
-        SERIALIZE_TYPE_EIGEN(double,3,4, "Eigen__double34"_hs);
-        SERIALIZE_TYPE_EIGEN(double,3,3, "Eigen__double33"_hs);
+        SERIALIZE_TYPE_EIGEN(double, 2, 1, "Eigen__double21"_hs);
+        SERIALIZE_TYPE_EIGEN(double, 3, 1, "Eigen__double31"_hs);
+        SERIALIZE_TYPE_EIGEN(double, 3, 4, "Eigen__double34"_hs);
+        SERIALIZE_TYPE_EIGEN(double, 3, 3, "Eigen__double33"_hs);
         SERIALIZE_TYPE_EIGEN(double,-1,-1, "Eigen__doubleXX"_hs);
-
-        //        SERIALIZE_TYPE_EIGEN(double,3,4, "Eigen_double34");
+        SERIALIZE_TYPE_EIGEN(double, 2,-1, "Eigen__double2X"_hs);
+        SERIALIZE_TYPE_EIGEN(double, 3,-1, "Eigen__double3X"_hs);
+        SERIALIZE_TYPE_EIGEN(double, 4,-1, "Eigen__double4X"_hs);
 
         firstCall = false;
     }

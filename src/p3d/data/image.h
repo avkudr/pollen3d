@@ -109,10 +109,4 @@ private:
 public:
     std::vector<cv::KeyPoint> _kpts{};
     cv::Mat _desc;
-
-    cv::Mat K;
-    cv::Mat P;
-
-    cv::Mat getIntrinsic() const {return K.clone();}
-    cv::Mat getCameraMatrix() const {return P.clone();}
 };

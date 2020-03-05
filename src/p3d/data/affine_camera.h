@@ -22,7 +22,7 @@ public:
     AffineCamera(const Mat2 & A);
     ~AffineCamera() override;
 
-    inline bool operator==(const AffineCamera& i) const;
+    bool operator==(const AffineCamera& i) const;
 
     // **** intrinsic parameters
 

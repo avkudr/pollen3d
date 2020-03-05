@@ -41,6 +41,10 @@ public:
     void findMeasurementMatrixFull(ProjectData & data);
     void findMeasurementMatrix(ProjectData & data);
     void autocalibrate(ProjectData & data);
+    void triangulate(ProjectData & data);
+    void triangulateDense(ProjectData & data);
+    void bundleAdjustment(ProjectData & data);
+    void exportPLY(ProjectData & data);
 
     // ***** Settings
     entt::meta_any getSetting(const p3dSetting & name);

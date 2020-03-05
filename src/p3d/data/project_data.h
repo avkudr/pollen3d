@@ -27,11 +27,14 @@ enum p3dData_
     p3dData_imagePairs  = 2004,
     p3dData_measMat     = 2005,
     p3dData_measMatFull = 2006,
+    p3dData_pts3D       = 2007,
 };
 
 class ProjectData : public Serializable<ProjectData>{
 
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     static int initMeta();
 
     ProjectData();
@@ -54,34 +57,9 @@ public:
 
     bool empty() const { return nbImages() == 0; }
 
-    Image * getREFACTOR(const int index);
-    ImagePair * getPairREFACTOR(const int index);
-
     std::string getProjectPath() const { return m_projectPath; }
     void setProjectPath(const std::string & path) {
         m_projectPath = path;
-    }
-
-    void estimateMeasurementMatrixFull();
-    void estimateMeasurementMatrix();
-    void estimateMeasurementMatrixKLT();
-    cv::Mat getMeasurementMatrixOLD() const { return _measurementMatrix.clone();}
-
-    cv::Mat _Pm;
-    void updateCameraMatrices();
-    cv::Mat getCameraMatrices(){
-        return _Pm;
-    }
-    std::vector<cv::Mat> getCameraMatricesInArray() const {
-        if (!_Pm.empty()){
-            std::vector<cv::Mat> P;
-            for (size_t i = 0; i < m_images.size(); i++){
-                P.push_back(m_images[i].getCameraMatrix().clone());
-            }
-            return P;
-        }
-        std::vector<cv::Mat> P;
-        return P;
     }
 
     Image * image(const std::size_t idx) {
@@ -103,8 +81,15 @@ public:
 
     const Mat & getMeasurementMatrix() const { return m_measurementMatrix; }
     void setMeasurementMatrix(const Mat & W) { m_measurementMatrix = W; }
-    const Mat & getMeasurementMatrixFull() const { return m_measurementMatrixFull; }
+    const Mat & getMeasurementMatrixFull() const { return m_measurementMatrixFull; } // [3*nbImages,nbPts]
     void setMeasurementMatrixFull(const Mat & Wf) { m_measurementMatrixFull = Wf; }
+
+    std::vector<Mat34> getCameraMatrices();
+    Mat getCameraMatricesMat();
+
+    const Mat4X & getPts3D() const { return m_pts3D; }
+    void setPts3D(const Mat4X &pts3D) { m_pts3D = pts3D; }
+
 private:
 
     Image * imagePairImage(const std::size_t idx, bool left) {
@@ -121,11 +106,5 @@ private:
     Mat m_measurementMatrix;
     Mat m_measurementMatrixFull;
 
-    cv::Mat _measurementMatrix;
-    cv::Mat _measurementMatrixFull;
-    std::vector<cv::Mat> _measMatFromDisp;
-
-    cv::Mat _matchesTableFull;
-    std::vector<cv::Point3d> _sparsePointCloud;
-    cv::Mat _sparsePointCloudMat;
+    Mat4X m_pts3D;
 };

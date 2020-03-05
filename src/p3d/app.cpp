@@ -559,28 +559,62 @@ void Application::_drawTab_Multiview()
 {
     if (ImGui::BeginTabItem("Multiview"))
     {
-        float matchingWidgetW = 400.0f;
-        if (ImGui::Button("Get full measurement matrix",ImVec2(0.6f*matchingWidgetW,50)))
+        if (ImGui::Button("Get full W"))
         {
             auto f = [&]() {
                 ProjectManager::get()->findMeasurementMatrixFull(m_projectData);
             };
             _doHeavyTask(f);
         }
-        if (ImGui::Button("Get measurement matrix",ImVec2(0.6f*matchingWidgetW,50)))
+        ImGui::SameLine();
+        if (ImGui::Button("Get W"))
         {
             auto f = [&]() {
                 ProjectManager::get()->findMeasurementMatrix(m_projectData);
             };
             _doHeavyTask(f);
         }
-        if (ImGui::Button("Autocalibrate",ImVec2(0.6f*matchingWidgetW,50)))
+        ImGui::SameLine();
+        if (ImGui::Button("Autocalibrate"))
         {
             auto f = [&]() {
                 ProjectManager::get()->autocalibrate(m_projectData);
             };
             _doHeavyTask(f);
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Triangulate"))
+        {
+            auto f = [&]() {
+                ProjectManager::get()->triangulate(m_projectData);
+            };
+            _doHeavyTask(f);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Triangulate dense"))
+        {
+            auto f = [&]() {
+                ProjectManager::get()->triangulateDense(m_projectData);
+            };
+            _doHeavyTask(f);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Export PLY"))
+        {
+            auto f = [&]() {
+                ProjectManager::get()->exportPLY(m_projectData);
+            };
+            _doHeavyTask(f);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Bundle adjustment"))
+        {
+            auto f = [&]() {
+                ProjectManager::get()->bundleAdjustment(m_projectData);
+            };
+            _doHeavyTask(f);
+        }
+
         ImGui::EndTabItem();
 
         if (m_currentTab != Tab_Multiview) _resetAppState();
@@ -753,6 +787,15 @@ void Application::_drawProperties()
         if (W.rows() > 0 && W.cols() > 0)
             drawProperty_matrix(W,"W","Measurement matrix");
 
+        const auto & P = m_projectData.getCameraMatricesMat();
+        if (P.rows() > 0 && P.cols() > 0)
+            drawProperty_matrix(P,"P","Concatenated camera matrices");
+
+        const auto & X = m_projectData.getPts3D();
+        if (X.cols() > 0)
+            drawProperty_matrix(X,"X","3D points");
+
+
         return;
     }
 
@@ -792,8 +835,9 @@ void Application::drawProperty_matrix(
 
     bool hovered = false;
     ImGui::Text("%s %s", ICON_FA_BORDER_ALL, name.c_str());
+    std::string popupName = "##matrix_prop_popup" + name + longName;
     if (ImGui::IsItemHovered()) hovered = true;
-    ImGui::OpenPopupOnItemClick("##matrix_prop_popup", 1);
+    ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
 
     ImGui::NextColumn();
     ImGui::Text("[%ix%i]", rows, cols);
@@ -829,7 +873,7 @@ void Application::drawProperty_matrix(
         ImGui::PopFont();
         ImGui::EndTooltip();
     }
-    if (ImGui::BeginPopupContextItem("##matrix_prop_popup"))
+    if (ImGui::BeginPopupContextItem(popupName.c_str()))
     {
         if(ImGui::Selectable("Copy to clipboard: Eigen")) {
             std::stringstream ss;

@@ -4,6 +4,8 @@
 #include <omp.h>
 #endif
 
+#include <Eigen/Eigen>
+
 void utils::saveFileToMatlab(std::string fileName, cv::Mat a, std::string varName){
     int rows = (int) a.rows;
     int cols = (int) a.cols;
@@ -234,4 +236,64 @@ Mat3 utils::skewSym(const Vec3 &a)
            a(2),     0, -a(0),
           -a(1),  a(0),     0;
     return out;
+}
+
+double utils::nullspace(const Eigen::Ref<const Mat> &A, Vec * nullsp)
+{
+    if (!nullsp) return -1.0;
+
+    if ( A.rows() >= A.cols() )
+    {
+        Eigen::JacobiSVD<Mat> svd( A, Eigen::ComputeFullV );
+        *nullsp = svd.matrixV().col( A.cols() - 1 );
+        return svd.singularValues()( A.cols() - 1 );
+    }
+    // Extend A with rows of zeros to make it square. It's a hack, but it is
+    // necessary until Eigen supports SVD with more columns than rows.
+    Mat A_extended( A.cols(), A.cols() );
+    A_extended.block( A.rows(), 0, A.cols() - A.rows(), A.cols() ).setZero();
+    A_extended.block( 0, 0, A.rows(), A.cols() ) = A;
+    return nullspace( A_extended, nullsp );
+}
+
+bool utils::exportToPly(const Mat4X &vec_points_white, const std::string &sFileName)
+{
+    std::ofstream outfile;
+    outfile.open(sFileName.c_str(), std::ios_base::out);
+    outfile << "ply"
+            << '\n' << "format ascii 1.0"
+            << '\n' << "element vertex " << vec_points_white.cols()
+            << '\n' << "property float x"
+            << '\n' << "property float y"
+            << '\n' << "property float z"
+            << '\n' << "property uchar red"
+            << '\n' << "property uchar green"
+            << '\n' << "property uchar blue"
+            << '\n' << "end_header" << std::endl;
+
+    for (auto i=0; i < vec_points_white.cols(); ++i)
+    {
+        outfile << vec_points_white.col(i).topRows(3).transpose()
+                << " 255 255 255" << "\n";
+    }
+    outfile.flush();
+    bool bOk = outfile.good();
+    outfile.close();
+    return bOk;
+}
+
+Vec4 utils::triangulate(const std::vector<Vec2> &x, const std::vector<Mat34> &Ps) {
+    int nviews = x.size();
+    assert(nviews == Ps.size());
+
+    Mat design = Mat::Zero(3*nviews, 4 + nviews);
+    for (int i = 0; i < nviews; i++) {
+        design.block<3, 4>(3*i, 0) = -Ps[i];
+        design(3*i + 0, 4 + i) = x[i](0);
+        design(3*i + 1, 4 + i) = x[i](1);
+        design(3*i + 2, 4 + i) = 1.0;
+    }
+    Vec X_and_alphas;
+    utils::nullspace(design, &X_and_alphas);
+    return Vec4(X_and_alphas.head(4));
 }

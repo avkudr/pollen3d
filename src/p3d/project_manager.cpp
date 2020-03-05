@@ -4,6 +4,8 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <Eigen/Dense>
+
 #include <vector>
 #include <map>
 
@@ -422,7 +424,7 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
 struct Params{
     int lowerBound = -1;
     int upperBound = 2;
-    int blockSize  = 9;
+    int blockSize  = 5;
 };
 
 struct ParamsFilter{
@@ -620,6 +622,142 @@ void ProjectManager::autocalibrate(ProjectData &data)
     }
 
     std::cout << "Rotation angles :\n" << rot.format(CleanFmt) << std::endl;
+}
+
+void ProjectManager::triangulate(ProjectData &data)
+{
+    LOG_DBG("MAKE BUTTON DISABLED");
+
+    auto Wf = data.getMeasurementMatrixFull();
+    if (Wf.rows() == 0 || Wf.cols() == 0) {
+        LOG_ERR("No full measurement matrix");
+        return;
+    }
+
+    auto Ps = data.getCameraMatrices();
+    if (Ps.size() == 0) {
+        LOG_ERR("No camera matrices");
+        return;
+    }
+
+    auto nbCams = Ps.size();
+    auto nbPts  = Wf.cols();
+    Mat4X pts3D;
+    pts3D.setZero(4,nbPts);
+
+    for (auto p = 0; p < nbPts; ++p) {
+        std::vector<Vec2> x;
+        std::vector<Mat34> P;
+        for (auto c = 0; c < nbCams; c++) {
+            if (Wf(3*c + 2,p) == 1.0) { // there is a point
+                x.emplace_back(Wf.block(3*c,p,2,1));
+                P.emplace_back(Ps[c]);
+            }
+        }
+        pts3D.col(p) = utils::triangulate(x,P);
+        pts3D.col(p) /= pts3D(3,p);
+    }
+
+    CommandManager::get()->executeCommand(
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3D),pts3D,false)
+                );
+    LOG_OK("Triangulated %i points", data.getPts3D().cols());
+}
+
+void ProjectManager::triangulateDense(ProjectData &data)
+{
+    LOG_ERR("Not implemented yet");
+    return;
+
+    if (data.nbImages() < 2) {
+        LOG_ERR("Not enough images");
+        return;
+    }
+
+    std::vector<Mat4X> pts3D(data.nbImagePairs());
+    for (int pairIdx = 0; pairIdx < 1/*data.nbImagePairs()*/; ++pairIdx) {
+        if (!data.imagePair(pairIdx)->hasDisparityMap()) return;
+        auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
+        if (dispValues.type() != CV_16S) return;
+        dispValues = dispValues / 16.0;
+
+        Mat3 Tl = data.imagePair(pairIdx)->getRectifyingTransformL();
+        Mat3 Tr = data.imagePair(pairIdx)->getRectifyingTransformR();
+
+        Mat3 Tli = Tl.inverse();
+        Mat3 Tri = Tr.inverse();
+
+        LOG_INFO("disp(%i)", dispValues.type());
+
+        // **** build potential matches
+        std::vector<std::vector<Vec2>> matches;
+        for (int u = 0; u < dispValues.cols; ++u) {
+            for (int v = 0; v < dispValues.rows; ++v) {
+                const double d = static_cast<double>(dispValues.at<short>(v,u));
+                if (d * 0.0 != 0.0) continue; // check for NaN
+
+                if (u == 200 && v == 200)
+                    LOG_INFO("disp(%i,%i): %0.3f", u, v, d);
+
+                Vec3 pl = Tli * Vec3(u  , v, 1.0);
+                Vec3 pr = Tri * Vec3(double(u)+d, v, 1.0);
+
+                if (pl(0) < 0) continue;
+                if (pl(1) < 0) continue;
+                if (pr(0) < 0) continue;
+                if (pr(1) < 0) continue;
+
+                //if (pl(0) > im1.width()) continue;
+                //if (pl(1) > im1.height()) continue;
+                //if (pr(0) > im2.width()) continue;
+                //if (pr(1) > im2.height()) continue;
+
+                matches.push_back({pl.topRows(2),pr.topRows(2)});
+            }
+        }
+
+        pts3D[pairIdx].setZero(4,matches.size());
+
+        auto Ps = data.getCameraMatrices();
+        std::vector<Mat34> P;
+        P.push_back(Ps[pairIdx]);
+        P.push_back(Ps[pairIdx+1]);
+
+    #ifdef WITH_OPENMP
+        omp_set_num_threads(utils::nbAvailableThreads());
+        #pragma omp parallel for
+    #endif
+        for (auto p = 0; p < matches.size(); ++p) {
+            pts3D[pairIdx].col(p) = utils::triangulate(matches[p],P);
+            pts3D[pairIdx].col(p) /= pts3D[pairIdx](3,p);
+        }
+    }
+
+    Mat4X result = utils::concatenateMat(pts3D,utils::CONCAT_HORIZONTAL);
+
+    CommandManager::get()->executeCommand(
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3D),result,false)
+                );
+    LOG_OK("Triangulated %i points", data.getPts3D().cols());
+}
+
+void ProjectManager::bundleAdjustment(ProjectData &data)
+{
+    LOG_ERR("Not implemented yet :)");
+}
+
+void ProjectManager::exportPLY(ProjectData &data)
+{
+    auto X = data.getPts3D();
+    if (X.cols() == 0) {
+        LOG_ERR("No reconstructed points...");
+        return;
+    }
+
+    utils::exportToPly(X,"point_cloud.ply");
+
+    LOG_OK("Exported point cloud: %i points", X.cols());
+
 }
 
 entt::meta_any ProjectManager::getSetting(const p3dSetting &name) {

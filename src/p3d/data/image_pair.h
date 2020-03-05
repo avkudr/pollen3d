@@ -72,7 +72,7 @@ public:
     ImagePair(int imL = -1, int imR = -1);
     ~ImagePair() override;
 
-    inline bool operator==(const ImagePair& i) const;
+    bool operator==(const ImagePair& i) const;
 
     bool isValid() { return _imL >= 0 && _imR >= 0;}
     bool hasMatches() { return getNbMatches() > 0; }

@@ -59,11 +59,13 @@ Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> concatenateMat(const std::vector<
             row += SizeX;
         }
     }else{
-        outMat.setZero(SizeX, SizeY * matArray.size());
+        int fullWidth = 0;
+        for (auto& m:matArray) fullWidth += m.cols();
+        outMat.setZero(SizeX, fullWidth);
         int col = 0;
         for(auto& m:matArray) {
-            outMat.block(col,0,SizeX,SizeY) = m;
-            col += SizeY;
+            outMat.block(col,0,SizeX,m.cols()) = m;
+            col += m.cols();
         }
     }
     return outMat;
@@ -74,6 +76,8 @@ int nbAvailableThreads();
 std::pair<Vec2,Vec2> lineIntersectBox(const Vec3& line, double w, double h/*, double x = 0.0, double y = 0.0*/);
 
 void matchesMapsToTable(std::vector<std::map<int, int> > matchesMaps, Mati &table);
+
+bool exportToPly(const Mat4X & vec_points_white, const std::string & sFileName);
 
 // **** Rotations
 
@@ -109,6 +113,10 @@ void EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2);
 
 // **** Math
 Mat3 skewSym(const Vec3 & a);
+double nullspace(const Eigen::Ref<const Mat> & A, Vec * nullsp);
+
+
+Vec4 triangulate(const std::vector<Vec2> &x, const std::vector<Mat34> &Ps);
 
 }
 
