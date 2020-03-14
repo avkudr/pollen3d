@@ -151,6 +151,17 @@ set(SOURCES
     ./src/p3d/data/image_pair.h
 )
 
+set(SOURCES
+    ${SOURCES}
+    ./src/p3d/viewer3d/viewer3d.h
+    ./src/p3d/viewer3d/viewer3d.cpp
+    ./src/p3d/viewer3d/eyecamera.h
+    ./src/p3d/viewer3d/eyecamera.cpp
+    ./src/p3d/viewer3d/viewer3d_opengl.h
+    ./src/p3d/viewer3d/viewer3d_opengl.cpp
+    ./src/p3d/viewer3d/shader_opengl.h
+)
+
 # Add source files
 #file(GLOB_RECURSE SOURCE_FILES 
 #	${CMAKE_SOURCE_DIR}/src/*.c

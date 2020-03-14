@@ -25,6 +25,8 @@ set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL QUIET)
 if (OPENGL_FOUND)
     add_definitions(-DWITH_IMGUI)
+    add_definitions(-DWITH_OPENGL)
+
     message( STATUS "OpenGL - FOUND")
 else()
     message( FATAL_ERROR "OpenGL - not found")

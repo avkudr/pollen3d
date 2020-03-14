@@ -4,7 +4,8 @@
 #include "examples/imgui_impl_opengl3.h"
 #include "examples/imgui_impl_glfw.h"
 
-#include "app.h"
+#include "p3d/app.h"
+#include "p3d/viewer3d/viewer3d_opengl.h"
 
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
 #include <GL/gl3w.h>    // Initialize with gl3wInit()
@@ -27,7 +28,6 @@ class ApplicationOpenGL : public Application
 {
 public:
     ApplicationOpenGL() {
-
     }
 
     ~ApplicationOpenGL() override{
@@ -48,6 +48,4 @@ public:
 
 private:
     GLFWwindow* m_window = nullptr;
-
-    GLuint m_textureId = 0;
 };

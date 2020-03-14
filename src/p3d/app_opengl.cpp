@@ -1,13 +1,14 @@
 #include "app_opengl.h"
-#include "opencv2/core.hpp"
-#include "opencv2/imgproc.hpp"
+
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "p3d/console_logger.h"
 
 #ifdef __APPLE__
 #define P3D_GLSL_VERSION "#version 120"
 #else
-#define P3D_GLSL_VERSION 
+#define P3D_GLSL_VERSION "#version 410"
 #endif
 
 void ApplicationOpenGL::init() {
@@ -57,6 +58,11 @@ void ApplicationOpenGL::init() {
 
     ImGui_ImplGlfw_InitForOpenGL(m_window, true);
     ImGui_ImplOpenGL3_Init(P3D_GLSL_VERSION);
+
+    m_textureId = new GLuint(0);
+    m_viewer3D = std::make_unique<Viewer3DOpenGL>();
+    m_viewer3D->init();
+
 }
 
 void ApplicationOpenGL::setWindowTitleImpl(std::string str)
@@ -65,6 +71,8 @@ void ApplicationOpenGL::setWindowTitleImpl(std::string str)
 }
 
 void ApplicationOpenGL::destroy() {
+    if (m_textureId) delete (GLuint*)m_textureId;
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -99,6 +107,8 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
     m_textureWidth  = 0;
     m_textureHeight = 0;
 
+    GLuint* tId = (GLuint*)m_textureId;
+
     if(im.empty()){
         LOG_DBG("textureAlloc: image is empty");
         return;
@@ -115,14 +125,13 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
         LOG_ERR("TextureDisplay: conversion failed");
     }
 
-    if(m_textureId) {
-        glDeleteTextures(1,&m_textureId);
-        m_textureId = 0;
+    if(tId) {
+        glDeleteTextures(1,tId);
+        *tId = 0;
     }
-    int error = glGetError();
 
-    glGenTextures(1, &m_textureId);
-    glBindTexture(GL_TEXTURE_2D, m_textureId);
+    glGenTextures(1, tId);
+    glBindTexture(GL_TEXTURE_2D, *tId);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -153,7 +162,8 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
 
 void ApplicationOpenGL::textureDisplay(const ImVec2 &size, ImVec2 uv0, ImVec2 uv1)
 {
-    if (m_textureId && isTextureReady()) {
-        ImGui::Image(ImTextureID(m_textureId), size, uv0, uv1);
+    GLuint* tId = (GLuint*)m_textureId;
+    if (*tId && isTextureReady()) {
+        ImGui::Image(ImTextureID(*tId), size, uv0, uv1);
     }
 }

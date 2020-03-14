@@ -12,6 +12,7 @@
 #include "p3d/data/project_data.h"
 #include "p3d/data/project_settings.h"
 
+#include "p3d/viewer3d/viewer3d.h"
 
 class Application
 {
@@ -52,6 +53,8 @@ public:
     void applyStyle();
     void draw(int width, int height);
 
+    void setTextureId(void * textureId) { m_textureId = textureId; }
+
 protected:
 
     virtual void setWindowTitleImpl(std::string str) = 0;
@@ -87,6 +90,7 @@ protected:
         setWindowTitle(m_projectData.getProjectPath());
         m_currentSection = Section_Default;
         m_textureNeedsUpdate = true;
+        m_viewer3dNeedsUpdate = true;
     }
 
     enum Tab{
@@ -125,10 +129,14 @@ protected:
     ImFont * m_fontMonoSmall = nullptr;
     ImFont * m_fontMono = nullptr;
 
+    void * m_textureId = nullptr;
     int m_textureWidth  = 0;
     int m_textureHeight = 0;
     int m_textureScale = 1.0f;
     int m_textureNeedsUpdate = false;
+    int m_viewer3dNeedsUpdate = false;
+
+    std::unique_ptr<Viewer3D> m_viewer3D{nullptr};
 
     bool m_initialised = false;
 

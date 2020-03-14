@@ -579,6 +579,7 @@ void Application::_drawTab_Multiview()
         {
             auto f = [&]() {
                 ProjectManager::get()->autocalibrate(m_projectData);
+                m_viewer3dNeedsUpdate = false;
             };
             _doHeavyTask(f);
         }
@@ -587,6 +588,7 @@ void Application::_drawTab_Multiview()
         {
             auto f = [&]() {
                 ProjectManager::get()->triangulate(m_projectData);
+                m_viewer3dNeedsUpdate = false;
             };
             _doHeavyTask(f);
         }
@@ -595,6 +597,7 @@ void Application::_drawTab_Multiview()
         {
             auto f = [&]() {
                 ProjectManager::get()->triangulateDense(m_projectData);
+                m_viewer3dNeedsUpdate = false;
             };
             _doHeavyTask(f);
         }
@@ -611,6 +614,7 @@ void Application::_drawTab_Multiview()
         {
             auto f = [&]() {
                 ProjectManager::get()->bundleAdjustment(m_projectData);
+                m_viewer3dNeedsUpdate = false;
             };
             _doHeavyTask(f);
         }
@@ -902,134 +906,148 @@ void Application::drawProperty_matrix(
 
 void Application::_drawCentral()
 {
-    if (!isOneOf(m_currentTab,{Tab_General,Tab_Image,Tab_Stereo})) {
-        float width  = ImGui::GetWindowContentRegionMax().x;
-        float height = ImGui::GetWindowContentRegionMax().y;
-        ImGui::BeginChild("Dummy",ImVec2(width,height));
-        ImGui::SetCursorPos(ImVec2(width/2.0f,height/2.0f));
-        ImGui::Text("Not implemented yet");
-        ImGui::EndChild();
+    float width  = ImGui::GetWindowContentRegionMax().x;
+    float height = ImGui::GetWindowContentRegionMax().y;
+
+    if (m_currentTab == Tab_Multiview && m_viewer3D != nullptr) {
+        m_viewer3D->setSize(width,height);
+
+        if (m_viewer3dNeedsUpdate) {
+            m_viewer3D->setPointCloud(m_projectData.getPts3D().topRows(3));
+            m_viewer3dNeedsUpdate = false;
+        }
+
+        m_viewer3D->draw();
+        m_textureWidth = width;
+        m_textureHeight = height;
+        setTextureId(m_viewer3D->textureId());
+        textureDisplay(ImVec2(width, height),ImVec2(0,0),ImVec2(1,1));
         return;
     }
 
-    const int SHOW_MATCHES = 0;
-    const int SHOW_EPILINES = 1;
-    static int display = SHOW_MATCHES;
+    if (isOneOf(m_currentTab,{Tab_General,Tab_Image,Tab_Stereo})) {
+        const int SHOW_MATCHES = 0;
+        const int SHOW_EPILINES = 1;
+        static int display = SHOW_MATCHES;
 
-    static bool showFeatures = true;
-    static bool showAnimated = false;
-    int controlBottomBarHeight = 35;
-    static float imageOpacity = 1.0f;
-    static int skipEvery = 1;
-    static float lineWidth = 1.0f;
+        static bool showFeatures = true;
+        static bool showAnimated = false;
+        int controlBottomBarHeight = 35;
+        static float imageOpacity = 1.0f;
+        static int skipEvery = 1;
+        static float lineWidth = 1.0f;
 
-    static float featuresSize = 2.5f;
-    static ImVec4 color = COLOR_GREEN;
+        static float featuresSize = 2.5f;
+        static ImVec4 color = COLOR_GREEN;
 
-    if (m_textureNeedsUpdate) {
-        cv::Mat matToBind;
-        if (m_currentTab == Tab_General || m_currentTab == Tab_Image) {
-            auto imPtr = m_projectData.image(m_currentImage);
-            if (imPtr) matToBind = imPtr->cvMat();
-        } else if (m_currentTab == Tab_Stereo) {
-            auto imPair = m_projectData.imagePair(m_currentImage);
-            if (imPair && imPair->isValid()) {
-                if (m_currentSection == Section_Default) {
-                    auto imIdxL = imPair->imL();
-                    auto imIdxR = imPair->imR();
-                    auto imL = m_projectData.image(imIdxL);
-                    auto imR = m_projectData.image(imIdxR);
+        if (m_textureNeedsUpdate) {
+            cv::Mat matToBind;
+            if (m_currentTab == Tab_General || m_currentTab == Tab_Image) {
+                auto imPtr = m_projectData.image(m_currentImage);
+                if (imPtr) matToBind = imPtr->cvMat();
+            } else if (m_currentTab == Tab_Stereo) {
+                auto imPair = m_projectData.imagePair(m_currentImage);
+                if (imPair && imPair->isValid()) {
+                    if (m_currentSection == Section_Default) {
+                        auto imIdxL = imPair->imL();
+                        auto imIdxR = imPair->imR();
+                        auto imL = m_projectData.image(imIdxL);
+                        auto imR = m_projectData.image(imIdxR);
 
-                    if (imL && imR)
-                        matToBind = utils::concatenateCvMat({imL->cvMat(),imR->cvMat()},utils::CONCAT_HORIZONTAL);
-                } else if (m_currentSection == Section_Rectified) {
-                    const auto & imL = imPair->getRectifiedImageL();
-                    const auto & imR = imPair->getRectifiedImageR();
-                    if (!imL.empty() && !imR.empty())
-                        matToBind = utils::concatenateCvMat({imL,imR},utils::CONCAT_HORIZONTAL);
-                } else if (m_currentSection == Section_DisparityMap) {
-                    matToBind = imPair->getDisparityMapPlot();
+                        if (imL && imR)
+                            matToBind = utils::concatenateCvMat({imL->cvMat(),imR->cvMat()},utils::CONCAT_HORIZONTAL);
+                    } else if (m_currentSection == Section_Rectified) {
+                        const auto & imL = imPair->getRectifiedImageL();
+                        const auto & imR = imPair->getRectifiedImageR();
+                        if (!imL.empty() && !imR.empty())
+                            matToBind = utils::concatenateCvMat({imL,imR},utils::CONCAT_HORIZONTAL);
+                    } else if (m_currentSection == Section_DisparityMap) {
+                        matToBind = imPair->getDisparityMapPlot();
+                    }
                 }
             }
+
+            if (!matToBind.empty()) textureBind(matToBind);
+            m_textureNeedsUpdate = false;
         }
 
-        if (!matToBind.empty()) textureBind(matToBind);
-        m_textureNeedsUpdate = false;
-    }
+        if (isTextureReady()) {
+            float width  = ImGui::GetWindowWidth();
+            float height = ImGui::GetWindowHeight() - controlBottomBarHeight;
+            float texAspect = m_textureHeight / float(m_textureWidth);
+            float winAspect = height / float(width);
 
-    if (isTextureReady()) {
-        float width  = ImGui::GetWindowWidth();
-        float height = ImGui::GetWindowHeight() - controlBottomBarHeight;
-        float texAspect = m_textureHeight / float(m_textureWidth);
-        float winAspect = height / float(width);
+            float newW, newH;
 
-        float newW, newH;
+            float imStartX = 0;
+            float imStartY = 0;
+            if (texAspect > winAspect){
+                newH = height;
+                newW = newH / texAspect;
+                imStartX = (width - newW)/2.0f;
+            } else {
+                newW = width;
+                newH = newW * texAspect;
+                imStartY = (height - newH)/2.0f;
+            }
 
-        float imStartX = 0;
-        float imStartY = 0;
-        if (texAspect > winAspect){
-            newH = height;
-            newW = newH / texAspect;
-            imStartX = (width - newW)/2.0f;
+            ImGui::SetCursorPos(ImVec2(imStartX,imStartY));
+            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, imageOpacity);
+            textureDisplay(ImVec2(newW, newH),ImVec2(0,0),ImVec2(1,1));
+            ImGui::PopStyleVar();
+
+            ImVec2 winPos = ImGui::GetWindowPos();
+            const float posX = winPos.x + imStartX;
+            const float posY = winPos.y + imStartY;
+
+            if (isOneOf(m_currentTab,{Tab_General,Tab_Image})) {
+                if (showFeatures) _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH),color,featuresSize);
+            } else if (m_currentTab == Tab_Stereo) {
+                if (m_currentSection == Section_Default) {
+                    if (display == SHOW_MATCHES) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),color,lineWidth,skipEvery);
+                    else if (display == SHOW_EPILINES) _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),color,lineWidth,skipEvery);
+                }
+            }
         } else {
-            newW = width;
-            newH = newW * texAspect;
-            imStartY = (height - newH)/2.0f;
+            ImGui::Text("No image to display");
         }
 
-        ImGui::SetCursorPos(ImVec2(imStartX,imStartY));
-        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, imageOpacity);
-        textureDisplay(ImVec2(newW, newH),ImVec2(0,0),ImVec2(1,1));
-        ImGui::PopStyleVar();
-
-        ImVec2 winPos = ImGui::GetWindowPos();
-        const float posX = winPos.x + imStartX;
-        const float posY = winPos.y + imStartY;
-
-        if (isOneOf(m_currentTab,{Tab_General,Tab_Image})) {
-            if (showFeatures) _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH),color,featuresSize);
+        ImGui::PushFont(m_fontMonoSmall);
+        ImGui::SetCursorPos(ImVec2(0,ImGui::GetWindowHeight() - controlBottomBarHeight));
+        ImGui::Separator();
+        ImGui::PushItemWidth(100);
+        ImGui::SliderFloat("##image-opacity", &imageOpacity, 0.0f, 1.0f, "opacity:%.2f");
+        ImGui::SameLine();
+        if (isOneOf(m_currentTab,{Tab_General,Tab_Image})){
+            ImGui::Text("--");
+            ImGui::SameLine();
+            ImGui::Checkbox("Show features",&showFeatures);
+            ImGui::SameLine();
+            ImGui::Text("--");
+            ImGui::SameLine();
+            ImGui::SliderFloat("##feature-size",&featuresSize, 1.0f,15.0f, "feat_size:%.1f");
         } else if (m_currentTab == Tab_Stereo) {
             if (m_currentSection == Section_Default) {
-                if (display == SHOW_MATCHES) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),color,lineWidth,skipEvery);
-                else if (display == SHOW_EPILINES) _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),color,lineWidth,skipEvery);
+                ImGui::Text("--"); ImGui::SameLine();
+                ImGui::RadioButton("matches", &display, 0); ImGui::SameLine();
+                ImGui::RadioButton("epilines", &display, 1);
             }
+            ImGui::SameLine();
+            const char * sliderText = (skipEvery == 1) ? "show all" : "skip every:%i";
+            ImGui::SliderInt("##percentage_of_features", &skipEvery, 1, 10, sliderText);
+            ImGui::SameLine();
+            ImGui::SliderFloat("##lineWidth", &lineWidth, 1.0f, 5.0f, "line width");
         }
-    } else {
-        ImGui::Text("No image to display");
+        if (isOneOf(m_currentTab,{Tab_General,Tab_Image})/* || (display == SHOW_MATCHES)*/) {
+            ImGui::SameLine();
+            ImGui::ColorEdit4("MyColor##3", (float*)&color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel );
+            ImGui::SameLine();
+        }
+        ImGui::PopFont();
+        return;
     }
 
-    ImGui::PushFont(m_fontMonoSmall);
-    ImGui::SetCursorPos(ImVec2(0,ImGui::GetWindowHeight() - controlBottomBarHeight));
-    ImGui::Separator();
-    ImGui::PushItemWidth(100);
-    ImGui::SliderFloat("##image-opacity", &imageOpacity, 0.0f, 1.0f, "opacity:%.2f");
-    ImGui::SameLine();
-    if (isOneOf(m_currentTab,{Tab_General,Tab_Image})){
-        ImGui::Text("--");
-        ImGui::SameLine();
-        ImGui::Checkbox("Show features",&showFeatures);
-        ImGui::SameLine();
-        ImGui::Text("--");
-        ImGui::SameLine();
-        ImGui::SliderFloat("##feature-size",&featuresSize, 1.0f,15.0f, "feat_size:%.1f");
-    } else if (m_currentTab == Tab_Stereo) {
-        if (m_currentSection == Section_Default) {
-            ImGui::Text("--"); ImGui::SameLine();
-            ImGui::RadioButton("matches", &display, 0); ImGui::SameLine();
-            ImGui::RadioButton("epilines", &display, 1);
-        }
-        ImGui::SameLine();
-        const char * sliderText = (skipEvery == 1) ? "show all" : "skip every:%i";
-        ImGui::SliderInt("##percentage_of_features", &skipEvery, 1, 10, sliderText);
-        ImGui::SameLine();
-        ImGui::SliderFloat("##lineWidth", &lineWidth, 1.0f, 5.0f, "line width");
-    }
-    if (isOneOf(m_currentTab,{Tab_General,Tab_Image})/* || (display == SHOW_MATCHES)*/) {
-        ImGui::SameLine();
-        ImGui::ColorEdit4("MyColor##3", (float*)&color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel );
-        ImGui::SameLine();
-    }
-    ImGui::PopFont();
+
 }
 
 void Application::_processKeyboardInput()
