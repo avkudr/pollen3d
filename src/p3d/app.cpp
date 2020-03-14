@@ -252,7 +252,7 @@ void Application::_drawTab()
         if (ImGui::BeginTabItem("Point cloud"))
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,0,0,1));
-            ImGui::Text("ID: 0123456789");
+            ImGui::Text("May come soon ;)");
             ImGui::PopStyleColor();
             ImGui::EndTabItem();
             if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
@@ -579,7 +579,7 @@ void Application::_drawTab_Multiview()
         {
             auto f = [&]() {
                 ProjectManager::get()->autocalibrate(m_projectData);
-                m_viewer3dNeedsUpdate = false;
+                m_viewer3dNeedsUpdate = true;
             };
             _doHeavyTask(f);
         }
@@ -588,7 +588,7 @@ void Application::_drawTab_Multiview()
         {
             auto f = [&]() {
                 ProjectManager::get()->triangulate(m_projectData);
-                m_viewer3dNeedsUpdate = false;
+                m_viewer3dNeedsUpdate = true;
             };
             _doHeavyTask(f);
         }
@@ -597,7 +597,7 @@ void Application::_drawTab_Multiview()
         {
             auto f = [&]() {
                 ProjectManager::get()->triangulateDense(m_projectData);
-                m_viewer3dNeedsUpdate = false;
+                m_viewer3dNeedsUpdate = true;
             };
             _doHeavyTask(f);
         }
@@ -614,14 +614,14 @@ void Application::_drawTab_Multiview()
         {
             auto f = [&]() {
                 ProjectManager::get()->bundleAdjustment(m_projectData);
-                m_viewer3dNeedsUpdate = false;
+                m_viewer3dNeedsUpdate = true;
             };
             _doHeavyTask(f);
         }
 
         ImGui::EndTabItem();
 
-        if (m_currentTab != Tab_Multiview) _resetAppState();
+        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
         m_currentTab = Tab_Multiview;
     }
 }
@@ -913,6 +913,7 @@ void Application::_drawCentral()
         m_viewer3D->setSize(width,height);
 
         if (m_viewer3dNeedsUpdate) {
+            m_viewer3D->init();
             m_viewer3D->setPointCloud(m_projectData.getPts3D().topRows(3));
             m_viewer3dNeedsUpdate = false;
         }
@@ -968,6 +969,10 @@ void Application::_drawCentral()
             }
 
             if (!matToBind.empty()) textureBind(matToBind);
+            else {
+                m_textureHeight = 0;
+                m_textureWidth  = 0;
+            }
             m_textureNeedsUpdate = false;
         }
 

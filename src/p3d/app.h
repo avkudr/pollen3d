@@ -45,7 +45,7 @@ public:
     virtual void preLoop() = 0;
     virtual void postLoop() = 0;
 
-    bool isTextureReady() const { return m_textureWidth > 0 && m_textureHeight > 0; }
+    bool isTextureReady() const { return m_textureId && m_textureWidth > 0 && m_textureHeight > 0; }
     virtual void textureBind(const cv::Mat & im) = 0;
     virtual void textureDisplay(const ImVec2 & size, ImVec2 uv0 = ImVec2(0,0), ImVec2 uv1 = ImVec2(1,1)) = 0;
 
@@ -89,8 +89,8 @@ protected:
     void _resetAppState() {
         setWindowTitle(m_projectData.getProjectPath());
         m_currentSection = Section_Default;
-        m_textureNeedsUpdate = true;
         m_viewer3dNeedsUpdate = true;
+        m_textureNeedsUpdate = true;
     }
 
     enum Tab{

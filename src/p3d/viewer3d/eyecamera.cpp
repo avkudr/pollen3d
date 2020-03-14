@@ -62,7 +62,7 @@ void EyeCamera::moveBackForward(float step)
 {
     distance = step * distance;
     position(2) = distance;
-    std::cout << "distance: " << position(2) << std::endl;
+    //std::cout << "distance: " << position(2) << std::endl;
 }
 
 void EyeCamera::strafeLeftRight(float step)
