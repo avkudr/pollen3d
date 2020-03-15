@@ -10,6 +10,18 @@
 
 #include <opencv2/core.hpp>
 
+namespace impl {
+    inline bool isMetaEqual(const entt::meta_any &lhs, const entt::meta_any &rhs) {
+        // We have to do this because Eigen operator== throws an exception if
+        // matrices are of the different size...
+        try {
+            return (lhs == rhs);
+        } catch (...) {
+            return false;
+        }
+    }
+}
+
 class Command
 {
 public:
@@ -50,14 +62,7 @@ public:
 
         m_from = entt::meta_any{m_data.get(*instance)};
 
-        // I have to do this because Eigen operator== throws an exception if
-        // matrices are of the different size...
-        bool areDifferent = false;
-        try {
-            areDifferent = (m_to != m_from);
-        } catch (const Exception & e) {
-            areDifferent = true;
-        }
+        bool areDifferent = !impl::isMetaEqual(m_to, m_from);
 
         if (!compareWithOld) m_isValid = true;
         else if (m_to.type() == m_data.type() && areDifferent) {

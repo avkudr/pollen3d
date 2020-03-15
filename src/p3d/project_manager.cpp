@@ -136,11 +136,19 @@ void ProjectManager::saveProject(ProjectData *data, std::string path) {
     }
 }
 
+void ProjectManager::closeProject(ProjectData *data)
+{
+    if (data)
+        *data = ProjectData();
+}
+
 void ProjectManager::openProject(ProjectData *data, std::string path)
 {
     if (!data) return;
     if (path == "") return;
     if (!utils::endsWith(path,P3D_PROJECT_EXTENSION)) return;
+
+    closeProject(data);
 
     LOG_OK( "Loading %s", path.c_str() );
 
@@ -536,7 +544,7 @@ void ProjectManager::findMeasurementMatrixFull(ProjectData &data)
     }
     //data.setMeasurementMatrixFull(Wfull);
     CommandManager::get()->executeCommand(
-                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_measMatFull),Wfull)
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_measMatFull),Wfull,false)
                 );
     LOG_OK("Full measurement matrix: %ix%i",Wfull.rows(),Wfull.cols());
 }
@@ -666,8 +674,8 @@ void ProjectManager::triangulate(ProjectData &data)
 
 void ProjectManager::triangulateDense(ProjectData &data)
 {
-    LOG_ERR("Not implemented yet");
-    return;
+//    LOG_ERR("Not implemented yet");
+//    return;
 
     if (data.nbImages() < 2) {
         LOG_ERR("Not enough images");
@@ -695,9 +703,6 @@ void ProjectManager::triangulateDense(ProjectData &data)
             for (int v = 0; v < dispValues.rows; ++v) {
                 const double d = static_cast<double>(dispValues.at<short>(v,u));
                 if (d * 0.0 != 0.0) continue; // check for NaN
-
-                if (u == 200 && v == 200)
-                    LOG_INFO("disp(%i,%i): %0.3f", u, v, d);
 
                 Vec3 pl = Tli * Vec3(u  , v, 1.0);
                 Vec3 pr = Tri * Vec3(double(u)+d, v, 1.0);

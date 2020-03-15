@@ -20,7 +20,8 @@ public:
         if (firstCall) {
             entt::meta<A>()
                 .type(P3D_ID_TYPE(110520))
-                .data<&A::setValue,&A::getValue>(P3D_ID_TYPE(110521));
+                .data<&A::setValue,&A::getValue>(P3D_ID_TYPE(110521))
+                .data<&A::setEigenMat,&A::getEigenMat>(P3D_ID_TYPE(110581));
 
             firstCall = false;
         }
@@ -34,9 +35,18 @@ public:
         m_matrixCV = matrixCV.clone();
     }
 
+    const Eigen::Matrix<double,-1,-1> & getEigenMat() const {
+        return m_eigMat;
+    }
+    void setEigenMat(const Eigen::Matrix<double,-1,-1> &m) {
+        m_eigMat = m;
+    }
+
 private:
     int m_value = 5;
     cv::Mat m_matrixCV;
+
+    Eigen::Matrix<double,-1,-1> m_eigMat;
 };
 
 
@@ -368,6 +378,20 @@ TEST(COMMANDS, command_setProperty)
     EXPECT_EQ(a.getValue(),254);
     CommandManager::get()->undoCommand();
     EXPECT_EQ(a.getValue(),15);
+}
+
+TEST(COMMANDS, command_setPropertyEigenDyn)
+{
+    Mat m; m.setIdentity(2,2);
+    Mat m1; m1.setZero(16,4);
+
+    A a;
+    a.setEigenMat(m);
+    EXPECT_EQ(a.getEigenMat(),m);
+    CommandManager::get()->executeCommand(new CommandSetProperty(&a,110581,m1));
+    EXPECT_EQ(a.getEigenMat(),m1);
+    CommandManager::get()->undoCommand();
+    EXPECT_EQ(a.getEigenMat(),m);
 }
 
 TEST(COMMANDS, command_setPropertyGroup)

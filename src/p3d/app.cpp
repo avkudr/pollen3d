@@ -41,6 +41,7 @@ void Application::applyStyle() {
     style.Alpha = 1.0f;
     style.FrameRounding  = 4;
     style.WindowRounding = 0;
+    style.WindowBorderSize = 1;
     style.IndentSpacing = 8.0f;
     style.WindowMenuButtonPosition = ImGuiDir_Right;
     style.Colors[ImGuiCol_TitleBg] = style.Colors[ImGuiCol_TitleBgActive];
@@ -51,23 +52,21 @@ void Application::applyStyle() {
     style.Colors[ImGuiCol_TitleBgActive] = style.Colors[ImGuiCol_TitleBg];
     style.Colors[ImGuiCol_TabUnfocusedActive] = style.Colors[ImGuiCol_TitleBg];
     style.Colors[ImGuiCol_Header] = ImVec4(0.216f,0.216f,0.239f,1.0f);
-    //style.Colors[ImGuiCol_WindowBg] = ImVec4(0.2f,0.2f,0.2f,1.0f);
+    style.Colors[ImGuiCol_Tab] = ImVec4(0.33f, 0.33f, 0.33f, 0.86f);
+
 
 }
 
 void Application::draw(int width, int height){
 
+    ImGui::NewFrame();
+
+    _drawMenuBar(width);
+
     ImVec4 colorBg2 = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
     colorBg2.w = 1.0f;
 
-    ImGui::NewFrame();
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,0);
-
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSizeConstraints(ImVec2(width, m_heightTabSection),ImVec2(width, m_heightTabSection));
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, colorBg2);
-    _drawTab();
-    ImGui::PopStyleColor();
 
     ImGui::SetNextWindowPos(ImVec2(0, m_heightTabSection));
     ImGui::SetNextWindowSizeConstraints(ImVec2(width, height - m_heightTabSection),ImVec2(width, height - m_heightTabSection));
@@ -79,17 +78,24 @@ void Application::draw(int width, int height){
 
     ImGuiWindowFlags flags =
             ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_NoCollapse |
             ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-    ImGui::Begin("DataWidget",nullptr, flags);
+    if (ImGui::Begin("Controls",nullptr, flags)){
+        _drawControls();
+        ImGui::End();
+    }
+
+    ImGui::Begin("Data",nullptr, flags);
     _drawData();
     ImGui::End();
+
     ImGui::Begin("Properties",nullptr, flags);
     _drawProperties();
     ImGui::End();
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, colorBg2);
-    ImGui::Begin("CentralWidget",nullptr, flags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::Begin("Viewer",nullptr, flags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     _drawCentral();
     ImGui::End();
     ImGui::PopStyleColor();
@@ -104,20 +110,26 @@ void Application::draw(int width, int height){
         ImGuiID dock_id = ImGui::GetID("ID().c_str()");
 
         ImGui::DockBuilderRemoveNode(dock_id); // Clear out existing layout
-        ImGui::DockBuilderAddNode(dock_id); //viewport->Size); // Add empty node
+        ImGui::DockBuilderAddNode(dock_id, // Add empty node
+                                  ImGuiDockNodeFlags_NoCloseButton |
+                                  ImGuiDockNodeFlags_NoWindowMenuButton);
 
-        ImGuiID id1, id2, id3, id4, id5, id6;
+        ImGuiID id1, id2, id3, id4, id5, id6, id7, id8;
         ImGui::DockBuilderSetNodePos(dock_id, ImVec2(0, m_heightTabSection));
         ImGui::DockBuilderSetNodeSize(dock_id, ImVec2(width, height - m_heightTabSection));
         ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Right,0.35f,&id2,&id1);
-        ImGui::DockBuilderSplitNode(id1, ImGuiDir_Left,0.25f,&id3,&id4);
+        ImGui::DockBuilderSplitNode(id1, ImGuiDir_Left,0.35f,&id3,&id4);
         ImGui::DockBuilderSplitNode(id3, ImGuiDir_Down,0.5f,&id5,&id6);
+        ImGui::DockBuilderSplitNode(id5, ImGuiDir_Down,0.4f,&id7,&id8);
         ImGui::DockBuilderDockWindow("Console", id2);
-        ImGui::DockBuilderDockWindow("Properties", id5);
-        ImGui::DockBuilderDockWindow("DataWidget", id6);
-        ImGui::DockBuilderDockWindow("CentralWidget", id4);
+        ImGui::DockBuilderDockWindow("Data", id8);
+        ImGui::DockBuilderDockWindow("Properties", id7);
+        ImGui::DockBuilderDockWindow("Controls", id6);
+        ImGui::DockBuilderDockWindow("Viewer", id4);
 
         ImGui::DockBuilderGetNode(id2)->HasCloseButton = false;
+        ImGui::DockBuilderGetNode(id2)->EnableCloseButton = false;
+        ImGui::DockBuilderGetNode(id2)->HasWindowMenuButton = false;
         ImGui::DockBuilderGetNode(id3)->HasCloseButton = false;
         ImGui::DockBuilderGetNode(id4)->HasCloseButton = false;
         ImGui::DockBuilderFinish(dock_id);
@@ -186,19 +198,20 @@ void Application::draw(int width, int height){
     ImGui::Render();
 }
 
-void Application::_drawTab()
+void Application::_drawMenuBar(int width)
 {
-
     static bool showImGuiMetrics = false;
     static bool showDemoImGui = false;
 
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(width, m_heightTabSection),ImVec2(width, m_heightTabSection));
     ImGui::Begin("##tab-widget",nullptr,
-                 ImGuiWindowFlags_NoDocking |
-                 ImGuiWindowFlags_NoResize |
-                 ImGuiWindowFlags_NoCollapse |
-                 ImGuiWindowFlags_NoTitleBar |
-                 ImGuiWindowFlags_MenuBar |
-                 ImGuiWindowFlags_NoBringToFrontOnFocus);
+         ImGuiWindowFlags_NoDocking |
+         ImGuiWindowFlags_NoResize |
+         ImGuiWindowFlags_NoCollapse |
+         ImGuiWindowFlags_NoTitleBar |
+         ImGuiWindowFlags_MenuBar |
+         ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     if (ImGui::BeginMenuBar())
     {
@@ -239,36 +252,11 @@ void Application::_drawTab()
         ImGui::EndMenuBar();
     }
 
-    if (showImGuiMetrics) ImGui::ShowMetricsWindow();
-    if (showDemoImGui) ImGui::ShowDemoWindow();
+    int buttonH = 32;
+    ImVec2 buttonSquare(buttonH,buttonH);
+    ImVec2 buttonRect(0.0f, buttonH);
 
-    if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_TabListPopupButton))
-    {
-        _drawTab_General();
-        _drawTab_Image();
-        _drawTab_Stereo();
-        _drawTab_Multiview();
-
-        if (ImGui::BeginTabItem("Point cloud"))
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,0,0,1));
-            ImGui::Text("May come soon ;)");
-            ImGui::PopStyleColor();
-            ImGui::EndTabItem();
-            if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
-            m_currentTab = Tab_PointCloud;
-        }
-        ImGui::EndTabBar();
-    }
-    ImGui::End();
-}
-
-void Application::_drawTab_General()
-{
-    if (!ImGui::BeginTabItem("General")) return;
-
-    int buttonH = 100;
-    if (ImGui::Button(ICON_FA_UPLOAD"",ImVec2(70, buttonH)))
+    if (ImGui::Button(ICON_FA_UPLOAD" Load images",buttonRect))
     {
         auto files = ProjectManager::get()->loadImagesDialog();
         auto f = [&,files]() {
@@ -279,7 +267,7 @@ void Application::_drawTab_General()
         _doHeavyTask(f);
     }
     ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_SAVE"",ImVec2(70, buttonH)))
+    if (ImGui::Button(ICON_FA_SAVE" Save",buttonRect))
     {
         auto f = [&]() {
             ProjectManager::get()->saveProject(&m_projectData,m_projectData.getProjectPath());
@@ -288,14 +276,14 @@ void Application::_drawTab_General()
         _doHeavyTask(f);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Save\nproject\nas...",ImVec2(70, buttonH)))
+    if (ImGui::Button("Save as...",buttonRect))
     {
         auto file = ProjectManager::get()->saveProjectDialog();
         ProjectManager::get()->saveProject(&m_projectData, file);
         _resetAppState();
     }
     ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_FOLDER_OPEN"",ImVec2(70, buttonH)))
+    if (ImGui::Button(ICON_FA_FOLDER_OPEN" Open",buttonRect))
     {
         auto file = ProjectManager::get()->openProjectDialog();
         LOG_DBG("Open project: %s", file.c_str());
@@ -307,12 +295,16 @@ void Application::_drawTab_General()
         if (file != "") _doHeavyTask(f);
     }
     ImGui::SameLine();
-    if (ImGui::Button("DBG"))
+    if (ImGui::Button(ICON_FA_FOLDER_MINUS" Close",buttonRect))
     {
-        ProjectManager::get()->extractFeatures(m_projectData, {m_currentImage});
+        LOG_DBG("Close project");
+        ProjectManager::get()->closeProject(&m_projectData);
+        _resetAppState();
     }
     ImGui::SameLine();
-    if (ImGui::Button("DBG_LOAD"))
+
+    ImGui::PushStyleColor(ImGuiCol_Button,COLOR_GREEN);
+    if (ImGui::Button("DBG_LOAD",buttonRect))
     {
         std::vector<std::string> imPaths;
         imPaths.push_back("/home/andrey/Projects/pollen3d/_datasets/pot_00.tif");
@@ -331,12 +323,7 @@ void Application::_drawTab_General()
         _doHeavyTask(f);
     }
     ImGui::SameLine();
-    if (ImGui::Button("DBG_SAVE"))
-    {
-        ProjectManager::get()->saveProject(&m_projectData,"test_project" + std::string(P3D_PROJECT_EXTENSION));
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("DBG_PROJ"))
+    if (ImGui::Button("DBG_PROJ",buttonRect))
     {
         auto f = [&]() {
             ProjectManager::get()->openProject(&m_projectData, "test_project" + std::string(P3D_PROJECT_EXTENSION));
@@ -346,15 +333,48 @@ void Application::_drawTab_General()
         _doHeavyTask(f);
     }
     ImGui::SameLine();
-    ImGui::EndTabItem();
+    ImGui::PopStyleColor();
 
-    if (!isOneOf(m_currentTab, {Tab_General,Tab_Image})) _resetAppState();
-    m_currentTab = Tab_General;
+    ImGui::End();
+
+    if (showImGuiMetrics) ImGui::ShowMetricsWindow();
+    if (showDemoImGui) ImGui::ShowDemoWindow();
+}
+
+void Application::_drawControls()
+{
+    if (!ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
+        return;
+
+    _drawTab_Image();
+    _drawTab_Stereo();
+    _drawTab_Multiview();
+
+    if (ImGui::BeginTabItem(ICON_FA_CLOUD""))
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,0,0,1));
+        ImGui::Text("May come soon ;)");
+        ImGui::PopStyleColor();
+        ImGui::EndTabItem();
+        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
+        m_currentTab = Tab_PointCloud;
+    }
+    ImGui::EndTabBar();
+
+    ImGui::SameLine();
+    const char * tabName = "";
+    switch (m_currentTab) {
+        case Tab_Image: tabName = "image"; break;
+        case Tab_Stereo: tabName = "stereo"; break;
+        case Tab_Multiview: tabName = "multiview"; break;
+        case Tab_PointCloud: tabName = "point cloud"; break;
+    }
+    ImGui::Text("%s",tabName);
 }
 
 void Application::_drawTab_Image()
 {
-    if (ImGui::BeginTabItem("Image"))
+    if (ImGui::BeginTabItem(ICON_FA_IMAGE""))
     {
         bool disabled = false;
         auto image = m_projectData.image(m_currentImage);
@@ -362,29 +382,24 @@ void Application::_drawTab_Image()
 
         if (disabled) ImGuiC::PushDisabled();
 
-        ImGui::BeginColumns("columns", 1);//false);
-        if (ImGui::Button("Extract features"))
+        if (ImGui::CollapsingHeader("Feature extraction",m_collapsingHeaderFlags))
         {
-            auto f = [&]() {
-                ProjectManager::get()->extractFeatures(m_projectData, {m_currentImage});
-            };
-            _doHeavyTask(f);
+            if (ImGui::Button("Extract features"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->extractFeatures(m_projectData, {m_currentImage});
+                };
+                _doHeavyTask(f);
+            }
+            if (ImGui::Button("Extract features ALL"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->extractFeatures(m_projectData);
+                };
+                _doHeavyTask(f);
+            }
         }
-        if (ImGui::Button("Extract features ALL"))
-        {
-            auto f = [&]() {
-                ProjectManager::get()->extractFeatures(m_projectData);
-            };
-            _doHeavyTask(f);
-        }
-        //ImGui::NextColumn();
-
         if (disabled) ImGuiC::PopDisabled();
-
-        //ImGui::NextColumn();
-
-        ImGui::NextColumn();
-        ImGui::EndColumns();
 
         ImGui::EndTabItem();
 
@@ -395,7 +410,7 @@ void Application::_drawTab_Image()
 
 void Application::_drawTab_Stereo()
 {
-    if (ImGui::BeginTabItem("Stereo"))
+    if (ImGui::BeginTabItem(ICON_FA_IMAGES""))
     {
         int matchingWidgetW = 250;
 
@@ -403,9 +418,8 @@ void Application::_drawTab_Stereo()
         ImagePair * imPair = m_projectData.imagePair(m_currentImage);
         if (!imPair) disabled = true;
 
-        if (ImGui::BeginChild("Matching",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
+        if (ImGui::CollapsingHeader("Matching",m_collapsingHeaderFlags))
         {
-            ImGui::BulletText("Matching");
             const char* matchingAlgos[] = { "BruteForce-L1", "BruteForce", "FlannBased"};
             auto matcherCurAlg     = ProjectManager::get()->getSetting(p3dSetting_matcherCurAlg).cast<int>();
 
@@ -430,7 +444,7 @@ void Application::_drawTab_Stereo()
             disableButtons = !((imR != nullptr) && imR->hasFeatures());
 
             if (disableButtons) ImGuiC::PushDisabled();
-            if (ImGui::Button("Match features",ImVec2(0.6f*matchingWidgetW,50)))
+            if (ImGui::Button("Match features"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->matchFeatures(m_projectData, {m_currentImage});
@@ -439,7 +453,7 @@ void Application::_drawTab_Stereo()
             }
 
             ImGui::SameLine();
-            if (ImGui::Button("ALL",ImVec2(0.25f*matchingWidgetW,50)))
+            if (ImGui::Button("ALL"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->matchFeatures(m_projectData);
@@ -447,16 +461,10 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             if (disableButtons) ImGuiC::PopDisabled();
-            ImGui::EndChild();
         }
 
-
-        ImGui::SameLine();
-
-        if (ImGui::BeginChild("EpipolarGeometry",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
+        if (ImGui::CollapsingHeader("Epipolar geometry",m_collapsingHeaderFlags))
         {
-            ImGui::BulletText("Epipolar geometry");
-
             bool disableButtons = disabled || !imPair->hasMatches();
             if (disableButtons) ImGuiC::PushDisabled();
 
@@ -478,16 +486,10 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             if (disableButtons) ImGuiC::PopDisabled();
-
-            ImGui::EndChild();
         }
 
-        ImGui::SameLine();
-
-        if (ImGui::BeginChild("Rectification",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
+        if (ImGui::CollapsingHeader("Rectification",m_collapsingHeaderFlags))
         {
-            ImGui::BulletText("Rectification");
-
             bool disableButtons = disabled || !imPair->hasF();
             if (disableButtons) ImGuiC::PushDisabled();
 
@@ -511,16 +513,10 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             if (disableButtons) ImGuiC::PopDisabled();
-
-            ImGui::EndChild();
         }
 
-        ImGui::SameLine();
-
-        if (ImGui::BeginChild("DenseMatching",ImVec2(matchingWidgetW,ImGui::GetContentRegionAvail().y)))
+        if (ImGui::CollapsingHeader("Dense matching",m_collapsingHeaderFlags))
         {
-            ImGui::BulletText("Dense matching");
-
             bool disableButtons = disabled || !imPair->hasF();
             if (disableButtons) ImGuiC::PushDisabled();
 
@@ -544,8 +540,6 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             if (disableButtons) ImGuiC::PopDisabled();
-
-            ImGui::EndChild();
         }
 
         ImGui::EndTabItem();
@@ -557,66 +551,80 @@ void Application::_drawTab_Stereo()
 
 void Application::_drawTab_Multiview()
 {
-    if (ImGui::BeginTabItem("Multiview"))
+    if (ImGui::BeginTabItem(ICON_FA_LAYER_GROUP""))
     {
-        if (ImGui::Button("Get full W"))
+        if (ImGui::CollapsingHeader("Measurement matrix",m_collapsingHeaderFlags))
         {
-            auto f = [&]() {
-                ProjectManager::get()->findMeasurementMatrixFull(m_projectData);
-            };
-            _doHeavyTask(f);
+            if (ImGui::Button("Get full W"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->findMeasurementMatrixFull(m_projectData);
+                };
+                _doHeavyTask(f);
+            }
+
+            if (ImGui::Button("Get W"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->findMeasurementMatrix(m_projectData);
+                };
+                _doHeavyTask(f);
+            }
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Get W"))
+
+        if (ImGui::CollapsingHeader("Autocalibration",m_collapsingHeaderFlags))
         {
-            auto f = [&]() {
-                ProjectManager::get()->findMeasurementMatrix(m_projectData);
-            };
-            _doHeavyTask(f);
+            if (ImGui::Button("Autocalibrate"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->autocalibrate(m_projectData);
+                    m_viewer3dNeedsUpdate = true;
+                };
+                _doHeavyTask(f);
+            }
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Autocalibrate"))
+
+        if (ImGui::CollapsingHeader("Triangulation",m_collapsingHeaderFlags))
         {
-            auto f = [&]() {
-                ProjectManager::get()->autocalibrate(m_projectData);
-                m_viewer3dNeedsUpdate = true;
-            };
-            _doHeavyTask(f);
+            if (ImGui::Button("Triangulate"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->triangulate(m_projectData);
+                    m_viewer3dNeedsUpdate = true;
+                };
+                _doHeavyTask(f);
+            }
+            if (ImGui::Button("Triangulate dense"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->triangulateDense(m_projectData);
+                    m_viewer3dNeedsUpdate = true;
+                };
+                _doHeavyTask(f);
+            }
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Triangulate"))
+
+        if (ImGui::CollapsingHeader("Bundle adjustment",m_collapsingHeaderFlags))
         {
-            auto f = [&]() {
-                ProjectManager::get()->triangulate(m_projectData);
-                m_viewer3dNeedsUpdate = true;
-            };
-            _doHeavyTask(f);
+            if (ImGui::Button("Bundle adjustment"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->bundleAdjustment(m_projectData);
+                    m_viewer3dNeedsUpdate = true;
+                };
+                _doHeavyTask(f);
+            }
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Triangulate dense"))
+
+        if (ImGui::CollapsingHeader("Export",m_collapsingHeaderFlags))
         {
-            auto f = [&]() {
-                ProjectManager::get()->triangulateDense(m_projectData);
-                m_viewer3dNeedsUpdate = true;
-            };
-            _doHeavyTask(f);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Export PLY"))
-        {
-            auto f = [&]() {
-                ProjectManager::get()->exportPLY(m_projectData);
-            };
-            _doHeavyTask(f);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Bundle adjustment"))
-        {
-            auto f = [&]() {
-                ProjectManager::get()->bundleAdjustment(m_projectData);
-                m_viewer3dNeedsUpdate = true;
-            };
-            _doHeavyTask(f);
+            if (ImGui::Button("Export PLY"))
+            {
+                auto f = [&]() {
+                    ProjectManager::get()->exportPLY(m_projectData);
+                };
+                _doHeavyTask(f);
+            }
         }
 
         ImGui::EndTabItem();

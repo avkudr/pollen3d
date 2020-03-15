@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include <stdexcept>
 
 #ifndef M_PI
 #define M_PI       3.141592653589793238462643383279502884L
@@ -20,7 +21,7 @@
 // Unfortunately, we have to do it because of the fact that
 // operator== throws an exception on comparing two Eigen::Matrix's
 #undef eigen_assert
-#define eigen_assert(x) if (!(x)) { printf("Eigen assertion failed\n"); }
+#define eigen_assert(x) if (!(x)) { throw std::runtime_error("Eigen assertion failed"); }
 
 #include <Eigen/Core>
 

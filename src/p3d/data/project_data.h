@@ -103,8 +103,8 @@ private:
     std::vector<ImagePair> m_imagesPairs{};
     std::string m_projectPath = "";
 
-    Mat m_measurementMatrix;
-    Mat m_measurementMatrixFull;
+    Mat m_measurementMatrix{Mat::Zero(0,0)};
+    Mat m_measurementMatrixFull{Mat::Zero(0,0)};
 
     Mat4X m_pts3D;
 };

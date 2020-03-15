@@ -25,6 +25,7 @@ public:
     void loadImages(ProjectData * list, const std::vector<std::string> & imPaths);
 
     void saveProject(ProjectData * data, std::string path = "");
+    void closeProject(ProjectData * data);
     void openProject(ProjectData * data, std::string path = "");
 
     // ***** Image

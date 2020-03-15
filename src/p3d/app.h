@@ -18,7 +18,7 @@ class Application
 {
 public:
     Application() {
-        LOG_INFO("Welcome to Pollen3D");
+        LOG_OK("Welcome to Pollen3D!");
     }
 
     virtual ~Application() { destroy(); }
@@ -59,9 +59,8 @@ protected:
 
     virtual void setWindowTitleImpl(std::string str) = 0;
 
-    void _drawMenuBar();
-    void _drawTab();
-    void _drawTab_General();
+    void _drawMenuBar(int width);
+    void _drawControls();
     void _drawTab_Image();
     void _drawTab_Stereo();
     void _drawTab_Multiview();
@@ -121,9 +120,11 @@ protected:
 
     int m_currentSection = Section_Default;
 
+    // ***** visuals
     int m_width = 1600;
     int m_height = 1000;
-    int m_heightTabSection = 200;
+    int m_heightTabSection = 70;
+    ImGuiTreeNodeFlags m_collapsingHeaderFlags = ImGuiTreeNodeFlags_None;
     bool m_dockingNeedsReset = true;
 
     ImFont * m_fontMonoSmall = nullptr;
