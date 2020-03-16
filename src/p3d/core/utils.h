@@ -47,6 +47,8 @@ enum{
 
 cv::Mat concatenateCvMat(const std::vector<cv::Mat> & matArray, int method = CONCAT_VERTICAL);
 
+void convert(const std::vector<Vec4> & src, Mat4X & dst);
+
 template<typename T, int SizeX, int SizeY>
 Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> concatenateMat(const std::vector<Eigen::Matrix<T,SizeX,SizeY>> & matArray, int method = CONCAT_VERTICAL)
 {
@@ -110,6 +112,7 @@ Eigen::Matrix<T, 3, 3> RfromEulerZYZt(const T& thetaT, const T& rho, const T& th
 }
 
 void EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2);
+void EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2);
 
 // **** Math
 Mat3 skewSym(const Vec3 & a);

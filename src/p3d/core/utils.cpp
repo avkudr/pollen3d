@@ -207,28 +207,6 @@ bool utils::equalsCvMat(const cv::Mat &lhs, const cv::Mat &rhs)
     return cv::norm(lhs - rhs) < 1e-5;
 }
 
-void utils::EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2){
-    const auto &rotmat = R;
-
-    if (rotmat(2,2) < 1){
-        if (rotmat(2,2) > -1){
-            rho = acos(rotmat(2,2));
-            t1  = atan2(rotmat(1,2),rotmat(0,2));
-            t2  = atan2(rotmat(2,1),-rotmat(2,0));
-        }
-        else{
-            rho = M_PI;
-            t1  = -atan2(rotmat(1,0),rotmat(1,1));
-            t2  = 0;
-        }
-    }
-    else{
-        rho = 0;
-        t1  = atan2(rotmat(1,0),rotmat(1,1));
-        t2  = 0;
-    }
-}
-
 Mat3 utils::skewSym(const Vec3 &a)
 {
     Mat3 out;
@@ -296,4 +274,59 @@ Vec4 utils::triangulate(const std::vector<Vec2> &x, const std::vector<Mat34> &Ps
     Vec X_and_alphas;
     utils::nullspace(design, &X_and_alphas);
     return Vec4(X_and_alphas.head(4));
+}
+
+void utils::EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2){
+    std::cout << "Must be utils::EulerZYZtfromR" << std::endl;
+    std::cout << "Must be utils::EulerZYZtfromR" << std::endl;
+    std::cout << "Must be utils::EulerZYZtfromR" << std::endl;
+
+    const auto &rotmat = R;
+
+    if (rotmat(2,2) < 1){
+        if (rotmat(2,2) > -1){
+            rho = acos(rotmat(2,2));
+            t1  = atan2(rotmat(1,2),rotmat(0,2));
+            t2  = atan2(rotmat(2,1),-rotmat(2,0));
+        }
+        else{
+            rho = M_PI;
+            t1  = -atan2(rotmat(1,0),rotmat(1,1));
+            t2  = 0;
+        }
+    }
+    else{
+        rho = 0;
+        t1  = atan2(rotmat(1,0),rotmat(1,1));
+        t2  = 0;
+    }
+}
+
+void utils::EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2)
+{
+    const auto &rotmat = R;
+
+    if (rotmat(2,2) < 1){
+        if (rotmat(2,2) > -1){
+            rho = acos(rotmat(2,2));
+            t1  = atan2(rotmat(1,2),rotmat(0,2));
+            t2  = atan2(-rotmat(2,1),-rotmat(2,0));
+        }
+        else{
+            rho = M_PI;
+            t1  = -atan2(rotmat(1,0),rotmat(1,1));
+            t2  = 0;
+        }
+    }
+    else{
+        rho = 0;
+        t1  = atan2(rotmat(1,0),rotmat(1,1));
+        t2  = 0;
+    }
+}
+
+void utils::convert(const std::vector<Vec4> &src, Mat4X &dst)
+{
+    dst.setZero(4,src.size());
+    for (int i = 0; i < src.size(); ++i) dst.col(i) = src[i];
 }

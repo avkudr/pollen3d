@@ -38,7 +38,11 @@ class Serializable;
     entt::meta<Eigen::Matrix<Scalar,x,y>>() \
             .type(name) \
             .func<&impl::_readEigen<Scalar,x,y>>("_read"_hs) \
-            .func<&impl::_writeEigen<Scalar,x,y>>("_write"_hs)
+            .func<&impl::_writeEigen<Scalar,x,y>>("_write"_hs); \
+    entt::meta<std::vector<Eigen::Matrix<Scalar,x,y>>>() \
+            .type("vector_" name) \
+            .func<&impl::_readVecEigen<Scalar,x,y>>("_read"_hs) \
+            .func<&impl::_writeVecEigen<Scalar,x,y>>("_write"_hs)
 
 template <typename Type>
 static void _write(cv::FileStorage& fs, P3D_ID_TYPE & id, Type & f){
@@ -152,6 +156,41 @@ static void _readEigen(cv::FileNode& node, P3D_ID_TYPE & id, Eigen::Matrix<Type,
     mat = out;
 }
 
+template<typename Type, int SizeX, int SizeY>
+static void _writeVecEigen(cv::FileStorage& fs, P3D_ID_TYPE & id, std::vector<Eigen::Matrix<Type, SizeX, SizeY>> & f){
+    fs << "p" + std::to_string(id) << "[";
+    for (auto i = 0; i < f.size(); ++i) {
+        fs << "{";
+        cv::Mat temp;
+        cv::eigen2cv(f[i],temp);
+        fs << "M" << temp;
+        fs << "}";
+    }
+    fs << "]";
+}
+
+template<typename Type, int SizeX, int SizeY>
+static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Eigen::Matrix<Type, SizeX, SizeY>> & out){
+    std::string name = "p" + std::to_string(id);
+    std::vector<Eigen::Matrix<Type, SizeX, SizeY>> temp;
+    cv::FileNode n = node[name];
+    if (node[name].empty()) return;
+    if (n.type() != cv::FileNode::SEQ)
+    {
+        std::cout << "not a sequence";
+        return;
+    }
+
+    for (auto it = n.begin(); it != n.end(); ++it) {
+        cv::Mat t;
+        (*it)["M"] >> t;
+        Eigen::Matrix<Type, SizeX, SizeY> a;
+        a.setZero();
+        cv::cv2eigen(t,a);
+        temp.emplace_back(a);
+    }
+    out = temp;
+}
 
 static int registerTypes();
 

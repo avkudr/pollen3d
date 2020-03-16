@@ -27,7 +27,8 @@ enum p3dData_
     p3dData_imagePairs  = 2004,
     p3dData_measMat     = 2005,
     p3dData_measMatFull = 2006,
-    p3dData_pts3D       = 2007,
+    p3dData_pts3DSparse = 2007,
+    p3dData_pts3DDense  = 2008,
 };
 
 class ProjectData : public Serializable<ProjectData>{
@@ -84,12 +85,18 @@ public:
     const Mat & getMeasurementMatrixFull() const { return m_measurementMatrixFull; } // [3*nbImages,nbPts]
     void setMeasurementMatrixFull(const Mat & Wf) { m_measurementMatrixFull = Wf; }
 
+    void getCamerasIntrinsics(std::vector<Vec3> * cam) const;
+    void setCamerasIntrinsics(std::vector<Vec3> & cam);
+    void getCamerasExtrinsics(std::vector<Vec3> *R, std::vector<Vec2> * t) const;
+    void setCamerasExtrinsics(std::vector<Vec3> &R, std::vector<Vec2> & t);
+
     std::vector<Mat34> getCameraMatrices();
     Mat getCameraMatricesMat();
 
-    const Mat4X & getPts3D() const { return m_pts3D; }
-    void setPts3D(const Mat4X &pts3D) { m_pts3D = pts3D; }
-
+    const Mat4X & getPts3DSparse() const { return m_pts3DSparse; }
+    void setPts3DSparse(const Mat4X &pts3D) { m_pts3DSparse = pts3D; }
+    const Mat4X & getPts3DDense() const { return m_pts3DDense; }
+    void setPts3DDense(const Mat4X &pts3D) { m_pts3DDense = pts3D; }
 private:
 
     Image * imagePairImage(const std::size_t idx, bool left) {
@@ -106,5 +113,6 @@ private:
     Mat m_measurementMatrix{Mat::Zero(0,0)};
     Mat m_measurementMatrixFull{Mat::Zero(0,0)};
 
-    Mat4X m_pts3D;
+    Mat4X m_pts3DSparse;
+    Mat4X m_pts3DDense;
 };

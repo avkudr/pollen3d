@@ -64,7 +64,8 @@ public:
                 .data<&ClassA::str>(P3D_ID_TYPE(15))
                 .data<&ClassA::vectorDouble>(P3D_ID_TYPE(20))
                 .data<&ClassA::eigenMatrix>(P3D_ID_TYPE(25))
-                .data<&ClassA::eigenMatrixDyn>(P3D_ID_TYPE(26));
+                .data<&ClassA::eigenMatrixDyn>(P3D_ID_TYPE(26))
+                .data<&ClassA::eigenVec>(P3D_ID_TYPE(27));
             first = false;
         }
         eigenMatrix.setIdentity();
@@ -81,6 +82,7 @@ public:
     std::vector<double> vectorDouble = {0.0,0.2};
     Eigen::Matrix3f eigenMatrix;
     Eigen::MatrixXf eigenMatrixDyn;
+    std::vector<Vec2> eigenVec;
 };
 
 #define EXPECT_TYPE_SERIALIZABLE(x) \
@@ -127,6 +129,7 @@ TEST(META, meta_serializeClass)
     a.vectorDouble = {0.65,5465};
     a.eigenMatrix.setOnes();
     a.eigenMatrixDyn.setOnes();
+    a.eigenVec = {Vec2(0,0),Vec2(1,1),Vec2(4,2)};
 
     {
         cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
@@ -148,6 +151,7 @@ TEST(META, meta_serializeClass)
     EXPECT_EQ(a.vectorDouble, b.vectorDouble);
     EXPECT_EQ(a.eigenMatrix, b.eigenMatrix);
     EXPECT_EQ(a.eigenMatrixDyn, b.eigenMatrixDyn);
+    EXPECT_EQ(a.eigenVec, b.eigenVec);
 
 }
 

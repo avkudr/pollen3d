@@ -8,6 +8,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
 
+#include <Eigen/Dense>
+
 #include "p3d/core/fundmat.h"
 #include "p3d/core/core.h"
 
@@ -20,7 +22,8 @@ int ProjectData::initMeta()
         std::cout << "Reflecting: ProjectData" << std::endl;
         entt::meta<ProjectData>()
             .type("ProjectData"_hs)
-            .data<&ProjectData::setPts3D,&ProjectData::getPts3D>(P3D_ID_TYPE(p3dData_pts3D))
+            .data<&ProjectData::setPts3DDense,&ProjectData::getPts3DDense>(P3D_ID_TYPE(p3dData_pts3DDense))
+            .data<&ProjectData::setPts3DSparse,&ProjectData::getPts3DSparse>(P3D_ID_TYPE(p3dData_pts3DSparse))
             .data<&ProjectData::setMeasurementMatrix,&ProjectData::getMeasurementMatrix>(P3D_ID_TYPE(p3dData_measMat))
             .data<&ProjectData::setMeasurementMatrixFull,&ProjectData::getMeasurementMatrixFull>(P3D_ID_TYPE(p3dData_measMatFull))
             .data<&ProjectData::setImagePairs,&ProjectData::getImagePairs>(P3D_ID_TYPE(p3dData_imagePairs))
@@ -114,6 +117,97 @@ void ProjectData::getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distan
         Vec2 errs = fundmat::epiporalDistancesF(F,ptsL[i],ptsR[i]);
         distances.col(i) = errs;
     }
+}
+
+void ProjectData::getCamerasIntrinsics(std::vector<Vec3> *cam) const
+{
+    if (nbImages() == 0) return;
+    if (cam == nullptr) return;
+
+    cam->resize(nbImages());
+    for (auto i = 0; i < nbImages(); i++){
+        const auto f = m_images[i].getCamera().getFocal();
+        const auto a = m_images[i].getCamera().getAlpha();
+        const auto s = m_images[i].getCamera().getSkew();
+        (*cam)[i] = Vec3(a,s,f);
+    }
+}
+
+void ProjectData::setCamerasIntrinsics(std::vector<Vec3> &cam)
+{
+    if (nbImages() != cam.size()) {
+        LOG_ERR("Wrong number of instrinsic matrices");
+        return;
+    }
+
+    for (auto i = 0; i < nbImages(); i++){
+        AffineCamera a;
+        a.setAlpha(cam[i][0]);
+        a.setSkew( cam[i][1]);
+        a.setFocal(cam[i][2]);
+        m_images[i].setCamera(a);
+    }
+}
+
+void ProjectData::getCamerasExtrinsics(std::vector<Vec3> *R, std::vector<Vec2> *t) const
+{
+    if (nbImages() == 0) return;
+
+    if (R) {
+        std::vector<Mat3> Rarray(nbImages());
+        Rarray[0].setIdentity();
+
+        for (auto i = 0; i < nbImagePairs(); i++){
+            double t1  = m_imagesPairs[i].getTheta1();
+            double rho = m_imagesPairs[i].getRho();
+            double t2  = m_imagesPairs[i].getTheta2();
+
+            Rarray[i+1] = utils::RfromEulerZYZt(t1,rho,t2);
+            if (i != 0) Rarray[i+1] = Rarray[i+1] * Rarray[i];
+        }
+
+        R->resize(nbImages());
+        for (auto i = 0; i < nbImages(); i++){
+            const Mat3 & m = Rarray[i];
+            double t1,rho,t2;
+            utils::EulerZYZtfromR(m, t1, rho, t2);
+            (*R)[i] << t1,rho,t2;
+        }
+    }
+
+    if (t) {
+        t->resize(nbImages());
+        for (auto i = 0; i < nbImages(); i++)
+            (*t)[i] = m_images[i].getTranslation();
+    }
+}
+
+void ProjectData::setCamerasExtrinsics(std::vector<Vec3> &R, std::vector<Vec2> &t)
+{
+    if (t.size() != R.size()) return;
+    if (nbImages() != R.size()) return;
+
+    std::vector<Mat3> Rarray(nbImages());
+    Rarray[0].setIdentity();
+    for (auto i = 0; i < nbImagePairs(); i++){
+        const auto & t1  = R[i+1][0];
+        const auto & rho = R[i+1][1];
+        const auto & t2  = R[i+1][2];
+        Rarray[i+1] = utils::RfromEulerZYZt(t1,rho,t2);
+    }
+
+    std::vector<Mat3> R_(nbImagePairs());
+    for (auto i = 0; i < nbImagePairs(); i++){
+        Mat3 dR = Rarray[i].inverse() * Rarray[i+1];
+        double t1, rho, t2;
+        utils::EulerZYZtfromR(dR,t1,rho,t2);
+        m_imagesPairs[i].setTheta1(t1);
+        m_imagesPairs[i].setRho(rho);
+        m_imagesPairs[i].setTheta2(t2);
+    }
+
+    for (auto i = 0; i < nbImages(); i++)
+        m_images[i].setTranslation(t[i]);
 }
 
 std::vector<Mat34> ProjectData::getCameraMatrices()

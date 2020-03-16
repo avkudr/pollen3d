@@ -303,6 +303,29 @@ void Application::_drawMenuBar(int width)
     }
     ImGui::SameLine();
 
+    /*
+    if (ImGui::Button(ICON_FA_IMAGE"",buttonSquare)) {
+        if (m_currentTab != Tab_Image) _resetAppState();
+        m_currentTab = Tab_Image;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_IMAGES"",buttonSquare)) {
+        if (m_currentTab != Tab_Stereo) _resetAppState();
+        m_currentTab = Tab_Stereo;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_LAYER_GROUP"",buttonSquare)) {
+        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
+        m_currentTab = Tab_Multiview;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_CLOUD"",buttonSquare)) {
+        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
+        m_currentTab = Tab_PointCloud;
+    }
+    ImGui::SameLine();
+    */
+
     ImGui::PushStyleColor(ImGuiCol_Button,COLOR_GREEN);
     if (ImGui::Button("DBG_LOAD",buttonRect))
     {
@@ -586,7 +609,7 @@ void Application::_drawTab_Multiview()
 
         if (ImGui::CollapsingHeader("Triangulation",m_collapsingHeaderFlags))
         {
-            if (ImGui::Button("Triangulate"))
+            if (ImGui::Button("Triangulate (sparse)"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->triangulate(m_projectData);
@@ -606,7 +629,7 @@ void Application::_drawTab_Multiview()
 
         if (ImGui::CollapsingHeader("Bundle adjustment",m_collapsingHeaderFlags))
         {
-            if (ImGui::Button("Bundle adjustment"))
+            if (ImGui::Button("Bundle adjustment (sparse)"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->bundleAdjustment(m_projectData);
@@ -618,12 +641,66 @@ void Application::_drawTab_Multiview()
 
         if (ImGui::CollapsingHeader("Export",m_collapsingHeaderFlags))
         {
-            if (ImGui::Button("Export PLY"))
+            if (ImGui::Button("Export PLY (sparse)"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->exportPLY(m_projectData);
                 };
                 _doHeavyTask(f);
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Analyze",m_collapsingHeaderFlags))
+        {
+            static bool showReprojectionErrorPlot = false;
+            if (ImGui::Button("Plot reprojection error (sparse)"))
+            {
+                showReprojectionErrorPlot = true;
+            }
+
+            if (showReprojectionErrorPlot) {
+                float w = 600;
+                ImGui::SetNextWindowSize(ImVec2(w,w));
+                if (ImGui::Begin("Reproj error##plot",&showReprojectionErrorPlot,ImGuiWindowFlags_Modal)) {
+
+                    ImVec2 a1 = ImGui::GetWindowPos();
+                    ImVec2 center = ImVec2(a1.x+w/2.0f,a1.y+w/2.0f);
+
+                    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+                    ImU32 color32 = IM_COL32(255,255,255,255*0.4f);
+                    draw_list->AddLine(ImVec2(center.x,center.y - w*0.5f), ImVec2(center.x,center.y + w*0.5f), color32);
+                    draw_list->AddLine(ImVec2(center.x - w*0.5f,center.y), ImVec2(center.x + w*0.5f,center.y), color32);
+                    draw_list->AddCircle(center, w*0.5f*0.4f, color32, 32, 1);
+                    draw_list->AddCircle(center, w*0.5f*0.8f, color32, 32, 1);
+
+                    auto X = m_projectData.getPts3DSparse();
+                    auto W = m_projectData.getMeasurementMatrixFull();
+                    auto P = m_projectData.getCameraMatricesMat();
+
+                    Mat error = W - P * X;
+                    int less1px = 0;
+                    int less05px = 0;
+                    int nbCams = P.rows() / 3;
+                    for (int c = 0; c < P.rows() / 3; ++c) {
+                        ImU32 color2 = IM_COL32(0,255*c/float(nbCams),255,255*0.9f);
+                        for (int i = 0; i < error.cols(); ++i) {
+                            Vec2 e = error.block(3*c,i,2,1);
+                            if (e.norm() < 1.0f) less1px++;
+                            if (e.norm() < 0.5f) less05px++;
+
+                            e *= w*0.5f*0.8f;
+                            e(0) += center.x;
+                            e(1) += center.y;
+                            draw_list->AddCircle(ImVec2(e(0),e(1)), 2, color2, 6, 1);
+                        }
+                    }
+
+                    ImGui::Text("From %i points", int(error.cols()));
+                    ImGui::Text("< 1px: %0.1f", 100.0f * less1px / float(nbCams * error.cols()));
+                    ImGui::Text("< 0.5px: %0.1f", 100.0f * less05px / float(nbCams * error.cols()));
+
+                }
+                ImGui::End();
             }
         }
 
@@ -793,7 +870,7 @@ void Application::_drawProperties()
     {
         const auto & Wfull = m_projectData.getMeasurementMatrixFull();
         if (Wfull.rows() > 0 && Wfull.cols() > 0)
-            drawProperty_matrix(Wfull,"Wfull","Full measurement matrix");
+            drawProperty_matrix(Wfull,"Wf","Full measurement matrix");
 
         const auto & W = m_projectData.getMeasurementMatrix();
         if (W.rows() > 0 && W.cols() > 0)
@@ -803,10 +880,13 @@ void Application::_drawProperties()
         if (P.rows() > 0 && P.cols() > 0)
             drawProperty_matrix(P,"P","Concatenated camera matrices");
 
-        const auto & X = m_projectData.getPts3D();
-        if (X.cols() > 0)
-            drawProperty_matrix(X,"X","3D points");
+        const auto & Xf = m_projectData.getPts3DSparse();
+        if (Xf.cols() > 0)
+            drawProperty_matrix(Xf,"Xf","3D points from Wf");
 
+        const auto & Xd = m_projectData.getPts3DDense();
+        if (Xd.cols() > 0)
+            drawProperty_matrix(Xd,"Xd","Dense point cloud");
 
         return;
     }
@@ -922,7 +1002,8 @@ void Application::_drawCentral()
 
         if (m_viewer3dNeedsUpdate) {
             m_viewer3D->init();
-            m_viewer3D->setPointCloud(m_projectData.getPts3D().topRows(3));
+            //m_viewer3D->setPointCloud(m_projectData.getPts3DSparse().topRows(3));
+            m_viewer3D->setPointCloud(m_projectData.getPts3DDense().topRows(3));
             m_viewer3dNeedsUpdate = false;
         }
 

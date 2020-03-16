@@ -15,6 +15,7 @@
 #include "p3d/data/image.h"
 #include "p3d/core/utils.h"
 #include "p3d/core/autocalib.h"
+#include "p3d/core/bundle_adjustment.h"
 #include "p3d/commands.h"
 
 #define P3D_PROJECT_EXTENSION ".yml.gz"
@@ -667,9 +668,9 @@ void ProjectManager::triangulate(ProjectData &data)
     }
 
     CommandManager::get()->executeCommand(
-                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3D),pts3D,false)
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DSparse),pts3D,false)
                 );
-    LOG_OK("Triangulated %i points", data.getPts3D().cols());
+    LOG_OK("Triangulated %i points", data.getPts3DSparse().cols());
 }
 
 void ProjectManager::triangulateDense(ProjectData &data)
@@ -682,8 +683,8 @@ void ProjectManager::triangulateDense(ProjectData &data)
         return;
     }
 
-    std::vector<Mat4X> pts3D(data.nbImagePairs());
-    for (int pairIdx = 0; pairIdx < 1/*data.nbImagePairs()*/; ++pairIdx) {
+    std::vector<Vec4> pts3D;
+    for (int pairIdx = 0; pairIdx < data.nbImagePairs(); ++pairIdx) {
         if (!data.imagePair(pairIdx)->hasDisparityMap()) return;
         auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
         if (dispValues.type() != CV_16S) return;
@@ -704,7 +705,7 @@ void ProjectManager::triangulateDense(ProjectData &data)
                 const double d = static_cast<double>(dispValues.at<short>(v,u));
                 if (d * 0.0 != 0.0) continue; // check for NaN
 
-                Vec3 pl = Tli * Vec3(u  , v, 1.0);
+                Vec3 pl = Tli * Vec3(u, v, 1.0);
                 Vec3 pr = Tri * Vec3(double(u)+d, v, 1.0);
 
                 if (pl(0) < 0) continue;
@@ -721,39 +722,102 @@ void ProjectManager::triangulateDense(ProjectData &data)
             }
         }
 
-        pts3D[pairIdx].setZero(4,matches.size());
-
         auto Ps = data.getCameraMatrices();
         std::vector<Mat34> P;
         P.push_back(Ps[pairIdx]);
         P.push_back(Ps[pairIdx+1]);
 
+        int nbGoodPoints = 0;
     #ifdef WITH_OPENMP
         omp_set_num_threads(utils::nbAvailableThreads());
         #pragma omp parallel for
     #endif
         for (auto p = 0; p < matches.size(); ++p) {
-            pts3D[pairIdx].col(p) = utils::triangulate(matches[p],P);
-            pts3D[pairIdx].col(p) /= pts3D[pairIdx](3,p);
+            Vec4 pt = utils::triangulate(matches[p],P);
+            pt /= pt(3);
+
+            // check consistensy
+            double err = 0.0;
+            for (auto c = 0; c < P.size(); ++c) {
+                Vec3 q1 = P[c] * pt;
+                q1 /= q1(2);
+                const auto & xr = q1(0);
+                const auto & yr = q1(1);
+                const auto & x = matches[p][c](0);
+                const auto & y = matches[p][c](1);
+                err += (xr - x)*(xr - x) + (yr - y)*(yr - y);
+            }
+            bool inlier = err < 2*2;
+            #pragma omp critical
+            if (inlier) {
+                pts3D.push_back(pt);
+                nbGoodPoints++;
+            }
         }
+        LOG_INFO("Good points: %0.2f %%", 100.0f * nbGoodPoints / float(matches.size()));
     }
 
-    Mat4X result = utils::concatenateMat(pts3D,utils::CONCAT_HORIZONTAL);
+    Mat4X result;
+    utils::convert(pts3D,result);
 
     CommandManager::get()->executeCommand(
-                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3D),result,false)
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DDense),result,false)
                 );
-    LOG_OK("Triangulated %i points", data.getPts3D().cols());
+
+    LOG_OK("Triangulated %i points", data.getPts3DSparse().cols());
 }
 
 void ProjectManager::bundleAdjustment(ProjectData &data)
 {
-    LOG_ERR("Not implemented yet :)");
+    BundleProblem p;
+    p.X = data.getPts3DSparse();
+    p.W = data.getMeasurementMatrixFull();
+
+    if (p.X.cols() != p.W.cols()) {
+        LOG_ERR("Measurement matrix doesn't correspond to 3D points");
+        return;
+    }
+
+    data.getCamerasIntrinsics(&p.cam);
+    data.getCamerasExtrinsics(&p.R,&p.t);
+
+    std::cout << data.getCameraMatricesMat() << std::endl;
+
+    const auto nbCams = p.R.size();
+    {
+        BundleParams params(nbCams);
+        params.setConstAll();
+        params.setVaryingPts();
+        BundleAdjustment ba;
+        ba.run(p,params);
+    }
+
+    {
+        BundleParams params(nbCams);
+        params.setConstAll();
+        params.setVaryingAllCams(p3dBundleParam_R);
+        params.setVaryingAllCams(p3dBundleParam_t);
+        params.setConstAllParams({0});
+        BundleAdjustment ba;
+        ba.run(p,params);
+    }
+
+    {
+        BundleParams params(nbCams);
+        params.setConstAll();
+        params.setVaryingPts();
+        BundleAdjustment ba;
+        ba.run(p,params);
+    }
+
+    data.setPts3DSparse(p.X);
+    data.setCamerasIntrinsics(p.cam);
+    data.setCamerasExtrinsics(p.R,p.t);
 }
 
 void ProjectManager::exportPLY(ProjectData &data)
 {
-    auto X = data.getPts3D();
+    auto X = data.getPts3DSparse();
     if (X.cols() == 0) {
         LOG_ERR("No reconstructed points...");
         return;
