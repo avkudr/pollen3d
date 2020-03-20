@@ -9,6 +9,7 @@ int ImagePair::initMeta()
         std::cout << "Reflecting: ImagePair" << std::endl;
         entt::meta<ImagePair>()
                 .type("ImagePair"_hs)
+                .data<&ImagePair::denseMatching>(P3D_ID_TYPE(p3dImagePair_denseMatching))
                 .data<&ImagePair::setMatches,&ImagePair::getMatches>(P3D_ID_TYPE(p3dImagePair_matches))
                 .data<&ImagePair::setLeftImage,&ImagePair::imL>(P3D_ID_TYPE(p3dImagePair_imL))
                 .data<&ImagePair::setRightImage,&ImagePair::imR>(P3D_ID_TYPE(p3dImagePair_imR))
@@ -100,9 +101,17 @@ void ImagePair::getEpilines(const std::vector<Vec2> &pts, std::vector<Vec3> &epi
 }
 
 cv::Mat ImagePair::getDisparityMapPlot() const {
-    cv::Mat disp8;
-    cv::normalize(m_disparityMap, disp8, 0, 255, CV_MINMAX, CV_8U);
-    return disp8;
+    cv::Mat display;
+    if (m_disparityMap.type() != CV_32F) {
+        LOG_ERR("ImagePair::getDisparityMapPlot. Wrong type");
+        return display;
+    }
+    float Amin = *std::min_element(m_disparityMap.begin<float>(), m_disparityMap.end<float>());
+    float Amax = *std::max_element(m_disparityMap.begin<float>(), m_disparityMap.end<float>());
+    cv::Mat A_scaled = (m_disparityMap - Amin)/(Amax - Amin);
+    A_scaled.convertTo(display, CV_8UC1, 255.0, 0);
+    applyColorMap(display, display, cv::COLORMAP_HOT);
+    return display;
 }
 
 bool ImagePair::hasF() const
@@ -127,3 +136,28 @@ int Match::initMeta() {
     return 0;
 }
 int dummyMatch_ = Match::initMeta();
+
+int DenseMatching::initMeta()
+{
+    static bool firstCall = true;
+    if (firstCall) {
+        std::cout << "Reflecting: DenseMatching" << std::endl;
+        entt::meta<DenseMatching>()
+                .type("DenseMatching"_hs)
+                .data<&DenseMatching::dispMethod>(P3D_ID_TYPE(p3dDense_DispMethod))
+                .data<&DenseMatching::dispLowerBound>(P3D_ID_TYPE(p3dDense_DispLowerBound))
+                .data<&DenseMatching::dispUpperBound>(P3D_ID_TYPE(p3dDense_DispUpperBound))
+                .data<&DenseMatching::dispBlockSize>(P3D_ID_TYPE(p3dDense_DispBlockSize))
+                .data<&DenseMatching::dispFilterNewValue>(P3D_ID_TYPE(p3dDense_DispFilterNewValue))
+                .data<&DenseMatching::dispFilterMaxSpeckleSize>(P3D_ID_TYPE(p3dDense_DispFilterMaxSpeckleSize))
+                .data<&DenseMatching::dispFilterMaxDiff>(P3D_ID_TYPE(p3dDense_DispFilterMaxDiff))
+                .data<&DenseMatching::bilateralD>(P3D_ID_TYPE(p3dDense_BilateralD))
+                .data<&DenseMatching::bilateralSigmaColor>(P3D_ID_TYPE(p3dDense_BilateralSigmaColor))
+                .data<&DenseMatching::bilateralSigmaSpace>(P3D_ID_TYPE(p3dDense_BilateralSigmaSpace));
+
+        SERIALIZED_ADD_READ_WRITE(DenseMatching,"DenseMatching"_hs);
+        firstCall = false;
+    }
+    return 0;
+}
+int dummyDenseMatching_ = DenseMatching::initMeta();

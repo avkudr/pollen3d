@@ -62,7 +62,6 @@ void ApplicationOpenGL::init() {
     m_textureId = new GLuint(0);
     m_viewer3D = std::make_unique<Viewer3DOpenGL>();
     m_viewer3D->init();
-
 }
 
 void ApplicationOpenGL::setWindowTitleImpl(std::string str)

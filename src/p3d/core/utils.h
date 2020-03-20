@@ -47,6 +47,7 @@ enum{
 
 cv::Mat concatenateCvMat(const std::vector<cv::Mat> & matArray, int method = CONCAT_VERTICAL);
 
+void convert(const std::vector<Vec3> & src, Mat4X & dst);
 void convert(const std::vector<Vec4> & src, Mat4X & dst);
 
 template<typename T, int SizeX, int SizeY>

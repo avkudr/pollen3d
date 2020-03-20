@@ -23,7 +23,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Compiling in Release")
 endif()
 
-OPTION(BUILD_UNIT_TESTS "Build unit tests" OFF)
+OPTION(BUILD_UNIT_TESTS "Build unit tests" ON)
 OPTION(USE_OPENMP "Use OpenMP" ON)
 
 set(ASSETS_FONTS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fonts CACHE STRING "Path to the folder with fonts")

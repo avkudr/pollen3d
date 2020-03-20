@@ -16,7 +16,6 @@
 #include "p3d/core/utils.h"
 #include "p3d/core/autocalib.h"
 #include "p3d/core/bundle_adjustment.h"
-#include "p3d/commands.h"
 
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 
@@ -165,6 +164,8 @@ void ProjectManager::openProject(ProjectData *data, std::string path)
         }
     } catch (const cv::Exception & e) {
         LOG_ERR("cvErr:%s",e.what());
+    } catch (...) {
+        LOG_ERR("Unknown error");
     }
 }
 
@@ -430,25 +431,8 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
     LOG_WARN("No Undo functionnality");
 }
 
-struct Params{
-    int lowerBound = -1;
-    int upperBound = 2;
-    int blockSize  = 5;
-};
-
-struct ParamsFilter{
-    int newVal = 0; // The disparity value used to paint-off the speckles
-    int maxSpeckleSize = 260; // The maximum speckle size to consider it a speckle. Larger blobs are not affected by the algorithm
-    int maxDiff = 10; // Maximum difference between neighbor disparity pixels to put them into the same blob. Note that since StereoBM,
-    //StereoSGBM and may be other algorithms return a fixed-point disparity map, where disparity values are multiplied by 16,
-    //this scale factor should be taken into account when specifying this parameter value.
-};
-
 void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPairsIds)
 {
-    Params _params;
-    ParamsFilter _paramsFilter;
-
     int _method = cv::StereoSGBM::MODE_SGBM; // Default method
 
     if (data.nbImagePairs() == 0) return;
@@ -469,21 +453,25 @@ void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPair
         const auto & imLeftR = data.imagePair(i)->getRectifiedImageL();
         const auto & imRightR = data.imagePair(i)->getRectifiedImageR();
 
-        cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create( 16*_params.lowerBound,
-                                                               16*_params.upperBound, //number of disparities
-                                                                  _params.blockSize);
+        const auto & lowerBound = 16*data.imagePair(i)->denseMatching.dispLowerBound;
+        const auto & upperBound = 16*data.imagePair(i)->denseMatching.dispUpperBound;
+        const auto & blockSize  = data.imagePair(i)->denseMatching.dispBlockSize;
+
+        cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create( lowerBound,
+                                                               upperBound, //number of disparities
+                                                               blockSize);
         sgbm->setMode(_method);
 
         int cn = imLeftR.channels();
-        sgbm->setP1(8*cn*_params.blockSize*_params.blockSize);
-        sgbm->setP2(32*cn*_params.blockSize*_params.blockSize);
+        sgbm->setP1(8*cn*blockSize*blockSize);
+        sgbm->setP2(32*cn*blockSize*blockSize);
 
         try{
             cv::Mat disparityMap;
             sgbm->compute(imLeftR, imRightR, disparityMap);
 
-            cv::Mat_<float> temp = disparityMap;
-            temp = temp / 16;
+            if (disparityMap.type() != CV_32F)
+                disparityMap.convertTo(disparityMap,CV_32F);
 
             //cv::bilateralFilter(temp,_dispValues,21,180,180); //use bilateral filter ?
             //_dispValues = temp; // no filter
@@ -504,6 +492,41 @@ void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPair
 
     if (groupCmd->empty()) delete groupCmd;
     else CommandManager::get()->executeCommand(groupCmd);
+}
+
+void ProjectManager::filterDisparityBilateral(ProjectData &data, std::vector<int> imPairsIds)
+{
+    auto pairIdx = 0;
+    auto imPair = data.imagePair(pairIdx);
+    if (!imPair) return;
+    if (!imPair->hasDisparityMap()) return;
+
+    auto m = imPair->getDisparityMap().clone();
+    auto d = imPair->denseMatching.bilateralD;
+    auto sc = imPair->denseMatching.bilateralSigmaColor;
+    auto ss = imPair->denseMatching.bilateralSigmaSpace;
+
+    cv::Mat mFiltered;
+
+    LOG_DBG("Disparity map type: %i", m.type());
+
+    if (m.type() != CV_32F)
+        m.convertTo(m,CV_32F);
+
+    LOG_DBG("Disparity map type: %i", m.type());
+
+    cv::bilateralFilter(m,mFiltered,d,sc,ss); //use bilateral filter ?
+
+    auto cmd = new CommandSetPropertyCV(
+                imPair,
+                &ImagePair::setDisparityMap,&ImagePair::getDisparityMap,mFiltered);
+    CommandManager::get()->executeCommand(cmd);
+    LOG_OK("Filtered disparity (bilateral)");
+}
+
+void ProjectManager::filterDisparitySpeckles(ProjectData &data, std::vector<int> imPairsIds)
+{
+
 }
 
 void ProjectManager::findMeasurementMatrixFull(ProjectData &data)
@@ -545,7 +568,7 @@ void ProjectManager::findMeasurementMatrixFull(ProjectData &data)
     }
     //data.setMeasurementMatrixFull(Wfull);
     CommandManager::get()->executeCommand(
-                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_measMatFull),Wfull,false)
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_measMatFull),Wfull)
                 );
     LOG_OK("Full measurement matrix: %ix%i",Wfull.rows(),Wfull.cols());
 }
@@ -668,15 +691,69 @@ void ProjectManager::triangulate(ProjectData &data)
     }
 
     CommandManager::get()->executeCommand(
-                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DSparse),pts3D,false)
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DSparse),pts3D,true)
                 );
     LOG_OK("Triangulated %i points", data.getPts3DSparse().cols());
 }
 
+void ProjectManager::triangulateStereo(ProjectData &data)
+{
+    auto pairIdx = 0;
+    auto imPair = data.imagePair(pairIdx);
+    if (!imPair) return;
+    if (!imPair->hasDisparityMap()) return;
+
+    auto rho = imPair->getRho();
+    if (utils::floatEq(rho,0.0)) return;
+
+    double cosRho = cos(rho);
+    double sinRho = sin(rho);
+
+    auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
+    if (dispValues.type() != CV_32F) {
+        LOG_ERR("Disparity map type must be CV_32F");
+        return;
+    }
+    dispValues = dispValues / 16.0;
+
+    std::vector<Vec3> pts3D;
+
+//#ifdef WITH_OPENMP
+//    omp_set_num_threads(utils::nbAvailableThreads());
+//    #pragma omp parallel for
+//#endif
+    for (int u = 0; u < dispValues.cols; ++u) {
+        for (int v = 0; v < dispValues.rows; ++v) {
+            const double d = static_cast<double>(dispValues.at<float>(v,u));
+            if (d * 0.0 != 0.0) continue; // check for NaN
+
+            const double q1x = u;
+            const double q1y = v;
+            const double q2x = double(u) + d;
+
+            const double q1z = (q1x * cosRho - q2x) / sinRho;
+
+//            #pragma omp critical
+            {
+                pts3D.emplace_back(Vec3(q1x,q1y,q1z));
+            }
+        }
+    }
+
+    Mat4X result;
+    utils::convert(pts3D,result);
+
+    CommandManager::get()->executeCommand(
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DDense),result,true)
+                );
+
+    LOG_OK("Triangulated (stereo) %i points", pts3D.size());
+}
+
 void ProjectManager::triangulateDense(ProjectData &data)
 {
-//    LOG_ERR("Not implemented yet");
-//    return;
+    LOG_ERR("Not implemented yet");
+    return;
 
     if (data.nbImages() < 2) {
         LOG_ERR("Not enough images");
@@ -687,7 +764,10 @@ void ProjectManager::triangulateDense(ProjectData &data)
     for (int pairIdx = 0; pairIdx < data.nbImagePairs(); ++pairIdx) {
         if (!data.imagePair(pairIdx)->hasDisparityMap()) return;
         auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
-        if (dispValues.type() != CV_16S) return;
+        if (dispValues.type() != CV_32F) {
+            LOG_ERR("Disparity map type must be CV_32F");
+            return;
+        }
         dispValues = dispValues / 16.0;
 
         Mat3 Tl = data.imagePair(pairIdx)->getRectifyingTransformL();
@@ -702,7 +782,7 @@ void ProjectManager::triangulateDense(ProjectData &data)
         std::vector<std::vector<Vec2>> matches;
         for (int u = 0; u < dispValues.cols; ++u) {
             for (int v = 0; v < dispValues.rows; ++v) {
-                const double d = static_cast<double>(dispValues.at<short>(v,u));
+                const double d = static_cast<double>(dispValues.at<float>(v,u));
                 if (d * 0.0 != 0.0) continue; // check for NaN
 
                 Vec3 pl = Tli * Vec3(u, v, 1.0);
@@ -761,7 +841,7 @@ void ProjectManager::triangulateDense(ProjectData &data)
     utils::convert(pts3D,result);
 
     CommandManager::get()->executeCommand(
-                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DDense),result,false)
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DDense),result,true)
                 );
 
     LOG_OK("Triangulated %i points", data.getPts3DSparse().cols());

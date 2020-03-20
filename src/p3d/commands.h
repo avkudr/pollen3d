@@ -48,7 +48,7 @@ template <typename T>
 class CommandSetProperty : public Command
 {
 public:
-    CommandSetProperty(T * instance, const P3D_ID_TYPE &propId, const entt::meta_any & v, bool compareWithOld = true) :
+    CommandSetProperty(T * instance, const P3D_ID_TYPE &propId, const entt::meta_any & v, bool force = false) :
         m_propId(propId),m_to(v),m_instance(instance)
     {
         if (instance == nullptr) return;
@@ -62,10 +62,8 @@ public:
 
         m_from = entt::meta_any{m_data.get(*instance)};
 
-        bool areDifferent = !impl::isMetaEqual(m_to, m_from);
-
-        if (!compareWithOld) m_isValid = true;
-        else if (m_to.type() == m_data.type() && areDifferent) {
+        if (force) m_isValid = true;
+        else if (m_to.type() == m_data.type() && !impl::isMetaEqual(m_to, m_from)) {
             m_isValid = true;
         }
     }

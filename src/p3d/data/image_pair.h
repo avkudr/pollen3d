@@ -18,6 +18,56 @@
 using std::vector;
 using std::string;
 
+enum p3dDense_
+{
+    p3dDense_DispMap = 0,
+    p3dDense_DispMethod,
+    p3dDense_DispLowerBound,
+    p3dDense_DispUpperBound,
+    p3dDense_DispBlockSize,
+
+    p3dDense_DispFilterNewValue, // The disparity value used to paint-off the speckles
+    p3dDense_DispFilterMaxSpeckleSize, // The maximum speckle size to consider it a speckle. Larger blobs are not affected by the algorithm
+    p3dDense_DispFilterMaxDiff, // Maximum difference between neighbor disparity pixels to put them into the same blob. Note that since StereoBM,
+    //StereoSGBM and may be other algorithms return a fixed-point disparity map, where disparity values are multiplied by 16,
+    //this scale factor should be taken into account when specifying this parameter value.
+
+    p3dDense_BilateralD, // The disparity value used to paint-off the speckles
+    p3dDense_BilateralSigmaColor, // The maximum speckle size to consider it a speckle. Larger blobs are not affected by the algorithm
+    p3dDense_BilateralSigmaSpace, // Maximum difference between neighbor disparity pixels to put them into the same blob. Note that since StereoBM,
+    //StereoSGBM and may be other algorithms return a fixed-point disparity map, where disparity values are multiplied by 16,
+    //this scale factor should be taken into account when specifying this parameter value.
+
+
+};
+
+class DenseMatching : public Serializable<DenseMatching>{
+public:
+    enum DenseMatchingMethod_{
+        DenseMatchingMethod_SGBM      = cv::StereoSGBM::MODE_SGBM,          ///< Perform parabolic interpolation on the table
+        DenseMatchingMethod_HH        = cv::StereoSGBM::MODE_HH,          ///< Perform linear interpolation on the table
+        DenseMatchingMethod_SGBM_3WAY = cv::StereoSGBM::MODE_SGBM_3WAY           ///< Perform parabolic interpolation on the table
+    };
+
+    static int initMeta();
+
+    cv::Mat dispMap;
+
+    int dispMethod{DenseMatchingMethod_SGBM};
+    int dispLowerBound{-1};
+    int dispUpperBound{2};
+    int dispBlockSize{9};
+
+    int dispFilterNewValue{0};
+    int dispFilterMaxSpeckleSize{260};
+    int dispFilterMaxDiff{10};
+
+    int bilateralD{9};
+    int bilateralSigmaColor{180};
+    int bilateralSigmaSpace{180};
+
+};
+
 enum p3dMatch_
 {
     p3dMatch_iPtL = 100,
@@ -61,6 +111,7 @@ enum p3dImagePair_
     p3dImagePair_Theta1, // theta_1
     p3dImagePair_Rho   , // rho
     p3dImagePair_Theta2, // theta_2
+    p3dImagePair_denseMatching,
 };
 
 class ImagePair : public Serializable<ImagePair>{
@@ -152,6 +203,8 @@ public:
         node["im_p" + std::to_string(int(p3dImagePair_disparityMap))] >> m_disparityMap;
     }
 
+    DenseMatching denseMatching{};
+
 private:
     int _imL = -1;
     int _imR = -1;
@@ -170,6 +223,7 @@ private:
     double m_theta1{0.0};
     double m_rho{0.0};
     double m_theta2{0.0};
+
 };
 
 #endif // IMAGE_PAIR_H

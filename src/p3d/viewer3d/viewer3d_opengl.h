@@ -41,9 +41,9 @@ public:
     }
 
     void release() override {
-        glDeleteFramebuffers(1,&m_fbo);
         glDeleteBuffers(1,&m_Tvbo);
         glDeleteVertexArrays(1,&m_Tvao);
+        glDeleteFramebuffers(1,&m_fbo);
         GLuint* tId = (GLuint*)m_textureId;
         if(tId) {
             glDeleteTextures(1,tId);
@@ -52,36 +52,15 @@ public:
     }
 
     void init() override {
-        release();
 
         // **** shaders
 
-        int major, minor;
-        glGetIntegerv(GL_MAJOR_VERSION,&major);
-        glGetIntegerv(GL_MINOR_VERSION,&minor);
-
-        //TRIANGLE CREATION//
-
-        float Tvertices[] = {
-            -0.5f, -0.5f, 0.0f,
-             0.5f, -0.5f, 0.0f,
-             0.0f,  0.5f, 0.0f
-        };
-
-        glGenFramebuffers(1,&m_fbo);
-
-        glGenVertexArrays(1, &m_Tvao);
-        glGenBuffers(1, &m_Tvbo);
-        glBindVertexArray(m_Tvao);
-        glBindBuffer(GL_ARRAY_BUFFER, m_Tvbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(Tvertices), Tvertices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-        m_nbPoints = 3;
-
+        glDeleteFramebuffers(1,&m_fbo);
         GLuint* tId = (GLuint*)m_textureId;
+        if(tId) {
+            glDeleteTextures(1,tId);
+            *tId = 0;
+        }
 
         // The texture we're going to render to
         glGenTextures(1, tId);

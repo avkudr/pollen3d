@@ -6,6 +6,7 @@
 #include "p3d/data/project_data.h"
 #include "p3d/core/core.h"
 #include "p3d/console_logger.h"
+#include "p3d/commands.h"
 
 class ProjectManager{
 public:
@@ -38,6 +39,8 @@ public:
     void findFundamentalMatrix(ProjectData & data, std::vector<int> imPairsIds = {});
     void rectifyImagePairs(ProjectData & data, std::vector<int> imPairsIds = {});
     void findDisparityMap(ProjectData & data, std::vector<int> imPairsIds = {});
+    void filterDisparityBilateral(ProjectData & data, std::vector<int> imPairsIds = {});
+    void filterDisparitySpeckles(ProjectData & data, std::vector<int> imPairsIds = {});
 
     // ***** Multiview
 
@@ -45,6 +48,7 @@ public:
     void findMeasurementMatrix(ProjectData & data);
     void autocalibrate(ProjectData & data);
     void triangulate(ProjectData & data);
+    void triangulateStereo(ProjectData & data);
     void triangulateDense(ProjectData & data);
     void bundleAdjustment(ProjectData & data);
     void exportPLY(ProjectData & data);
@@ -54,6 +58,15 @@ public:
     entt::meta_any getSetting(const p3dSetting & name);
     void setSetting(const p3dSetting & name, const entt::meta_any &value);
     void setSettings(const ProjectSettings & settings){ m_settings = settings; }
+
+    // ***** Data properties
+
+    template <typename T>
+    void setProperty(T * instance, const P3D_ID_TYPE &propId, const entt::meta_any & v, bool force = false) {
+        if (instance == nullptr) return;
+        CommandManager::get()->executeCommand(
+                    new CommandSetProperty(instance,propId,v,force));
+    }
 
 private:
     ProjectManager() {}
