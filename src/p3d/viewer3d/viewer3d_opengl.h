@@ -149,12 +149,12 @@ public:
 
         glBindVertexArray(m_Tvao);
         glPointSize(std::max(1.0f,m_pointSize));
-        if (m_shader) m_shader->setVec4("color",1.0f,1.0f,1.0f,1.0f);
+        if (m_shader) m_shader->setVec4("color",0.0f,0.0f,0.0f,0.0f);
         glDrawArrays(GL_POINTS, 0, m_nbPoints);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void setPointCloud(const Mat3X &pcd, Mat3X *colors) override;
+    void setPointCloud(const Mat3Xf &pcd, const Mat3Xf& colors) override;
 
 private:
     unsigned int m_fbo{0};

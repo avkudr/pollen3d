@@ -87,7 +87,7 @@ public:
     virtual void drawImpl() = 0;
     virtual void release() = 0;
     virtual void onSizeChanged(){}
-    virtual void setPointCloud(const Mat3X& pcd, Mat3X * colors = nullptr) = 0;
+    virtual void setPointCloud(const Mat3Xf& pcd, const Mat3Xf& colors) = 0;
 
     void rotateWorld(float dx, float dy) {
         const auto & up = m_camera.getUpAxis();

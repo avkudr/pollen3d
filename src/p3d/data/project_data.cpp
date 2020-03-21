@@ -22,6 +22,7 @@ int ProjectData::initMeta()
         std::cout << "Reflecting: ProjectData" << std::endl;
         entt::meta<ProjectData>()
             .type("ProjectData"_hs)
+            .data<&ProjectData::setPts3DDenseColors,&ProjectData::getPts3DDenseColors>(P3D_ID_TYPE(p3dData_pts3DDenseColors))
             .data<&ProjectData::setPts3DDense,&ProjectData::getPts3DDense>(P3D_ID_TYPE(p3dData_pts3DDense))
             .data<&ProjectData::setPts3DSparse,&ProjectData::getPts3DSparse>(P3D_ID_TYPE(p3dData_pts3DSparse))
             .data<&ProjectData::setMeasurementMatrix,&ProjectData::getMeasurementMatrix>(P3D_ID_TYPE(p3dData_measMat))

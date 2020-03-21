@@ -20,15 +20,16 @@ using std::string;
 typedef int p3dData;
 enum p3dData_
 {
-    p3dData_projectData = 2000,
-    p3dData_projectPath = 2001,
-    p3dData_dummy       = 2002,
-    p3dData_images      = 2003,
-    p3dData_imagePairs  = 2004,
-    p3dData_measMat     = 2005,
-    p3dData_measMatFull = 2006,
-    p3dData_pts3DSparse = 2007,
-    p3dData_pts3DDense  = 2008,
+    p3dData_projectData      = 2000,
+    p3dData_projectPath      = 2001,
+    p3dData_dummy            = 2002,
+    p3dData_images           = 2003,
+    p3dData_imagePairs       = 2004,
+    p3dData_measMat          = 2005,
+    p3dData_measMatFull      = 2006,
+    p3dData_pts3DSparse      = 2007,
+    p3dData_pts3DDense       = 2008,
+    p3dData_pts3DDenseColors = 2009,
 };
 
 class ProjectData : public Serializable<ProjectData>{
@@ -95,8 +96,10 @@ public:
 
     const Mat4X & getPts3DSparse() const { return m_pts3DSparse; }
     void setPts3DSparse(const Mat4X &pts3D) { m_pts3DSparse = pts3D; }
-    const Mat4X & getPts3DDense() const { return m_pts3DDense; }
-    void setPts3DDense(const Mat4X &pts3D) { m_pts3DDense = pts3D; }
+    const Mat3Xf & getPts3DDense() const { return m_pts3DDense; }
+    void setPts3DDense(const Mat3Xf &pts3D) { m_pts3DDense = pts3D; }
+    const Mat3Xf & getPts3DDenseColors() const { return m_pts3DDenseColors; }
+    void setPts3DDenseColors(const Mat3Xf &pts3D) { m_pts3DDenseColors = pts3D; }
 private:
 
     Image * imagePairImage(const std::size_t idx, bool left) {
@@ -114,5 +117,6 @@ private:
     Mat m_measurementMatrixFull{Mat::Zero(0,0)};
 
     Mat4X m_pts3DSparse;
-    Mat4X m_pts3DDense;
+    Mat3Xf m_pts3DDense{};
+    Mat3Xf m_pts3DDenseColors{};
 };

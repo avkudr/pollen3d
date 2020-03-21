@@ -325,6 +325,18 @@ void utils::EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2)
     }
 }
 
+void utils::convert(const std::vector<Vec3f> &src, Mat3Xf &dst)
+{
+    dst.setZero(3,src.size());
+    for (int i = 0; i < src.size(); ++i) dst.col(i) = src[i];
+}
+
+void utils::convert(const std::vector<Vec3> &src, Mat3Xf &dst)
+{
+    dst.setZero(3,src.size());
+    for (int i = 0; i < src.size(); ++i) dst.col(i) = src[i].cast<float>();
+}
+
 void utils::convert(const std::vector<Vec4> &src, Mat4X &dst)
 {
     dst.setZero(4,src.size());

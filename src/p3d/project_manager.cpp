@@ -158,6 +158,7 @@ void ProjectManager::openProject(ProjectData *data, std::string path)
             m_settings.read(fs["ProjectSettings"]);
             data->read(fs["ProjectData"]);
             LOG_OK( "Done" );
+            fs.
             fs.release();
         } else {
             LOG_ERR( "Can't write to %s", path.c_str() );
@@ -276,7 +277,7 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
     CommandGroup * groupCmd = new CommandGroup();
 
 #ifdef WITH_OPENMP
-    omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
+    omp_set_num_threads(std::min(int(imPairsIds.size()),utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
     for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
@@ -311,12 +312,21 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
 
 void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPairsIds)
 {
-    if (data.nbImagePairs() == 0) return;
+    LOG_INFO("ProjectManager::rectifyImagePairs");
+
+    if (data.nbImagePairs() == 0) {
+        LOG_ERR("No image pair to rectify");
+        return;
+    }
+
     if (imPairsIds.empty())
-        for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
+        for (int i = 0; i < data.nbImagePairs(); ++i) {
+            LOG_INFO("rectifyImagePairs: %i", i);
+            imPairsIds.push_back(i);
+        }
 
 #ifdef WITH_OPENMP
-    omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
+    omp_set_num_threads(std::min(int(imPairsIds.size()),utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
     for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
@@ -442,7 +452,7 @@ void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPair
     CommandGroup * groupCmd = new CommandGroup();
 
 #ifdef WITH_OPENMP
-    omp_set_num_threads(std::min(int(data.nbImagePairs()),utils::nbAvailableThreads()));
+    omp_set_num_threads(std::min(int(imPairsIds.size()),utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
     for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
@@ -610,8 +620,8 @@ void ProjectManager::autocalibrate(ProjectData &data)
     for (auto i = 0; i < data.nbImagePairs(); ++i) {
         auto F = data.imagePair(i)->getFundMat();
         auto angles = fundmat::slopAngles(F);
-        slopes(0,i+1) = angles.first;
-        slopes(1,i+1) = angles.second;
+        slopes(0,i+1) = angles.second;
+        slopes(1,i+1) = angles.first;
     }
 
     AutoCalibrator autocalib(data.nbImages());
@@ -638,14 +648,14 @@ void ProjectManager::autocalibrate(ProjectData &data)
     auto rotRad = autocalib.getRotationAngles();
     // first line of rotRad is [0,0,0]
     for (auto i = 0; i < data.nbImagePairs(); ++i) {
-        data.imagePair(i)->setTheta1(rotRad(i+1,0));
+        data.imagePair(i)->setTheta1(rotRad(i+1,2));
         data.imagePair(i)->setRho(rotRad(i+1,1));
-        data.imagePair(i)->setTheta2(rotRad(i+1,2));
+        data.imagePair(i)->setTheta2(rotRad(i+1,0));
     }
 
     auto rot = utils::rad2deg(rotRad);
 
-    LOG_OK("Angles: [theta rho theta']");
+    LOG_OK("Angles: [theta' rho theta]");
     std::stringstream ss;
     ss << rot.format(CleanFmt);
     auto rows = utils::split(ss.str(),"\n");
@@ -706,8 +716,8 @@ void ProjectManager::triangulateStereo(ProjectData &data)
     auto rho = imPair->getRho();
     if (utils::floatEq(rho,0.0)) return;
 
-    double cosRho = cos(rho);
-    double sinRho = sin(rho);
+    float cosRho = cos(rho);
+    float sinRho = sin(rho);
 
     auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
     if (dispValues.type() != CV_32F) {
@@ -716,35 +726,48 @@ void ProjectManager::triangulateStereo(ProjectData &data)
     }
     dispValues = dispValues / 16.0;
 
-    std::vector<Vec3> pts3D;
+    std::vector<Vec3f> pts3D;
+    std::vector<Vec3f> colors;
 
 //#ifdef WITH_OPENMP
 //    omp_set_num_threads(utils::nbAvailableThreads());
 //    #pragma omp parallel for
 //#endif
+
+    cv::Mat I = data.imagePair(pairIdx)->getRectifiedImageL();
+    if (I.type() != CV_8UC3) LOG_DBG("Rectified image has wrong type: %i", I.type());
+
     for (int u = 0; u < dispValues.cols; ++u) {
         for (int v = 0; v < dispValues.rows; ++v) {
-            const double d = static_cast<double>(dispValues.at<float>(v,u));
+            const float d = dispValues.at<float>(v,u);
             if (d * 0.0 != 0.0) continue; // check for NaN
 
-            const double q1x = u;
-            const double q1y = v;
-            const double q2x = double(u) + d;
+            const float q1x = u;
+            const float q1y = v;
+            const float q2x = float(u) + d;
 
-            const double q1z = (q1x * cosRho - q2x) / sinRho;
+            const float q1z = (q1x * cosRho - q2x) / sinRho;
 
 //            #pragma omp critical
+            cv::Vec3b c = I.at<cv::Vec3b>(v,u);
+            if (c != cv::Vec3b(0,0,0))
             {
-                pts3D.emplace_back(Vec3(q1x,q1y,q1z));
+                pts3D.emplace_back(Vec3f(q1x,q1y,q1z));
+                colors.emplace_back(Vec3f(c.val[0]/ 255.f,c.val[1]/ 255.f,c.val[2]/ 255.f));
             }
         }
     }
 
-    Mat4X result;
+    Mat3Xf result;
+    Mat3Xf colorsMat;
     utils::convert(pts3D,result);
+    utils::convert(colors,colorsMat);
 
     CommandManager::get()->executeCommand(
                 new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DDense),result,true)
+                );
+    CommandManager::get()->executeCommand(
+                new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DDenseColors),colorsMat,true)
                 );
 
     LOG_OK("Triangulated (stereo) %i points", pts3D.size());

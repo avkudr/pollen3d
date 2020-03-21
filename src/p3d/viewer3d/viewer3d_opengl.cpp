@@ -1,12 +1,15 @@
 #include "viewer3d_opengl.h"
 
-void Viewer3DOpenGL::setPointCloud(const Mat3X &pcd, Mat3X *colors)
+void Viewer3DOpenGL::setPointCloud(const Mat3Xf &pcd, const Mat3Xf &colors)
 {
     if (pcd.cols() == 0) return;
 
-    Eigen::Matrix<float,3,Eigen::Dynamic> V = pcd.cast<float>();
+    m_nbPoints = pcd.cols();
 
-    m_nbPoints = V.cols();
+    Eigen::Matrix<float,6,Eigen::Dynamic> data;
+    data.setOnes(6,m_nbPoints);
+    data.topRows(3) = pcd;
+    if (colors.cols() == m_nbPoints) data.bottomRows(3) = colors;
 
     glDeleteBuffers(1,&m_Tvbo);
     glDeleteVertexArrays(1,&m_Tvao);
@@ -15,26 +18,30 @@ void Viewer3DOpenGL::setPointCloud(const Mat3X &pcd, Mat3X *colors)
     glGenBuffers(1, &m_Tvbo);
     glBindVertexArray(m_Tvao);
     glBindBuffer(GL_ARRAY_BUFFER, m_Tvbo);
-    if(V.Options & Eigen::RowMajor)
+    if(data.Options & Eigen::RowMajor)
     {
       glBufferData(
         GL_ARRAY_BUFFER,
-        sizeof(float)*V.size(),
-        V.data(),
+        sizeof(float)*data.size(),
+        data.data(),
         GL_STATIC_DRAW);
     }else
     {
       // Create temporary copy of transpose
-      auto VT = V.transpose();
+      auto VT = data.transpose();
       // If its column major then we need to temporarily store a transpose
       glBufferData(
         GL_ARRAY_BUFFER,
-        sizeof(float)*V.size(),
+        sizeof(float)*data.size(),
         VT.data(),
         GL_STATIC_DRAW);
     }
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    // color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+    glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }

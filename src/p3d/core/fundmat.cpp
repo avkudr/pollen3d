@@ -220,8 +220,8 @@ std::pair<double, double> fundmat::slopAngles(const Mat3 &F)
     const auto & b = F(1,2);
     const auto & c = F(2,0);
     const auto & d = F(2,1);
-    angles.first  = std::atan(-a/b); // theta'
-    angles.second = std::atan(-c/d); // theta
+    angles.second  = std::atan(-a/b); // theta
+    angles.first   = std::atan(-c/d); // theta'
     return angles;
 }
 

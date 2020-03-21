@@ -26,6 +26,8 @@ int registerTypes() {
         SERIALIZE_TYPE_EIGEN(float, 4, 1, "Eigen__float41"_hs);
         SERIALIZE_TYPE_EIGEN(float, 4, 4, "Eigen__float44"_hs);
         SERIALIZE_TYPE_EIGEN(float,-1,-1, "Eigen__floatXX"_hs);
+        SERIALIZE_TYPE_EIGEN(float, 3,-1, "Eigen__float3X"_hs);
+        SERIALIZE_TYPE_EIGEN(float, 6,-1, "Eigen__float6X"_hs);
 
         SERIALIZE_TYPE_EIGEN(double, 2, 1, "Eigen__double21"_hs);
         SERIALIZE_TYPE_EIGEN(double, 3, 1, "Eigen__double31"_hs);

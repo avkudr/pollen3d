@@ -486,7 +486,7 @@ void Application::_drawTab_Stereo()
             }
 
             ImGui::SameLine();
-            if (ImGui::Button("ALL"))
+            if (ImGui::Button("ALL##matching"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->matchFeatures(m_projectData);
@@ -501,7 +501,6 @@ void Application::_drawTab_Stereo()
             bool disableButtons = disabled || !imPair->hasMatches();
             if (disableButtons) ImGuiC::PushDisabled();
 
-            ImGui::SetNextItemWidth(matchingWidgetW);
             if (ImGui::Button("Find fundamental matrix"))
             {
                 auto f = [&]() {
@@ -510,8 +509,8 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
 
-            ImGui::SetNextItemWidth(matchingWidgetW);
-            if (ImGui::Button("ALL"))
+            ImGui::SameLine();
+            if (ImGui::Button("ALL##fundamental"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->findFundamentalMatrix(m_projectData);
@@ -526,7 +525,6 @@ void Application::_drawTab_Stereo()
             bool disableButtons = disabled || !imPair->hasF();
             if (disableButtons) ImGuiC::PushDisabled();
 
-            ImGui::SetNextItemWidth(matchingWidgetW);
             if (ImGui::Button("Rectify image pair"))
             {
                 auto f = [&]() {
@@ -536,8 +534,8 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
 
-            ImGui::SetNextItemWidth(matchingWidgetW);
-            if (ImGui::Button("ALL"))
+            ImGui::SameLine();
+            if (ImGui::Button("ALL##rectify"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->rectifyImagePairs(m_projectData);
@@ -589,7 +587,7 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             ImGui::SameLine();
-            if (ImGui::Button("ALL"))
+            if (ImGui::Button("ALL##densematch"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->findDisparityMap(m_projectData);
@@ -627,7 +625,7 @@ void Application::_drawTab_Stereo()
                            "proportional to sigmaSpace.");
             }
 
-            if (ImGui::Button("Filter"))
+            if (ImGui::Button("Filter##bilateral"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->filterDisparityBilateral(m_projectData, {m_currentImage});
@@ -636,7 +634,7 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             ImGui::SameLine();
-            if (ImGui::Button("ALL"))
+            if (ImGui::Button("ALL##bilateral"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->filterDisparityBilateral(m_projectData);
@@ -663,7 +661,7 @@ void Application::_drawTab_Stereo()
                     ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_DispFilterMaxDiff,dispFilterMaxDiff);
             }
 
-            if (ImGui::Button("Filter"))
+            if (ImGui::Button("Filter##speckles"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->filterDisparitySpeckles(m_projectData, {m_currentImage});
@@ -672,7 +670,7 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             ImGui::SameLine();
-            if (ImGui::Button("ALL"))
+            if (ImGui::Button("ALL##speckles"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->filterDisparitySpeckles(m_projectData);
@@ -1129,7 +1127,10 @@ void Application::_drawCentral()
 
         if (m_viewer3dNeedsUpdate) {
             m_viewer3D->init();
-            m_viewer3D->setPointCloud(m_projectData.getPts3DDense().topRows(3));
+            m_viewer3D->setPointCloud(
+                        m_projectData.getPts3DDense(),
+                        m_projectData.getPts3DDenseColors()
+                        );
             m_viewer3dNeedsUpdate = false;
         }
 
@@ -1226,6 +1227,13 @@ void Application::_drawCentral()
                 if (m_currentSection == Section_Default) {
                     if (display == SHOW_MATCHES) _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),color,lineWidth,skipEvery);
                     else if (display == SHOW_EPILINES) _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),color,lineWidth,skipEvery);
+                } else if (m_currentSection == Section_Rectified) {
+                    // just draw a horizontal line to judge the quality of rectification
+                    if (ImGui::IsItemHovered()) {
+                        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+                        auto y = ImGui::GetIO().MousePos.y;
+                        draw_list->AddLine(ImVec2(posX, y),ImVec2(posX+newW, y), ImColor(200,0,0,120),2);
+                    }
                 }
             }
         } else {
