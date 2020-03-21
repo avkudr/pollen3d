@@ -51,9 +51,9 @@ struct Diamond {
 
         R.resize(4);
         R[0].setIdentity();
-        R[1] = utils::RfromEulerZYZt(deg2rad(slopes(0,1)), deg2rad(rhos[1]),deg2rad(slopes(1,1))) * R[0];
-        R[2] = utils::RfromEulerZYZt(deg2rad(slopes(0,2)), deg2rad(rhos[2]),deg2rad(slopes(1,2))) * R[1];
-        R[3] = utils::RfromEulerZYZt(deg2rad(slopes(0,3)), deg2rad(rhos[3]),deg2rad(slopes(1,3))) * R[2];
+        R[1] = utils::RfromEulerZYZt_inv(deg2rad(slopes(0,1)), deg2rad(rhos[1]),deg2rad(slopes(1,1))) * R[0];
+        R[2] = utils::RfromEulerZYZt_inv(deg2rad(slopes(0,2)), deg2rad(rhos[2]),deg2rad(slopes(1,2))) * R[1];
+        R[3] = utils::RfromEulerZYZt_inv(deg2rad(slopes(0,3)), deg2rad(rhos[3]),deg2rad(slopes(1,3))) * R[2];
 
         t = std::vector<Vec2>(R.size(),{500,250});
 

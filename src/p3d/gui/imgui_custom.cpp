@@ -14,7 +14,6 @@ void ImGuiC::PopDisabled()
 }
 
 
-
 void ImGuiC::ItemCircle(const char *label, const ImVec2 & pt, float radius, const ImU32 & color32)
 {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -27,4 +26,20 @@ void ImGuiC::ItemCircle(const char *label, const ImVec2 & pt, float radius, cons
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     draw_list->AddCircle(pt, radius, color32, 6, 2);
 
+}
+
+void ImGuiC::HelpMarker(const char *desc, bool sameLine)
+{
+    if (sameLine) ImGui::SameLine();
+    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+    ImGui::PopItemFlag();
 }

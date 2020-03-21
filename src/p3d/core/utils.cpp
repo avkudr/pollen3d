@@ -325,6 +325,14 @@ void utils::EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2)
     }
 }
 
+void utils::EulerZYZtfromRinv(const Mat3 &R, double &t1, double &rho, double &t2) {
+    double a=0,b=0,c=0;
+    utils::EulerZYZtfromR(R,a,b,c);
+    t2  = a;
+    rho = -b;
+    t1  = c;
+}
+
 void utils::convert(const std::vector<Vec3f> &src, Mat3Xf &dst)
 {
     dst.setZero(3,src.size());
@@ -347,4 +355,10 @@ void utils::convert(const std::vector<Vec3> &src, Mat4X &dst)
 {
     dst.setOnes(4,src.size());
     for (int i = 0; i < src.size(); ++i) dst.col(i).topRows(3) = src[i];
+}
+
+void utils::wrapHalfPI(double &angleRad)
+{
+    while (angleRad < -M_PI/2) angleRad += M_PI;
+    while (angleRad >  M_PI/2) angleRad -= M_PI;
 }

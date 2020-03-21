@@ -163,16 +163,16 @@ void ProjectData::getCamerasExtrinsics(std::vector<Vec3> *R, std::vector<Vec2> *
             double rho = m_imagesPairs[i].getRho();
             double t2  = m_imagesPairs[i].getTheta2();
 
-            Rarray[i+1] = utils::RfromEulerZYZt(t1,rho,t2);
+            Rarray[i+1] = utils::RfromEulerZYZt_inv(t1,rho,t2);
             if (i != 0) Rarray[i+1] = Rarray[i+1] * Rarray[i];
         }
 
         R->resize(nbImages());
         for (auto i = 0; i < nbImages(); i++){
             const Mat3 & m = Rarray[i];
-            double t1,rho,t2;
-            utils::EulerZYZtfromR(m, t1, rho, t2);
-            (*R)[i] << t1,rho,t2;
+            double a,b,c;
+            utils::EulerZYZtfromR(m, a, b, c);
+            (*R)[i] << a,b,c;
         }
     }
 
@@ -191,17 +191,20 @@ void ProjectData::setCamerasExtrinsics(std::vector<Vec3> &R, std::vector<Vec2> &
     std::vector<Mat3> Rarray(nbImages());
     Rarray[0].setIdentity();
     for (auto i = 0; i < nbImagePairs(); i++){
-        const auto & t1  = R[i+1][0];
-        const auto & rho = R[i+1][1];
-        const auto & t2  = R[i+1][2];
-        Rarray[i+1] = utils::RfromEulerZYZt(t1,rho,t2);
+        const auto & a  = R[i+1][0];
+        const auto & b = R[i+1][1];
+        const auto & c  = R[i+1][2];
+        Rarray[i+1] = utils::RfromEulerZYZt(a,b,c);
     }
 
     std::vector<Mat3> R_(nbImagePairs());
     for (auto i = 0; i < nbImagePairs(); i++){
         Mat3 dR = Rarray[i].inverse() * Rarray[i+1];
+
         double t1, rho, t2;
-        utils::EulerZYZtfromR(dR,t1,rho,t2);
+        utils::EulerZYZtfromRinv(dR,t1,rho,t2);
+        utils::wrapHalfPI(t1);
+        utils::wrapHalfPI(t2);
         m_imagesPairs[i].setTheta1(t1);
         m_imagesPairs[i].setRho(rho);
         m_imagesPairs[i].setTheta2(t2);
@@ -225,7 +228,7 @@ std::vector<Mat34> ProjectData::getCameraMatrices()
         double rho = m_imagesPairs[i].getRho();
         double t2  = m_imagesPairs[i].getTheta2();
 
-        Rarray[i+1] = utils::RfromEulerZYZt(t1,rho,t2);
+        Rarray[i+1] = utils::RfromEulerZYZt_inv(t1,rho,t2);
         if (i != 0) Rarray[i+1] = Rarray[i+1] * Rarray[i];
     }
 

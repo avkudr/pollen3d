@@ -2,7 +2,7 @@
 
 #include <omp.h>
 
-#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <Eigen/Dense>
 
@@ -192,7 +192,12 @@ void ProjectManager::extractFeatures(ProjectData &data, std::vector<int> imIds)
         std::vector<cv::KeyPoint> kpts;
         cv::Mat desc;
 
-        cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB,0,3,0.001f );
+        cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create(
+                    getSetting(p3dSetting_featuresDescType).cast<int>(),
+                    getSetting(p3dSetting_featuresDescSize).cast<int>(),
+                    getSetting(p3dSetting_featuresDescChannels).cast<int>(),
+                    getSetting(p3dSetting_featuresThreshold).cast<float>()
+                    );
         akaze->detectAndCompute(im->cvMat(), cv::noArray(), kpts, desc);
         akaze.release();
 
@@ -618,10 +623,8 @@ void ProjectManager::autocalibrate(ProjectData &data)
     Mat2X slopes;
     slopes.setZero(2,data.nbImages());
     for (auto i = 0; i < data.nbImagePairs(); ++i) {
-        auto F = data.imagePair(i)->getFundMat();
-        auto angles = fundmat::slopAngles(F);
-        slopes(0,i+1) = angles.second;
-        slopes(1,i+1) = angles.first;
+        slopes(0,i+1) = data.imagePair(i)->getTheta1();
+        slopes(1,i+1) = data.imagePair(i)->getTheta2();
     }
 
     AutoCalibrator autocalib(data.nbImages());
@@ -648,14 +651,14 @@ void ProjectManager::autocalibrate(ProjectData &data)
     auto rotRad = autocalib.getRotationAngles();
     // first line of rotRad is [0,0,0]
     for (auto i = 0; i < data.nbImagePairs(); ++i) {
-        data.imagePair(i)->setTheta1(rotRad(i+1,2));
+        data.imagePair(i)->setTheta1(rotRad(i+1,0));
         data.imagePair(i)->setRho(rotRad(i+1,1));
-        data.imagePair(i)->setTheta2(rotRad(i+1,0));
+        data.imagePair(i)->setTheta2(rotRad(i+1,2));
     }
 
     auto rot = utils::rad2deg(rotRad);
 
-    LOG_OK("Angles: [theta' rho theta]");
+    LOG_OK("Angles: [theta rho theta']");
     std::stringstream ss;
     ss << rot.format(CleanFmt);
     auto rows = utils::split(ss.str(),"\n");
@@ -775,15 +778,15 @@ void ProjectManager::triangulateStereo(ProjectData &data)
 
 void ProjectManager::triangulateDense(ProjectData &data)
 {
-    LOG_ERR("Not implemented yet");
-    return;
+    //LOG_ERR("Not implemented yet");
+    //return;
 
     if (data.nbImages() < 2) {
         LOG_ERR("Not enough images");
         return;
     }
 
-    std::vector<Vec4> pts3D;
+    std::vector<Vec3> pts3D;
     for (int pairIdx = 0; pairIdx < data.nbImagePairs(); ++pairIdx) {
         if (!data.imagePair(pairIdx)->hasDisparityMap()) return;
         auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
@@ -831,10 +834,10 @@ void ProjectManager::triangulateDense(ProjectData &data)
         P.push_back(Ps[pairIdx+1]);
 
         int nbGoodPoints = 0;
-    #ifdef WITH_OPENMP
-        omp_set_num_threads(utils::nbAvailableThreads());
-        #pragma omp parallel for
-    #endif
+//    #ifdef WITH_OPENMP
+//        omp_set_num_threads(utils::nbAvailableThreads());
+//        #pragma omp parallel for
+//    #endif
         for (auto p = 0; p < matches.size(); ++p) {
             Vec4 pt = utils::triangulate(matches[p],P);
             pt /= pt(3);
@@ -851,23 +854,23 @@ void ProjectManager::triangulateDense(ProjectData &data)
                 err += (xr - x)*(xr - x) + (yr - y)*(yr - y);
             }
             bool inlier = err < 2*2;
-            #pragma omp critical
+            //#pragma omp critical
             if (inlier) {
-                pts3D.push_back(pt);
+                pts3D.push_back(pt.topRows(3));
                 nbGoodPoints++;
             }
         }
         LOG_INFO("Good points: %0.2f %%", 100.0f * nbGoodPoints / float(matches.size()));
     }
 
-    Mat4X result;
+    Mat3Xf result;
     utils::convert(pts3D,result);
 
     CommandManager::get()->executeCommand(
                 new CommandSetProperty(&data,P3D_ID_TYPE(p3dData_pts3DDense),result,true)
                 );
 
-    LOG_OK("Triangulated %i points", data.getPts3DSparse().cols());
+    LOG_OK("Triangulated %i points", pts3D.size());
 }
 
 void ProjectManager::bundleAdjustment(ProjectData &data)
@@ -884,8 +887,7 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
     data.getCamerasIntrinsics(&p.cam);
     data.getCamerasExtrinsics(&p.R,&p.t);
 
-    std::cout << data.getCameraMatricesMat() << std::endl;
-
+    LOG_OK("Bundle adjustement started...");
     const auto nbCams = p.R.size();
     {
         BundleParams params(nbCams);
@@ -916,6 +918,8 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
     data.setPts3DSparse(p.X);
     data.setCamerasIntrinsics(p.cam);
     data.setCamerasExtrinsics(p.R,p.t);
+
+    LOG_OK("Bundle adjustement: done");
 }
 
 void ProjectManager::exportPLY(ProjectData &data)

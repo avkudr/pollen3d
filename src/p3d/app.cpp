@@ -366,6 +366,16 @@ void Application::_drawMenuBar(int width)
         };
         _doHeavyTask(f);
     }
+    ImGui::SameLine();
+    if (ImGui::Button("DBG_PROJ3",buttonRect))
+    {
+        auto f = [&]() {
+            ProjectManager::get()->openProject(&m_projectData, "test_project3" + std::string(P3D_PROJECT_EXTENSION));
+            m_currentImage = 0;
+            _resetAppState();
+        };
+        _doHeavyTask(f);
+    }
     ImGui::PopStyleColor();
 
     ImGui::End();
@@ -417,6 +427,32 @@ void Application::_drawTab_Image()
 
         if (ImGui::CollapsingHeader("Feature extraction",m_collapsingHeaderFlags))
         {
+            auto v2 = ProjectManager::get()->settings().featuresDescSize;
+            auto v3 = ProjectManager::get()->settings().featuresDescChannels;
+            auto v4 = ProjectManager::get()->settings().featuresThreshold;
+
+            ImGui::Text("AKAZE keypoint detector");
+            ImGuiC::HelpMarker("Fast Explicit Diffusion for Accelerated Features in Nonlinear "
+                               "Scale Spaces. Pablo F. Alcantarilla, Jesús Nuevo and Adrien "
+                               "Bartoli. (BMVC 2013)");
+
+            ImGui::InputInt("desc size",&v2);
+            if (ImGui::IsItemEdited())
+                ProjectManager::get()->setSetting(p3dSetting_featuresDescSize,v2);
+            ImGuiC::HelpMarker("Size of the descriptor in bits. 0 => Full size");
+
+            ImGui::InputInt("desc channels",&v3);
+            if (ImGui::IsItemEdited()) {
+                v3 = std::min(std::max(v3,1),3);
+                ProjectManager::get()->setSetting(p3dSetting_featuresDescChannels,v3);
+            }
+            ImGuiC::HelpMarker("Number of channels in the descriptor (1, 2, 3)");
+
+            ImGui::InputFloat("threshold",&v4,0.0002f,0.0f,"%0.5f",ImGuiInputTextFlags_CharsScientific);
+            if (ImGui::IsItemEdited())
+                ProjectManager::get()->setSetting(p3dSetting_featuresThreshold,v4);
+            ImGuiC::HelpMarker("Detector response threshold to accept point");
+
             if (ImGui::Button("Extract features"))
             {
                 auto f = [&]() {
@@ -424,7 +460,7 @@ void Application::_drawTab_Image()
                 };
                 _doHeavyTask(f);
             }
-            if (ImGui::Button("Extract features ALL"))
+            if (ImGui::Button("ALL##extract_features"))
             {
                 auto f = [&]() {
                     ProjectManager::get()->extractFeatures(m_projectData);
@@ -606,20 +642,20 @@ void Application::_drawTab_Stereo()
                 ImGui::InputInt("diameter",&v1);
                 if (ImGui::IsItemEdited())
                     ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_BilateralD,v1);
-                helpMarker("Diameter of each pixel neighborhood that is used during filtering. "
+                ImGuiC::HelpMarker("Diameter of each pixel neighborhood that is used during filtering. "
                            "If it is non-positive, it is computed from sigmaSpace.");
 
                 ImGui::InputInt("sigma color",&v2);
                 if (ImGui::IsItemEdited())
                     ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_BilateralSigmaColor,v2);
-                helpMarker("Filter sigma in the color space. A larger value of the parameter means that "
+                ImGuiC::HelpMarker("Filter sigma in the color space. A larger value of the parameter means that "
                            "farther colors within the pixel neighborhood (see sigmaSpace) will be mixed "
                            "together, resulting in larger areas of semi-equal color.");
 
                 ImGui::InputInt("sigma space",&v3);
                 if (ImGui::IsItemEdited())
                     ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_BilateralSigmaSpace,v3);
-                helpMarker("Filter sigma in the coordinate space. A larger value of the parameter means that"
+                ImGuiC::HelpMarker("Filter sigma in the coordinate space. A larger value of the parameter means that "
                            "farther pixels will influence each other as long as their colors are close enough (see sigmaColor"
                            "). When diameter>0, it specifies the neighborhood size regardless of sigmaSpace. Otherwise, d is"
                            "proportional to sigmaSpace.");
@@ -1291,7 +1327,7 @@ void Application::_processKeyboardInput()
         if (ImGui::IsKeyPressed('s') || ImGui::IsKeyPressed('S')) {
             auto f = [&]() {
                 ProjectManager::get()->saveProject(&m_projectData,m_projectData.getProjectPath());
-                _resetAppState();
+                //_resetAppState();
             };
             _doHeavyTask(f);
         } else if (ImGui::IsKeyPressed(ImGuiKey_Z)){

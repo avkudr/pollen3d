@@ -206,7 +206,7 @@ double AutoCalibrator::distanceWminusMMW(const std::vector<double> &x)
         double rho = paramTable(i,p3dBundleIdx_Rho);
         double t2  = paramTable(i,p3dBundleIdx_Theta2);
 
-        Rarray[i] = utils::RfromEulerZYZt(t1,rho,t2);
+        Rarray[i] = utils::RfromEulerZYZt_inv(t1,rho,t2);
         if (i != 0) Rarray[i] = Rarray[i] * Rarray[i-1];
 
         Marray[i] = A * Rarray[i].topRows(2);

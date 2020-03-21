@@ -79,20 +79,6 @@ protected:
     template<typename Type>
     void drawProperty_basic(const Type &v, const std::string &name, const char * fmt, const char *icon = nullptr);
 
-    void helpMarker(const char* desc, bool sameLine = true)
-    {
-        if (sameLine) ImGui::SameLine();
-        ImGui::TextDisabled("(?)");
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::BeginTooltip();
-            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-            ImGui::TextUnformatted(desc);
-            ImGui::PopTextWrapPos();
-            ImGui::EndTooltip();
-        }
-    }
-
     template<typename Func>
     void _doHeavyTask(Func f){
         m_startedHeavyCalculus = true;
@@ -145,6 +131,7 @@ protected:
     ImFont * m_fontMono = nullptr;
 
     void * m_textureId = nullptr;
+
     int m_textureWidth  = 0;
     int m_textureHeight = 0;
     int m_textureScale = 1.0f;

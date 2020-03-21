@@ -22,7 +22,7 @@
     #define LOG_ERR(...)  printf("[ERR ]"); printf(__VA_ARGS__); printf("\n"); fflush(stdout)
 #else
 #ifdef LOG_TO_GUI
-    #define COLOR_INFO     ImVec4{0.9f,0.9f,0.9f,1.0f}
+    #define COLOR_INFO     ImVec4{0.6f,0.6f,0.6f,1.0f}
     #define COLOR_WARN     ImVec4{0.9f,0.9f,0.2f,1.0f}
     #define COLOR_ERR_     ImVec4{0.9f,0.2f,0.2f,1.0f}
     #define COLOR_GREEN    ImVec4{0.0f,0.7f,0.3f,1.0f}

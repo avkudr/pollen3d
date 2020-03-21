@@ -1,8 +1,11 @@
 #include "bundle_adjustment.h"
 
+#include <fstream>
+
 #include "ceres/ceres.h"
 
 #include "p3d/core/utils.h"
+#include "p3d/console_logger.h"
 
 struct BAFunctor_Affine
 {
@@ -136,7 +139,6 @@ void BundleAdjustment::run(BundleProblem &data, BundleParams &params)
     }
 
     ceres::Solver::Options options;
-
     options.preconditioner_type = ceres::JACOBI;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
@@ -144,8 +146,18 @@ void BundleAdjustment::run(BundleProblem &data, BundleParams &params)
     options.use_explicit_schur_complement = true;
     options.num_threads = utils::nbAvailableThreads();
 
+
+    std::stringstream buffer;
+    std::streambuf * old = std::cout.rdbuf(buffer.rdbuf());
+
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+
+    std::string text = buffer.str();
+    std::cout.rdbuf(old);
+
+    auto lines = utils::split(text,"\n");
+    for (const auto & l : lines) LOG_INFO("%s",l.c_str());
 
     //std::string sReport = summary.BriefReport();
     //std::cout << sReport << std::endl;

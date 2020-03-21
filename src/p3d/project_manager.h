@@ -55,6 +55,7 @@ public:
 
     // ***** Settings
 
+    const ProjectSettings & settings() const { return m_settings; }
     entt::meta_any getSetting(const p3dSetting & name);
     void setSetting(const p3dSetting & name, const entt::meta_any &value);
     void setSettings(const ProjectSettings & settings){ m_settings = settings; }

@@ -114,8 +114,16 @@ Eigen::Matrix<T, 3, 3> RfromEulerZYZt(const T& thetaT, const T& rho, const T& th
     return RfromEulerZYZ(thetaT,rho,-theta);
 }
 
+template<typename T>
+Eigen::Matrix<T, 3, 3> RfromEulerZYZt_inv(const T& theta1, const T& rho, const T& theta2){
+    return RfromEulerZYZt(theta2,-rho,theta1);
+}
+
 void EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2);
 void EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2);
+void EulerZYZtfromRinv(const Mat3 &R, double &t1, double &rho, double &t2);
+
+void wrapHalfPI(double & angleRad);
 
 // **** Math
 Mat3 skewSym(const Vec3 & a);

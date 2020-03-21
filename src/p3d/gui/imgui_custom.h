@@ -8,4 +8,5 @@ namespace ImGuiC{ // C for custom
     void PopDisabled();
 
     void ItemCircle(const char * label, const ImVec2 & pt, float radius, const ImU32 & color);
+    void HelpMarker(const char* desc, bool sameLine = true);
 }
