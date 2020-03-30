@@ -32,51 +32,14 @@ else()
     message( FATAL_ERROR "OpenGL - not found")
 endif()
 
-if (WIN32)
-    find_package(glfw REQUIRED)
-    set(GLAD_DIR ${CMAKE_CURRENT_LIST_DIR}/../glad)
+find_package(glfw REQUIRED)
+find_package(glad REQUIRED)
 
-    set(SOURCES
-        ${SOURCES}
-        ${GLAD_DIR}/include/glad/glad.h
-        ${GLAD_DIR}/include/KHR/khrplatform.h
-        ${GLAD_DIR}/src/glad.c
-        )
+include_directories(${OPENGL_INCLUDE_DIR})
 
-    include_directories(
-        ${GLAD_DIR}/include/ 
-        ${glfw_INCLUDE_DIRS} 
-        ${OPENGL_INCLUDE_DIR}
-        )
-        
-    set(ImGui_FOUND true)
-
-    set(ImGui_LIBS ${OPENGL_LIBRARIES} ${glfw_LIBS})
-    add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
-else()
-    find_package(glfw3 QUIET)
-    find_package(GLEW QUIET)
-    message(STATUS glfw3_FOUND: ${glfw3_FOUND})
-    message(STATUS GLEW_FOUND: ${GLEW_FOUND})
-
-    if(APPLE)
-        find_path(GLEW_INCLUDE_DIR GL/glew.h)
-    endif()
-
-    if (glfw3_FOUND AND OPENGL_FOUND AND GLEW_FOUND)
-        set(ImGui_FOUND true)
-        include_directories(
-            ${GLFW_INCLUDE_DIR}
-            ${GLEW_INCLUDE_DIR}
-            ${OPENGL_INCLUDE_DIR}
-            )
-        set(ImGui_LIBS ${OPENGL_LIBRARIES} glfw GLEW) #glfw3 for mac?
-
-        add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLEW)
-
-    endif()
-endif()
-
+set(ImGui_FOUND true)
+set(ImGui_LIBS ${OPENGL_LIBRARIES} ${glfw_LIBS})
+add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 if (ImGui_FOUND)
     set(SOURCES

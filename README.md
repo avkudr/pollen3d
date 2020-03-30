@@ -3,7 +3,10 @@
 ## Install
 
 linux:
-    sudo apt-get install libglew-dev
+    * Install conan
+    * mkdir build && cd build
+    * conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+    * conan install .. --build=missing
 
 macos:
     brew install libomp
