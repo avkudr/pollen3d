@@ -33,9 +33,7 @@ else()
 endif()
 
 if (WIN32)
-    set(GLFW_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../glfw-3.3.2/include)
-    link_directories(${CMAKE_CURRENT_LIST_DIR}/../glfw-3.3.2/lib-vc2019)
-
+    find_package(glfw REQUIRED)
     set(GLAD_DIR ${CMAKE_CURRENT_LIST_DIR}/../glad)
 
     set(SOURCES
@@ -45,13 +43,16 @@ if (WIN32)
         ${GLAD_DIR}/src/glad.c
         )
 
-    include_directories(${GLAD_DIR}/include/ ${GLFW_INCLUDE_DIR})
+    include_directories(
+        ${GLAD_DIR}/include/ 
+        ${glfw_INCLUDE_DIRS} 
+        ${OPENGL_INCLUDE_DIR}
+        )
+        
     set(ImGui_FOUND true)
 
-    set(ImGui_LIBS ${OPENGL_LIBRARIES} glfw3)
-
+    set(ImGui_LIBS ${OPENGL_LIBRARIES} ${glfw_LIBS})
     add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
-
 else()
     find_package(glfw3 QUIET)
     find_package(GLEW QUIET)

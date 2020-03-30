@@ -285,7 +285,7 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
     omp_set_num_threads(std::min(int(imPairsIds.size()),utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
-    for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
+    for (int idx = 0; idx < imPairsIds.size(); idx++) {
         auto i = imPairsIds[idx];
         std::vector<Vec2> ptsL, ptsR;
         data.getPairwiseMatches(i, ptsL, ptsR);
@@ -334,7 +334,7 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
     omp_set_num_threads(std::min(int(imPairsIds.size()),utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
-    for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
+    for (int idx = 0; idx < imPairsIds.size(); idx++) {
         auto i = imPairsIds[idx];
 
         auto imPair = data.imagePair(i);
@@ -460,7 +460,7 @@ void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPair
     omp_set_num_threads(std::min(int(imPairsIds.size()),utils::nbAvailableThreads()));
     #pragma omp parallel for
 #endif
-    for (size_t idx = 0; idx < imPairsIds.size(); idx++) {
+    for (int idx = 0; idx < imPairsIds.size(); idx++) {
         auto i = imPairsIds[idx];
         if (!data.imagePair(i)) continue;
         if (!data.imagePair(i)->isRectified()) continue;

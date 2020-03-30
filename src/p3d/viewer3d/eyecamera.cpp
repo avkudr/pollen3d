@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "p3d/core/core.h"
+
 EyeCamera::EyeCamera()
 {
     resetParams();

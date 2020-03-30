@@ -12,6 +12,25 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/bin)
 
+set(CONAN_SYSTEM_INCLUDES ON)
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+    file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.14/conan.cmake"
+            "${CMAKE_BINARY_DIR}/conan.cmake")
+endif()
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+conan_cmake_run(
+        CONANFILE conanfile.txt
+        BASIC_SETUP
+        BUILD missing)
+
+conan_check()
+
+#include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+#conan_basic_setup()
+#include_directories(${CONAN_INCLUDE_DIRS})
+#link_directories(${CONAN_LIB_DIRS})
+
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -31,6 +50,7 @@ set(ASSETS_FONTS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fonts CACHE STRING "P
 # ----- Looking for modules
 
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake/)
+set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 
 # ----- Threads
 
@@ -59,29 +79,22 @@ if( NOT EIGEN3_INCLUDE_DIR )
 endif()
 include_directories ( "${EIGEN3_INCLUDE_DIR}" )
 
-# ----- Add OpenCV -------------------------------------------
+# ----- Add opencv -------------------------------------------
 
-if (WIN32)
-set( OpenCV_DIR E:/dependances/opencv-3.4.9/build/install )
-endif()
-
-find_package(OpenCV 3.0 REQUIRED)
-if (OpenCV_FOUND)
-    include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
-    link_directories(${OpenCV_DIR})
-    message( STATUS "OpenCV - FOUND")
-else()
-    message( FATAL_ERROR "OpenCV not found" )
+find_package(opencv 3.4.0 REQUIRED)
+if (opencv_FOUND)
+    link_directories(${CONAN_INCLUDE_DIRS_OPENCV}/../staticlib)
 endif()
 
 # ----- Add Ceres --------------------------------------------
 
-find_package(Ceres REQUIRED)
-if (Ceres_FOUND)
-    include_directories(${CERES_INCLUDE_DIRS})
+find_package(ceres-solver REQUIRED)
+if (ceres-solver_FOUND)
+    include_directories(${ceres-solver_INCLUDE_DIRS})
+    include_directories(${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog)
 endif()
 
-# ----- Add Ceres --------------------------------------------
+# ----- Add NLopt --------------------------------------------
 
 find_package(NLopt REQUIRED)
 if (NLOPT_FOUND)
@@ -191,7 +204,7 @@ endif()
 include_directories(./3rdparty/entt/src/entt/)
 include_directories(./src/)
 
-set(TARGET_LIBS ${TARGET_LIBS} ${ImGui_LIBS} ${OpenCV_LIBS})
+set(TARGET_LIBS ${TARGET_LIBS} ${ImGui_LIBS} ${CONAN_LIBS})
 if(Eigen_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} Eigen3::Eigen)
 endif()

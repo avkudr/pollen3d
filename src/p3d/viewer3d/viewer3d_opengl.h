@@ -122,12 +122,12 @@ public:
                     float x = u * s;
                     float y = v * s;
 
-                    glBegin(GL_LINE_LOOP);
-                    glVertex3f(x    , y    , 0.0f);
-                    glVertex3f(x    , y + s, 0.0f);
-                    glVertex3f(x + s, y + s, 0.0f);
-                    glVertex3f(x + s, y    , 0.0f);
-                    glEnd();
+                    // glBegin(GL_LINE_LOOP);
+                    // glVertex3f(x    , y    , 0.0f);
+                    // glVertex3f(x    , y + s, 0.0f);
+                    // glVertex3f(x + s, y + s, 0.0f);
+                    // glVertex3f(x + s, y    , 0.0f);
+                    // glEnd();
                 }
             }
         }
@@ -138,10 +138,10 @@ public:
             for (int i = 0; i < 3; i++ ){
                 const auto & v = m_axisColors[i];
                 if (m_shader) m_shader->setVec4("color",v[0],v[1],v[2],v[3]);
-                glBegin(GL_LINES);
-                glVertex3f(0.0f, 0.0f, 0.0f);
-                glVertex3f(m_gridSquareSize*v[0], m_gridSquareSize*v[1], m_gridSquareSize*v[2]);
-                glEnd();
+                // glBegin(GL_LINES);
+                // glVertex3f(0.0f, 0.0f, 0.0f);
+                // glVertex3f(m_gridSquareSize*v[0], m_gridSquareSize*v[1], m_gridSquareSize*v[2]);
+                // glEnd();
             }
         }
 
