@@ -1,4 +1,4 @@
-# ![Pollen3d Logo](assets/pollen3d_icon64.png.png) MeshLab
+# ![pollen3d Logo](assets/pollen3d_icon64.png) pollen3d
 
 ## Install
 
