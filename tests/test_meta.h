@@ -2,43 +2,49 @@
 
 #include "gtest/gtest.h"
 
+#include "p3d/commands.h"
 #include "p3d/core/core.h"
-#include "p3d/core/utils.h"
 #include "p3d/core/serialization.h"
+#include "p3d/core/utils.h"
 #include "p3d/data/project_data.h"
 #include "p3d/project_manager.h"
-#include "p3d/commands.h"
 
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 #endif
 
-class A{
+class A
+{
 public:
-    A() {
+    A()
+    {
         static bool firstCall = true;
         if (firstCall) {
             entt::meta<A>()
                 .type(P3D_ID_TYPE(110520))
-                .data<&A::setValue,&A::getValue>(P3D_ID_TYPE(110521))
-                .data<&A::setEigenMat,&A::getEigenMat>(P3D_ID_TYPE(110581));
+                .data<&A::setValue, &A::getValue>(P3D_ID_TYPE(110521))
+                .data<&A::setEigenMat, &A::getEigenMat>(P3D_ID_TYPE(110581));
 
             firstCall = false;
         }
     }
-    int getValue() const { return m_value;}
-    void setValue(int v) { m_value = v;}
-    const cv::Mat & getMatrixCV() const {
+    int getValue() const { return m_value; }
+    void setValue(int v) { m_value = v; }
+    const cv::Mat &getMatrixCV() const
+    {
         return m_matrixCV;
     }
-    void setMatrixCV(const cv::Mat &matrixCV) {
+    void setMatrixCV(const cv::Mat &matrixCV)
+    {
         m_matrixCV = matrixCV.clone();
     }
 
-    const Eigen::Matrix<double,-1,-1> & getEigenMat() const {
+    const Eigen::Matrix<double, -1, -1> &getEigenMat() const
+    {
         return m_eigMat;
     }
-    void setEigenMat(const Eigen::Matrix<double,-1,-1> &m) {
+    void setEigenMat(const Eigen::Matrix<double, -1, -1> &m)
+    {
         m_eigMat = m;
     }
 
@@ -46,14 +52,13 @@ private:
     int m_value = 5;
     cv::Mat m_matrixCV;
 
-    Eigen::Matrix<double,-1,-1> m_eigMat;
+    Eigen::Matrix<double, -1, -1> m_eigMat;
 };
 
-
-struct ClassA : public Serializable<ClassA>{
-
+struct ClassA : public Serializable<ClassA> {
 public:
-    ClassA() {
+    ClassA()
+    {
         static bool first = true;
         if (first) {
             entt::meta<ClassA>()
@@ -69,23 +74,23 @@ public:
             first = false;
         }
         eigenMatrix.setIdentity();
-        eigenMatrixDyn.setIdentity(15,15);
+        eigenMatrixDyn.setIdentity(15, 15);
     }
-    ~ClassA(){
-
+    ~ClassA()
+    {
     }
 
     float float1 = 0.5;
     float float2 = 0.5;
     int integer = 24;
     std::string str = "hello";
-    std::vector<double> vectorDouble = {0.0,0.2};
+    std::vector<double> vectorDouble = {0.0, 0.2};
     Eigen::Matrix3f eigenMatrix;
     Eigen::MatrixXf eigenMatrixDyn;
     std::vector<Vec2> eigenVec;
 };
 
-#define EXPECT_TYPE_SERIALIZABLE(x) \
+#define EXPECT_TYPE_SERIALIZABLE(x)                   \
     EXPECT_TRUE(entt::resolve<x>().func("_read"_hs)); \
     EXPECT_TRUE(entt::resolve<x>().func("_write"_hs))
 
@@ -104,7 +109,6 @@ TEST(META, meta_serializedTypes)
 
     EXPECT_TYPE_SERIALIZABLE(Eigen::MatrixXf);
     EXPECT_TYPE_SERIALIZABLE(AffineCamera);
-
 }
 
 TEST(META, meta_nbReflectedDataMembers)
@@ -118,7 +122,6 @@ TEST(META, meta_nbReflectedDataMembers)
     EXPECT_TRUE(cnt > 0);
 }
 
-
 TEST(META, meta_serializeClass)
 {
     ClassA a;
@@ -126,14 +129,15 @@ TEST(META, meta_serializeClass)
     a.float1 = 8.10f;
     a.float2 = 26.04f;
     a.str = "pollen3d";
-    a.vectorDouble = {0.65,5465};
+    a.vectorDouble = {0.65, 5465};
     a.eigenMatrix.setOnes();
     a.eigenMatrixDyn.setOnes();
-    a.eigenVec = {Vec2(0,0),Vec2(1,1),Vec2(4,2)};
+    a.eigenVec = {Vec2(0, 0), Vec2(1, 1), Vec2(4, 2)};
 
     {
         cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
-        fs << "Node1" << "{";
+        fs << "Node1"
+           << "{";
         a.write(fs);
         fs << "}";
         fs.release();
@@ -152,32 +156,31 @@ TEST(META, meta_serializeClass)
     EXPECT_EQ(a.eigenMatrix, b.eigenMatrix);
     EXPECT_EQ(a.eigenMatrixDyn, b.eigenMatrixDyn);
     EXPECT_EQ(a.eigenVec, b.eigenVec);
-
 }
 
-#define SERIALIZATION_TEST(Type, X, Y) \
-    { \
-        auto id = entt::resolve<Type>().identifier(); \
+#define SERIALIZATION_TEST(Type, X, Y)                          \
+    {                                                           \
+        auto id = entt::resolve<Type>().identifier();           \
         cv::FileStorage fs("test.xml", cv::FileStorage::WRITE); \
-        fs << "node1" << "{"; \
-        impl::_write<Type>(fs,id,X); \
-        fs << "}"; \
-        fs.release(); \
-    } \
-    { \
-        cv::FileStorage fs("test.xml", cv::FileStorage::READ); \
-        cv::FileNode node = fs["node1"]; \
-        auto id = entt::resolve<Type>().identifier(); \
-        impl::_read<Type>(node, id, Y); \
-        fs.release(); \
+        fs << "node1"                                           \
+           << "{";                                              \
+        impl::_write<Type>(fs, id, X);                          \
+        fs << "}";                                              \
+        fs.release();                                           \
+    }                                                           \
+    {                                                           \
+        cv::FileStorage fs("test.xml", cv::FileStorage::READ);  \
+        cv::FileNode node = fs["node1"];                        \
+        auto id = entt::resolve<Type>().identifier();           \
+        impl::_read<Type>(node, id, Y);                         \
+        fs.release();                                           \
     }
-
 
 TEST(META, meta_serializeFloat)
 {
     float m1 = 25.0;
     float m2;
-    SERIALIZATION_TEST(float,m1,m2)
+    SERIALIZATION_TEST(float, m1, m2)
     ASSERT_FLOAT_EQ(m1, m2);
 }
 
@@ -185,7 +188,7 @@ TEST(META, meta_serializeDouble)
 {
     double m1 = 25.0;
     double m2;
-    SERIALIZATION_TEST(double,m1,m2)
+    SERIALIZATION_TEST(double, m1, m2)
     ASSERT_FLOAT_EQ(m1, m2);
 }
 
@@ -193,22 +196,23 @@ TEST(META, meta_serializeInt)
 {
     int m1 = 25;
     int m2;
-    SERIALIZATION_TEST(int,m1,m2)
+    SERIALIZATION_TEST(int, m1, m2)
     ASSERT_FLOAT_EQ(m1, m2);
 }
 
 TEST(META, meta_serializeEigen)
 {
-    using Matrix = Eigen::Matrix<float,-1,-1>;
+    using Matrix = Eigen::Matrix<float, -1, -1>;
     Matrix m1;
-    m1.setOnes(15,15);
+    m1.setOnes(15, 15);
     Matrix m2;
 
     {
         auto id = entt::resolve<Matrix>().identifier();
         cv::FileStorage fs("test.xml", cv::FileStorage::WRITE);
-        fs << "node1" << "{";
-        impl::_writeEigen<float,-1,-1>(fs, id, m1);
+        fs << "node1"
+           << "{";
+        impl::_writeEigen<float, -1, -1>(fs, id, m1);
         fs << "}";
         fs.release();
     }
@@ -216,16 +220,15 @@ TEST(META, meta_serializeEigen)
         cv::FileStorage fs("test.xml", cv::FileStorage::READ);
         cv::FileNode node = fs["node1"];
         auto id = entt::resolve<Matrix>().identifier();
-        impl::_readEigen<float,-1,-1>(node, id, m2);
+        impl::_readEigen<float, -1, -1>(node, id, m2);
         fs.release();
     }
     EXPECT_EQ(m1.size(), m2.size());
     for (int i = 0; i < m1.rows(); ++i) {
         for (int j = 0; j < m1.cols(); ++j) {
-            EXPECT_FLOAT_EQ(m1(i,j),m2(i,j));
+            EXPECT_FLOAT_EQ(m1(i, j), m2(i, j));
         }
     }
-
 }
 
 TEST(META, meta_serializeAffineCamera)
@@ -237,7 +240,8 @@ TEST(META, meta_serializeAffineCamera)
 
     {
         cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
-        fs << "AffineCamera" << "{";
+        fs << "AffineCamera"
+           << "{";
         cSave.write(fs);
         fs << "}";
         fs.release();
@@ -265,7 +269,8 @@ TEST(META, meta_serializeImage)
 
     {
         cv::FileStorage fs("testSaveImage.yml", cv::FileStorage::WRITE);
-        fs << "Image" << "{";
+        fs << "Image"
+           << "{";
         imSave.write(fs);
         fs << "}";
         fs.release();
@@ -277,7 +282,6 @@ TEST(META, meta_serializeImage)
         imRead.read(fs["Image"]);
         fs.release();
     }
-    std::cout << imRead.getCamera().getA() << std::endl;
     EXPECT_EQ(imSave.getPath(), imRead.getPath());
     EXPECT_EQ(imSave.getCamera(), imRead.getCamera());
 }
@@ -292,8 +296,9 @@ TEST(META, meta_serializeVecFloat)
     {
         auto id = entt::resolve<decltype(m1)>().identifier();
         cv::FileStorage fs("test.xml", cv::FileStorage::WRITE);
-        fs << "node1" << "{";
-        impl::_writeVec<float>(fs,id,m1);
+        fs << "node1"
+           << "{";
+        impl::_writeVec<float>(fs, id, m1);
         fs << "}";
         fs.release();
     }
@@ -313,19 +318,19 @@ TEST(META, meta_serializeVecFloat)
         EXPECT_FLOAT_EQ(m1[i], m2[i]);
 }
 
-
 TEST(META, meta_serializeVecMatches)
 {
     std::vector<Match> m1;
-    m1.emplace_back(Match(0,1,0.5));
-    m1.emplace_back(Match(1,2));
-    m1.emplace_back(Match(2,3));
+    m1.emplace_back(Match(0, 1, 0.5));
+    m1.emplace_back(Match(1, 2));
+    m1.emplace_back(Match(2, 3));
 
     {
         auto id = entt::resolve<std::vector<Match>>().identifier();
         cv::FileStorage fs("test.xml", cv::FileStorage::WRITE);
-        fs << "node1" << "{";
-        impl::_writeVecS<Match>(fs,id,m1);
+        fs << "node1"
+           << "{";
+        impl::_writeVecS<Match>(fs, id, m1);
         fs << "}";
         fs.release();
     }
@@ -348,21 +353,20 @@ TEST(META, meta_serializeVecMatches)
     }
 }
 
-
 TEST(META, meta_serializeProject)
 {
     ProjectData data1;
     std::string path = "test" + std::string(P3D_PROJECT_EXTENSION);
     data1.setProjectPath(path);
-    ProjectManager::get()->saveProject(&data1,path);
+    ProjectManager::get()->saveProject(&data1, path);
 
     ProjectData data2;
-    ProjectManager::get()->openProject(&data2,path);
+    ProjectManager::get()->openProject(&data2, path);
 
-    entt::resolve<ProjectData>().data([&](entt::meta_data data){
-        EXPECT_EQ(data.get(data1).operator bool(), data.get(data2).operator bool()); // both exist
-        EXPECT_EQ(data.get(data1).type()         , data.get(data2).type()); // type is the same
-        EXPECT_EQ(data.get(data1)                , data.get(data2)); // type is the same
+    entt::resolve<ProjectData>().data([&](entt::meta_data data) {
+        EXPECT_EQ(data.get(data1).operator bool(), data.get(data2).operator bool());  // both exist
+        EXPECT_EQ(data.get(data1).type(), data.get(data2).type());                    // type is the same
+        EXPECT_EQ(data.get(data1), data.get(data2));                                  // type is the same
     });
 }
 
@@ -370,48 +374,50 @@ TEST(META, meta_noDoubleReflect)
 {
     ProjectData data;
     ProjectData data2;
-    ASSERT_EQ(1,1);
+    ASSERT_EQ(1, 1);
 }
 
 TEST(COMMANDS, command_setProperty)
 {
     A a;
     a.setValue(15);
-    EXPECT_EQ(a.getValue(),15);
-    CommandManager::get()->executeCommand(new CommandSetProperty(&a,110521,254));
-    EXPECT_EQ(a.getValue(),254);
+    EXPECT_EQ(a.getValue(), 15);
+    CommandManager::get()->executeCommand(new CommandSetProperty(&a, 110521, 254));
+    EXPECT_EQ(a.getValue(), 254);
     CommandManager::get()->undoCommand();
-    EXPECT_EQ(a.getValue(),15);
+    EXPECT_EQ(a.getValue(), 15);
 }
 
 TEST(COMMANDS, command_setPropertyEigenDyn)
 {
-    Mat m; m.setIdentity(2,2);
-    Mat m1; m1.setZero(16,4);
+    Mat m;
+    m.setIdentity(2, 2);
+    Mat m1;
+    m1.setZero(16, 4);
 
     A a;
     a.setEigenMat(m);
-    EXPECT_EQ(a.getEigenMat(),m);
-    CommandManager::get()->executeCommand(new CommandSetProperty(&a,110581,m1));
-    EXPECT_EQ(a.getEigenMat(),m1);
+    EXPECT_EQ(a.getEigenMat(), m);
+    CommandManager::get()->executeCommand(new CommandSetProperty(&a, 110581, m1));
+    EXPECT_EQ(a.getEigenMat(), m1);
     CommandManager::get()->undoCommand();
-    EXPECT_EQ(a.getEigenMat(),m);
+    EXPECT_EQ(a.getEigenMat(), m);
 }
 
 TEST(COMMANDS, command_setPropertyGroup)
 {
     A a;
     a.setValue(15);
-    EXPECT_EQ(a.getValue(),15);
-    CommandGroup * grp = new CommandGroup();
-    grp->add(new CommandSetProperty(&a,110521,20));
-    grp->add(new CommandSetProperty(&a,110521,21));
-    grp->add(new CommandSetProperty(&a,110521,22));
-    grp->add(new CommandSetProperty(&a,110521,23));
+    EXPECT_EQ(a.getValue(), 15);
+    CommandGroup *grp = new CommandGroup();
+    grp->add(new CommandSetProperty(&a, 110521, 20));
+    grp->add(new CommandSetProperty(&a, 110521, 21));
+    grp->add(new CommandSetProperty(&a, 110521, 22));
+    grp->add(new CommandSetProperty(&a, 110521, 23));
     CommandManager::get()->executeCommand(grp);
-    EXPECT_EQ(a.getValue(),23);
+    EXPECT_EQ(a.getValue(), 23);
     CommandManager::get()->undoCommand();
-    EXPECT_EQ(a.getValue(),15);
+    EXPECT_EQ(a.getValue(), 15);
 }
 
 TEST(COMMANDS, command_setPropertyCV)
@@ -419,49 +425,52 @@ TEST(COMMANDS, command_setPropertyCV)
     using namespace std::placeholders;
 
     A a;
-    cv::Mat B = (cv::Mat_<double>(3,3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
-    cv::Mat C = (cv::Mat_<double>(3,3) << 15,14,13,12,11,10,9,8,7);
+    cv::Mat B = (cv::Mat_<double>(3, 3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
+    cv::Mat C = (cv::Mat_<double>(3, 3) << 15, 14, 13, 12, 11, 10, 9, 8, 7);
     a.setMatrixCV(B);
 
-    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(),B));
-    CommandManager::get()->executeCommand(new CommandSetPropertyCV(&a,&A::setMatrixCV,&A::getMatrixCV,C));
-    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(),C));
+    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(), B));
+    CommandManager::get()->executeCommand(new CommandSetPropertyCV(&a, &A::setMatrixCV, &A::getMatrixCV, C));
+    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(), C));
     CommandManager::get()->undoCommand();
-    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(),B));
+    EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(), B));
 }
 
 TEST(META, meta_setSettings)
 {
-    float f  = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
-    ProjectManager::get()->setSetting(p3dSetting_matcherFilterCoef, 2.0f*f);
+    float f = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
+    ProjectManager::get()->setSetting(p3dSetting_matcherFilterCoef, 2.0f * f);
     float f2 = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
-    EXPECT_FLOAT_EQ(f2,2.0f*f);
+    EXPECT_FLOAT_EQ(f2, 2.0f * f);
 }
-
 
 TEST(META, meta_setValue)
 {
     auto identifier = P3D_ID_TYPE(1002);
     ProjectSettings s;
     auto data = entt::resolve<ProjectSettings>().data(identifier);
-    entt::meta_any v = data.get(s); // default value is 0.3f
-    data.set(s,v);                  EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.3f);    // ok
-    data.set(s,2.0f);               EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 2.0f);    // ok
-    data.set(s,2.0f * 2.0f);        EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 4.0f);    // ok
+    entt::meta_any v = data.get(s);  // default value is 0.3f
+    data.set(s, v);
+    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.3f);  // ok
+    data.set(s, 2.0f);
+    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 2.0f);  // ok
+    data.set(s, 2.0f * 2.0f);
+    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 4.0f);  // ok
 
-    CommandManager::get()->executeCommand(new CommandSetProperty(&s,identifier,v));
+    CommandManager::get()->executeCommand(new CommandSetProperty(&s, identifier, v));
     EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.3f);
-    CommandManager::get()->executeCommand(new CommandSetProperty(&s,identifier,2.0f));
+    CommandManager::get()->executeCommand(new CommandSetProperty(&s, identifier, 2.0f));
     EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 2.0f);
-    CommandManager::get()->executeCommand(new CommandSetProperty(&s,identifier,2.0f * 2.0f));
+    CommandManager::get()->executeCommand(new CommandSetProperty(&s, identifier, 2.0f * 2.0f));
     EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 4.0f);
 
-//    foo(&s,identifier,2.0f);
-//    foo(&s,identifier,2.0f * 1.0f);
+    //    foo(&s,identifier,2.0f);
+    //    foo(&s,identifier,2.0f * 1.0f);
 }
 
-struct B{
-    B() {
+struct B {
+    B()
+    {
         entt::meta<B>()
             .type("ClassB"_hs)
             .data<&B::value>("value"_hs);
@@ -469,7 +478,7 @@ struct B{
     int value = 5;
 };
 
-struct Dummy{
+struct Dummy {
     entt::meta_any value{};
 };
 
@@ -480,5 +489,5 @@ TEST(META, meta_setValueClassAttribute)
     auto data = entt::resolve<B>().data("value"_hs);
     d.value = data.get(b);
 
-    EXPECT_EQ(d.value,b.value);
+    EXPECT_EQ(d.value, b.value);
 }

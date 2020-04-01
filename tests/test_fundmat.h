@@ -4,13 +4,15 @@
 
 #include "gtest/gtest.h"
 
-#include "p3d/core/utils.h"
 #include "p3d/core/core.h"
-#include "p3d/project_manager.h"
+#include "p3d/core/utils.h"
 #include "p3d/data/project_data.h"
+#include "p3d/project_manager.h"
 
 TEST(FUNDMAT, fundmat_testData)
 {
+    std::cout.setstate(std::ios_base::failbit);
+
     // Init some point pairs
     double xL[21] = {437.9474182128906, 685.6380004882813, 673.5831909179688, 533.0491333007813, 319.1584777832031, 483.3897399902344, 333.6655883789063, 476.6916809082031, 269.8779907226563, 429.8667602539063, 216.3757171630859, 372.67333984375, 304.4205932617188, 319.5361328125, 335.4749145507813, 382.3995666503906, 572.8048095703125, 245.6207733154297, 707.018310546875, 171.2962799072266, 420.7103271484375};
     double yL[21] = {240.1227111816406, 272.74755859375, 382.7117614746094, 514.738525390625, 461.6735229492188, 473.9537658691406, 217.2646789550781, 251.5523071289063, 272.0774536132813, 343.7459106445313, 265.4274291992188, 450.608154296875, 368.2933959960938, 371.5750732421875, 397.6313781738281, 493.9369201660156, 518.26904296875, 521.64794921875, 525.8312377929688, 492.1295776367188, 499.5015869140625};
@@ -19,20 +21,20 @@ TEST(FUNDMAT, fundmat_testData)
 
     std::vector<Vec2> ptsL;
     std::vector<Vec2> ptsR;
-    for (int i = 0; i < 21; i++){
-        ptsL.emplace_back(Vec2(xL[i],yL[i]));
-        ptsR.emplace_back(Vec2(xR[i],yR[i]));
+    for (int i = 0; i < 21; i++) {
+        ptsL.emplace_back(Vec2(xL[i], yL[i]));
+        ptsR.emplace_back(Vec2(xR[i], yR[i]));
     }
 
-    Mat3 F = fundmat::findAffineCeres(ptsL,ptsR);
+    Mat3 F = fundmat::findAffineCeres(ptsL, ptsR);
 
     Mat2X distances;
-    distances.setZero(2,ptsL.size());
+    distances.setZero(2, ptsL.size());
     for (int i = 0; i < ptsL.size(); ++i) {
-        Vec2 errs = fundmat::epiporalDistancesF(F,ptsL[i],ptsR[i]);
+        Vec2 errs = fundmat::epiporalDistancesF(F, ptsL[i], ptsR[i]);
         distances.col(i) = errs;
     }
-    EXPECT_GE(2.0,distances.mean());
+    EXPECT_GE(2.0, distances.mean());
 }
 
 TEST(FUNDMAT, fundmat_testImages)
@@ -41,13 +43,11 @@ TEST(FUNDMAT, fundmat_testImages)
     ProjectSettings settings;
     settings.matcherFilterCoef = 0.2f;
 
-    ProjectManager::get()->loadImages(&data,{
-            "../../_datasets/brassica/Brassica01.jpg",
-            "../../_datasets/brassica/Brassica02.jpg"
-        });
+    ProjectManager::get()->loadImages(&data, {"../../_datasets/brassica/Brassica01.jpg",
+                                              "../../_datasets/brassica/Brassica02.jpg"});
 
     // --- extract features from all images. {} = all
-    ProjectManager::get()->extractFeatures(data,{});
+    ProjectManager::get()->extractFeatures(data, {});
 
     ASSERT_EQ(data.nbImages(), 2);
     ASSERT_NE(data.image(0), nullptr);
@@ -56,13 +56,13 @@ TEST(FUNDMAT, fundmat_testImages)
     EXPECT_GE(data.image(1)->getNbFeatures(), 100);
 
     // --- extract matches ({} = for all pairs)
-    ProjectManager::get()->matchFeatures(data,{});
+    ProjectManager::get()->matchFeatures(data, {});
 
-    ProjectManager::get()->findFundamentalMatrix(data,{});
+    ProjectManager::get()->findFundamentalMatrix(data, {});
 
     Vec errors;
-    data.getEpipolarErrorsResidual(0,errors);
+    data.getEpipolarErrorsResidual(0, errors);
     Mat2X distances;
-    data.getEpipolarErrorsDistance(0,distances);
+    data.getEpipolarErrorsDistance(0, distances);
     EXPECT_GE(0.5f, errors.mean());
 }

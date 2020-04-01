@@ -7,28 +7,42 @@
 
 #include "p3d/console_logger.h"
 
-#ifdef __APPLE__
-#define P3D_GLSL_VERSION "#version 120"
-#else
 #define P3D_GLSL_VERSION "#version 410"
-#endif
 
-void ApplicationOpenGL::init() {
+void error_callback(int error, const char* description)
+{
+    fputs(description, stderr);
+    std::cout << std::endl;
+}
+
+void ApplicationOpenGL::init()
+{
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    if(!glfwInit()){
+
+    if (!glfwInit()) {
         throw "Failed to initialize OpenGL loader!";
     }
+
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
+
+    glfwSetErrorCallback(error_callback);
+
     m_window = glfwCreateWindow(m_width, m_height, "Pollen3D", nullptr, nullptr);
     if (m_window == nullptr) return;
     glfwMakeContextCurrent(m_window);
-    glfwSwapInterval(1); // Enable vsync
+    glfwSwapInterval(1);  // Enable vsync
 
-    auto loadIcon = [](GLFWimage * im, std::string path){
-        cv::Mat icon1 = cv::imread(path,CV_LOAD_IMAGE_UNCHANGED);
+    auto loadIcon = [](GLFWimage* im, std::string path) {
+        cv::Mat icon1 = cv::imread(path, CV_LOAD_IMAGE_UNCHANGED);
         cv::Mat icon2;
-        cv::cvtColor(icon1,icon2,CV_BGR2RGBA);
-        im->width  = icon2.cols;
+        cv::cvtColor(icon1, icon2, CV_BGR2RGBA);
+        im->width = icon2.cols;
         im->height = icon2.rows;
         im->pixels = icon2.clone().data;
     };
@@ -48,7 +62,7 @@ void ApplicationOpenGL::init() {
     bool err = false;
     glbinding::initialize([](const char* name) { return (glbinding::ProcAddress)glfwGetProcAddress(name); });
 #else
-    bool err = false; // If you use IMGUI_IMPL_OPENGL_LOADER_CUSTOM, your loader is likely to requires some form of initialization.
+    bool err = false;  // If you use IMGUI_IMPL_OPENGL_LOADER_CUSTOM, your loader is likely to requires some form of initialization.
 #endif
 
     if (err) throw "Failed to initialize OpenGL loader!";
@@ -70,7 +84,8 @@ void ApplicationOpenGL::setWindowTitleImpl(std::string str)
     glfwSetWindowTitle(m_window, str.c_str());
 }
 
-void ApplicationOpenGL::destroy() {
+void ApplicationOpenGL::destroy()
+{
     if (m_textureId) delete (GLuint*)m_textureId;
 
     ImGui_ImplOpenGL3_Shutdown();
@@ -81,52 +96,54 @@ void ApplicationOpenGL::destroy() {
     glfwTerminate();
 }
 
-void ApplicationOpenGL::preLoop(){
+void ApplicationOpenGL::preLoop()
+{
     glfwPollEvents();
 
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 
-    glfwGetWindowSize(m_window,&m_width,&m_height);
+    glfwGetWindowSize(m_window, &m_width, &m_height);
 }
 
-void ApplicationOpenGL::postLoop() {
+void ApplicationOpenGL::postLoop()
+{
     int display_w, display_h;
     glfwGetFramebufferSize(m_window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
-    glClearColor(0,0,0,0);
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(m_window);
 }
 
-void ApplicationOpenGL::textureBind(const cv::Mat &im)
+void ApplicationOpenGL::textureBind(const cv::Mat& im)
 {
-    m_textureWidth  = 0;
+    m_textureWidth = 0;
     m_textureHeight = 0;
 
     GLuint* tId = (GLuint*)m_textureId;
 
-    if(im.empty()){
+    if (im.empty()) {
         LOG_DBG("textureAlloc: image is empty");
         return;
     }
 
     cv::Mat mat;
     if (im.channels() == 3) {
-        cv::cvtColor(im,mat,CV_BGR2RGBA);
+        cv::cvtColor(im, mat, CV_BGR2RGBA);
     } else if (im.channels() == 1) {
-        cv::cvtColor(im,mat,CV_GRAY2RGBA);
+        cv::cvtColor(im, mat, CV_GRAY2RGBA);
     }
 
     if (mat.empty()) {
         LOG_ERR("TextureDisplay: conversion failed");
     }
 
-    if(tId) {
-        glDeleteTextures(1,tId);
+    if (tId) {
+        glDeleteTextures(1, tId);
         *tId = 0;
     }
 
@@ -142,16 +159,16 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
     // Create the texture
     glTexImage2D(GL_TEXTURE_2D,     // Type of texture
                  0,                 // Pyramid level (for mip-mapping) - 0 is the top level
-                 GL_RGBA,    // Internal colour format to convert to
+                 GL_RGBA,           // Internal colour format to convert to
                  mat.cols,          // Image width  i.e. 640 for Kinect in standard mode
                  mat.rows,          // Image height i.e. 480 for Kinect in standard mode
                  0,                 // Border width in pixels (can either be 1 or 0)
-                 GL_RGBA, // Input image format (i.e. GL_RGB, GL_RGBA, GL_BGR etc.)
+                 GL_RGBA,           // Input image format (i.e. GL_RGB, GL_RGBA, GL_BGR etc.)
                  GL_UNSIGNED_BYTE,  // Image data type
                  mat.ptr());        // The actual image data itself
 
     if (!glGetError()) {
-        m_textureWidth  = mat.cols;
+        m_textureWidth = mat.cols;
         m_textureHeight = mat.rows;
         LOG_DBG("Texture bind");
     } else {
@@ -159,7 +176,7 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
     }
 }
 
-void ApplicationOpenGL::textureDisplay(const ImVec2 &size, ImVec2 uv0, ImVec2 uv1)
+void ApplicationOpenGL::textureDisplay(const ImVec2& size, ImVec2 uv0, ImVec2 uv1)
 {
     GLuint* tId = (GLuint*)m_textureId;
     if (*tId && isTextureReady()) {

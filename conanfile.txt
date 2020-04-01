@@ -9,7 +9,7 @@ ceres-solver/1.14.0
 gtest/1.8.1@bincrafters/stable
 
 [options]
-gtest:shared=True
+gtest:build_gmock=False
 opencv:jasper=False
 
 [generators]
