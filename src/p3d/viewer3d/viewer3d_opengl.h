@@ -26,11 +26,7 @@ using namespace gl;
 
 class Viewer3DOpenGL : public Viewer3D{
 public:
-    Viewer3DOpenGL() : Viewer3D() {
-        m_textureId = new GLuint(0);
-        m_shader = std::make_unique<ShaderOpenGL>("../../assets/4.1.shader.vs",
-                                                  "../../assets/4.1.shader.fs");
-    }
+    Viewer3DOpenGL();
 
     virtual ~Viewer3DOpenGL() override {
         release();
@@ -40,15 +36,13 @@ public:
         init();
     }
 
-    void release() override {
-        glDeleteBuffers(1,&m_Tvbo);
-        glDeleteVertexArrays(1,&m_Tvao);
-        glDeleteFramebuffers(1,&m_fbo);
+    void release() override
+    {
+        if (m_Tvao) glDeleteVertexArrays(1, &m_Tvao);
+        if (m_Tvbo) glDeleteBuffers(1, &m_Tvbo);
         GLuint* tId = (GLuint*)m_textureId;
-        if(tId) {
-            glDeleteTextures(1,tId);
-            *tId = 0;
-        }
+        if (tId) delete (GLuint*)m_textureId;
+        if (m_fbo) glDeleteFramebuffers(1, &m_fbo);
     }
 
     void init() override {
@@ -57,8 +51,8 @@ public:
 
         glDeleteFramebuffers(1,&m_fbo);
         GLuint* tId = (GLuint*)m_textureId;
-        if(tId) {
-            glDeleteTextures(1,tId);
+        if (tId) {
+            glDeleteTextures(1, tId);
             *tId = 0;
         }
 
@@ -158,7 +152,7 @@ public:
 
 private:
     unsigned int m_fbo{0};
-    unsigned int m_Tvbo, m_Tvao;
+    unsigned int m_Tvbo{0}, m_Tvao{0};
 
-    std::unique_ptr<ShaderOpenGL> m_shader;
+    std::unique_ptr<ShaderOpenGL> m_shader{nullptr};
 };

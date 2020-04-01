@@ -1,13 +1,23 @@
 #include "viewer3d_opengl.h"
 
+#include <filesystem>
+
+Viewer3DOpenGL::Viewer3DOpenGL() : Viewer3D()
+{
+    m_textureId = new GLuint(0);
+    auto vertShader = "./assets/4.1.shader.vs";
+    auto fragShader = "./assets/4.1.shader.fs";
+    m_shader = std::make_unique<ShaderOpenGL>(vertShader, fragShader);
+}
+
 void Viewer3DOpenGL::setPointCloud(const Mat3Xf &pcd, const Mat3Xf &colors)
 {
     if (pcd.cols() == 0) return;
 
     m_nbPoints = pcd.cols();
 
-    Eigen::Matrix<float,6,Eigen::Dynamic> data;
-    data.setOnes(6,m_nbPoints);
+    Eigen::Matrix<float, 6, Eigen::Dynamic> data;
+    data.setOnes(6, m_nbPoints);
     data.topRows(3) = pcd;
     if (colors.cols() == m_nbPoints) data.bottomRows(3) = colors;
 

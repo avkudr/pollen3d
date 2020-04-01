@@ -1,5 +1,6 @@
 #include "app.h"
 
+#include <filesystem>
 #include <future>
 
 #include "p3d/project_manager.h"
@@ -7,7 +8,7 @@
 #include "p3d/gui/palette.h"
 #include "p3d/gui/imgui_custom.h"
 
-#include "fonts/IconsFontAwesome5.h"
+#include "../assets/fonts/IconsFontAwesome5.h"
 
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"
@@ -20,7 +21,7 @@ void Application::initImGui(){
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigDockingWithShift = true;
 
-    std::string pathToFonts = "../../3rdparty/fonts/";
+    std::string pathToFonts = "./assets/fonts/";
     io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "Ubuntu-R.ttf").c_str(), 16.0f);
 
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
@@ -460,6 +461,7 @@ void Application::_drawTab_Image()
                 };
                 _doHeavyTask(f);
             }
+            ImGui::SameLine();
             if (ImGui::Button("ALL##extract_features"))
             {
                 auto f = [&]() {
@@ -731,19 +733,12 @@ void Application::_drawTab_Multiview()
     {
         if (ImGui::CollapsingHeader("Measurement matrix",m_collapsingHeaderFlags))
         {
-            if (ImGui::Button("Get full W"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->findMeasurementMatrixFull(m_projectData);
-                };
+            if (ImGui::Button("Get full W")) {
+                auto f = [&]() { ProjectManager::get()->findMeasurementMatrixFull(m_projectData); };
                 _doHeavyTask(f);
             }
-
-            if (ImGui::Button("Get W"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->findMeasurementMatrix(m_projectData);
-                };
+            if (ImGui::Button("Get W")) {
+                auto f = [&]() { ProjectManager::get()->findMeasurementMatrix(m_projectData); };
                 _doHeavyTask(f);
             }
         }

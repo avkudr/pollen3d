@@ -1,5 +1,7 @@
 #include "app_opengl.h"
 
+#include <filesystem>
+
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -32,8 +34,7 @@ void ApplicationOpenGL::init() {
     };
 
     GLFWimage images[1];
-    loadIcon(&images[0],"../../assets/pollen3d_icon64.png");
-    //loadIcon(&images[1],"../../assets/pollen3d_icon32.png");
+    loadIcon(&images[0], "./assets/pollen3d_icon64.png");
     glfwSetWindowIcon(m_window, 1, images);
 
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
@@ -156,7 +157,6 @@ void ApplicationOpenGL::textureBind(const cv::Mat &im)
     } else {
         LOG_ERR("glError: %i", error);
     }
-
 }
 
 void ApplicationOpenGL::textureDisplay(const ImVec2 &size, ImVec2 uv0, ImVec2 uv1)

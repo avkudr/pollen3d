@@ -39,6 +39,7 @@ public:
             draw(m_width,m_height);
             postLoop();
         }
+        m_viewer3D.reset();
     }
 
     virtual bool isRunning() = 0;
@@ -73,8 +74,9 @@ protected:
     void _showMatches(const ImVec2 & pos, const ImVec2 & size, const ImVec4 & col, float lineWidth = 1.0f, int skipEvery = 1);
     void _showEpilines(const ImVec2 & pos, const ImVec2 & size, const ImVec4 & col, float lineWidth = 1.0f, int skipEvery = 1);
 
-    template<typename Scalar, int SizeX, int SizeY>
-    void drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &v, const std::string &name, const std::string &longName = "");
+    template <typename Scalar, int SizeX, int SizeY>
+    void drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &v, const std::string &name,
+                             const std::string &longName = "");
 
     template<typename Type>
     void drawProperty_basic(const Type &v, const std::string &name, const char * fmt, const char *icon = nullptr);

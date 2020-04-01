@@ -228,3 +228,4 @@ endif()
 add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES})
 target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
