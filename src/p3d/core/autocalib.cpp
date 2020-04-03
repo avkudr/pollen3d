@@ -28,7 +28,7 @@ PseudoInverseType<MatType> pseudoInverse(const MatType &a, double epsilon = std:
 #include <nlopt.hpp>
 
 #include "p3d/core/utils.h"
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 
 AutoCalibrator::AutoCalibrator(const int nbCams) :
     m_pars(BundleParams(nbCams))

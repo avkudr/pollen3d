@@ -5,7 +5,7 @@
 #include "p3d/data/project_settings.h"
 #include "p3d/data/project_data.h"
 #include "p3d/core/core.h"
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 #include "p3d/commands.h"
 
 class ProjectManager{
@@ -19,11 +19,7 @@ public:
 
     // ***** Files
 
-    std::vector<std::string> loadImagesDialog();
-
-    std::string openProjectDialog();
-    std::string saveProjectDialog();
-    void loadImages(ProjectData * list, const std::vector<std::string> & imPaths);
+    void loadImages(ProjectData *list, const std::vector<std::string> &imPaths);
 
     void saveProject(ProjectData * data, std::string path = "");
     void closeProject(ProjectData * data);

@@ -52,6 +52,9 @@ set(ASSETS_FONTS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fonts CACHE STRING "P
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake/)
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 
+set(SOURCES "")
+set(SOURCES_GUI "")
+
 # ----- Threads
 
 #find_package (Threads)
@@ -124,33 +127,35 @@ set_source_files_properties(
     COMPILE_FLAGS "-w"
 )
 
-set(SOURCES ${SOURCES} ${FILE_DIALOG_SOURCES})
+set(SOURCES_GUI ${SOURCES_GUI} ${FILE_DIALOG_SOURCES})
 
 include_directories(./3rdparty/)
 
 # ----- pollen3d ---------------------------------------------
 
-set(SOURCES
-    ${SOURCES}
+set(SOURCES_GUI
+    ${SOURCES_GUI}
     ./src/p3d/app.h
     ./src/p3d/app.cpp
-    ./src/p3d/console_logger.h
-    ./src/p3d/console_logger.cpp
-    ./src/p3d/commands.h
-    ./src/p3d/commands.cpp
     ./src/p3d/gui/palette.h
     ./src/p3d/gui/imgui_custom.h
     ./src/p3d/gui/imgui_custom.cpp
+    ./src/p3d/gui/widget_console.h
+    ./src/p3d/gui/widget_console.cpp
 )
 
 set(SOURCES
     ${SOURCES}
+    ./src/p3d/commands.h
+    ./src/p3d/commands.cpp
     ./src/p3d/project_manager.h
     ./src/p3d/project_manager.cpp
     ./src/p3d/core/core.cpp
     ./src/p3d/core/core.h
     ./src/p3d/core/serialization.h
     ./src/p3d/core/serialization.cpp
+    ./src/p3d/core/logger.h
+    ./src/p3d/core/logger.cpp
     ./src/p3d/core/fundmat.cpp
     ./src/p3d/core/fundmat.h
     ./src/p3d/core/robust_estim.hpp
@@ -173,8 +178,8 @@ set(SOURCES
     ./src/p3d/data/image_pair.h
 )
 
-set(SOURCES
-    ${SOURCES}
+set(SOURCES_GUI
+    ${SOURCES_GUI}
     ./src/p3d/viewer3d/viewer3d.h
     ./src/p3d/viewer3d/viewer3d.cpp
     ./src/p3d/viewer3d/eyecamera.h
@@ -199,8 +204,8 @@ set(SOURCES
 set(RES_FILES "")
 if(POLLEN3D_OPENGL)
     message("OpenGL - FOUND")
-    set(SOURCES
-        ${SOURCES}
+    set(SOURCES_GUI
+        ${SOURCES_GUI}
         ./src/p3d/app_opengl.cpp
         ./src/p3d/app_opengl.h
     )
@@ -237,7 +242,7 @@ else()
     message("Tests: NO")
 endif()
 
-add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES} ${RES_FILES})
+add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES})
 target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR}/bin)

@@ -9,9 +9,7 @@
 #include <vector>
 #include <map>
 
-#include "tinyfiledialogs/tinyfiledialogs.h"
-
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 #include "p3d/data/image.h"
 #include "p3d/core/utils.h"
 #include "p3d/core/autocalib.h"
@@ -20,65 +18,6 @@
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 
 ProjectManager *ProjectManager::m_instance = nullptr;
-
-std::vector<std::string> ProjectManager::loadImagesDialog()
-{
-    std::vector<std::string> out;
-    char const * lTheOpenFileName;
-    char const * lFilterPatterns[] = { "*.jpg","*.jpeg", "*.png", "*.tif", "*.tiff" };
-
-    lTheOpenFileName = tinyfd_openFileDialog(
-                         "Load images...",
-                         "",
-                         5,
-                         lFilterPatterns,
-                         nullptr,
-                         1);
-    if (!lTheOpenFileName) return out;
-
-    std::string allFiles(lTheOpenFileName);
-    out = utils::split(lTheOpenFileName,"|");
-    return out;
-}
-
-std::string ProjectManager::openProjectDialog()
-{
-    char const * lTheOpenFileName;
-    std::string ext = "*" + std::string(P3D_PROJECT_EXTENSION);
-    char const * lFilterPatterns[] = { ext.c_str() };
-
-    lTheOpenFileName = tinyfd_openFileDialog(
-                         "Load images...",
-                         "",
-                         1,
-                         lFilterPatterns,
-                         nullptr,
-                         0);
-    if (!lTheOpenFileName) return "";
-
-    std::string projectFile(lTheOpenFileName);
-    return projectFile;
-}
-
-std::string ProjectManager::saveProjectDialog()
-{
-    char const * saveFilePath;
-    std::string ext = "*" + std::string(P3D_PROJECT_EXTENSION);
-    char const * saveFilePattern[] = { ext.c_str() };
-
-    saveFilePath = tinyfd_saveFileDialog (
-            "Save project as..." ,
-            "" ,
-            1, // nb files to save
-            saveFilePattern,
-            "Pollen3D project") ;
-
-    if (!saveFilePath) return "";
-
-    std::string out(saveFilePath);
-    if (!utils::endsWith(out,P3D_PROJECT_EXTENSION)) out += P3D_PROJECT_EXTENSION;
-    return out;
-}
 
 void ProjectManager::loadImages(ProjectData *list, const std::vector<std::string> &imPaths)
 {
@@ -112,11 +51,8 @@ void ProjectManager::loadImages(ProjectData *list, const std::vector<std::string
 void ProjectManager::saveProject(ProjectData *data, std::string path) {
 
     if (!data) return;
-    if (path == "" && data->getProjectPath() == ""){
-        path = saveProjectDialog();
-    }
-    if ( path == "") {
-        LOG_ERR("Error while saving project");
+    if (path == "") {
+        LOG_ERR("Can't save the project to empty path");
         return;
     }
 

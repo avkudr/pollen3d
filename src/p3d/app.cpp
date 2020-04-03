@@ -3,18 +3,75 @@
 #include <filesystem>
 #include <future>
 
+#include "tinyfiledialogs/tinyfiledialogs.h"
+
+#include "../assets/fonts/IconsFontAwesome5.h"
+
 #include "p3d/project_manager.h"
 #include "p3d/commands.h"
 #include "p3d/gui/palette.h"
 #include "p3d/gui/imgui_custom.h"
 
-#include "../assets/fonts/IconsFontAwesome5.h"
 
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 #endif
 
-void Application::initImGui(){
+#define COLOR_GREEN \
+    ImVec4 { 0.0f, 0.7f, 0.3f, 1.0f }
+#define COLOR_PINK \
+    ImVec4 { 1.0f, 0.3f, 0.6f, 1.0f }
+
+std::vector<std::string> loadImagesDialog()
+{
+    std::vector<std::string> out;
+    char const *lTheOpenFileName;
+    char const *lFilterPatterns[] = {"*.jpg", "*.jpeg", "*.png", "*.tif",
+                                     "*.tiff"};
+
+    lTheOpenFileName = tinyfd_openFileDialog("Load images...", "", 5,
+                                             lFilterPatterns, nullptr, 1);
+    if (!lTheOpenFileName) return out;
+
+    std::string allFiles(lTheOpenFileName);
+    out = utils::split(lTheOpenFileName, "|");
+    return out;
+}
+
+std::string openProjectDialog()
+{
+    char const *lTheOpenFileName;
+    std::string ext = "*" + std::string(P3D_PROJECT_EXTENSION);
+    char const *lFilterPatterns[] = {ext.c_str()};
+
+    lTheOpenFileName = tinyfd_openFileDialog("Load images...", "", 1,
+                                             lFilterPatterns, nullptr, 0);
+    if (!lTheOpenFileName) return "";
+
+    std::string projectFile(lTheOpenFileName);
+    return projectFile;
+}
+
+std::string saveProjectDialog()
+{
+    char const *saveFilePath;
+    std::string ext = "*" + std::string(P3D_PROJECT_EXTENSION);
+    char const *saveFilePattern[] = {ext.c_str()};
+
+    saveFilePath = tinyfd_saveFileDialog("Save project as...", "",
+                                         1,  // nb files to save
+                                         saveFilePattern, "Pollen3D project");
+
+    if (!saveFilePath) return "";
+
+    std::string out(saveFilePath);
+    if (!utils::endsWith(out, P3D_PROJECT_EXTENSION))
+        out += P3D_PROJECT_EXTENSION;
+    return out;
+}
+
+void Application::initImGui()
+{
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -36,7 +93,7 @@ void Application::initImGui(){
 
     m_fontMono = io.Fonts->AddFontFromFileTTF(
         std::string(pathToFonts + fontMono).c_str(), 16.0f);
-    ConsoleLogger::get()->setFont(m_fontMono);
+    m_consoleLogger->setFont(m_fontMono);
     m_fontMonoSmall = io.Fonts->AddFontFromFileTTF(
         std::string(pathToFonts + fontMono).c_str(), 14.0f);
 
@@ -108,9 +165,9 @@ void Application::draw(int width, int height){
     ImGui::End();
     ImGui::PopStyleColor();
 
-    if (m_showConsole) {
+    if (m_showConsole && m_consoleLogger) {
         ImGui::Begin("Console", nullptr, flags);
-        ConsoleLogger::get()->render();
+        m_consoleLogger->render();
         ImGui::End();
     }
 
@@ -275,7 +332,7 @@ void Application::_drawMenuBar(int width)
 
     if (ImGui::Button(ICON_FA_UPLOAD" Load images",buttonRect))
     {
-        auto files = ProjectManager::get()->loadImagesDialog();
+        auto files = loadImagesDialog();
         auto f = [&,files]() {
             ProjectManager::get()->loadImages(&m_projectData,files);
             if (!m_projectData.empty()) m_currentImage = 0;
@@ -287,7 +344,9 @@ void Application::_drawMenuBar(int width)
     if (ImGui::Button(ICON_FA_SAVE" Save",buttonRect))
     {
         auto f = [&]() {
-            ProjectManager::get()->saveProject(&m_projectData,m_projectData.getProjectPath());
+            std::string path = m_projectData.getProjectPath();
+            if (path == "") path = saveProjectDialog();
+            ProjectManager::get()->saveProject(&m_projectData, path);
             _resetAppState();
         };
         _doHeavyTask(f);
@@ -295,14 +354,14 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
     if (ImGui::Button("Save as...",buttonRect))
     {
-        auto file = ProjectManager::get()->saveProjectDialog();
+        auto file = saveProjectDialog();
         ProjectManager::get()->saveProject(&m_projectData, file);
         _resetAppState();
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FOLDER_OPEN" Open",buttonRect))
     {
-        auto file = ProjectManager::get()->openProjectDialog();
+        auto file = openProjectDialog();
         LOG_DBG("Open project: %s", file.c_str());
 
         auto f = [&,file]() {

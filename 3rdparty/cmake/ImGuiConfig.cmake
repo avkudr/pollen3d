@@ -7,8 +7,8 @@ include_directories(
     ${ImGui_DIR}
     )
 
-set(SOURCES
-    ${SOURCES}
+set(SOURCES_GUI
+    ${SOURCES_GUI}
     ${ImGui_DIR}/imgui.h
     ${ImGui_DIR}/imgui_internal.h
     ${ImGui_DIR}/imstb_rectpack.h
@@ -42,8 +42,8 @@ set(ImGui_LIBS ${OPENGL_LIBRARIES} ${glfw_LIBS})
 add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 if (ImGui_FOUND)
-    set(SOURCES
-        ${SOURCES}
+    set(SOURCES_GUI
+        ${SOURCES_GUI}
         ${ImGui_DIR}/examples/imgui_impl_glfw.h
         ${ImGui_DIR}/examples/imgui_impl_glfw.cpp
         ${ImGui_DIR}/examples/imgui_impl_opengl3.h

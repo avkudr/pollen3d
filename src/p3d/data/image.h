@@ -9,9 +9,9 @@
 #include <opencv2/calib3d.hpp>
 
 #include "p3d/core/core.h"
-#include "p3d/core/utils.h"
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 #include "p3d/core/serialization.h"
+#include "p3d/core/utils.h"
 #include "p3d/data/affine_camera.h"
 
 using std::vector;

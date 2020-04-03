@@ -4,8 +4,8 @@
 
 #include "ceres/ceres.h"
 
+#include "p3d/core/logger.h"
 #include "p3d/core/utils.h"
-#include "p3d/console_logger.h"
 
 struct BAFunctor_Affine
 {

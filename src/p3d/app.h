@@ -8,9 +8,10 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 #include "p3d/data/project_data.h"
 #include "p3d/data/project_settings.h"
+#include "p3d/gui/widget_console.h"
 
 #include "p3d/viewer3d/viewer3d.h"
 
@@ -18,6 +19,9 @@ class Application
 {
 public:
     Application() {
+        m_consoleLogger = std::make_unique<ConsoleLogger>();
+        _logger = m_consoleLogger.get();
+
         LOG_OK("Welcome to Pollen3D!");
     }
 
@@ -143,6 +147,7 @@ protected:
     int m_viewer3dNeedsUpdate = false;
 
     std::unique_ptr<Viewer3D> m_viewer3D{nullptr};
+    std::unique_ptr<ConsoleLogger> m_consoleLogger{nullptr};
 
     bool m_initialised = false;
 

@@ -2,7 +2,7 @@
 
 #include <Eigen/Eigen>
 
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 
 void normalizePoints(std::vector<cv::Point2d> &pts, cv::Mat &transformMatrix)
 {

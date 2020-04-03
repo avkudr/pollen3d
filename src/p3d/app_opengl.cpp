@@ -5,7 +5,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 
 #define P3D_GLSL_VERSION "#version 410"
 

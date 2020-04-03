@@ -1,7 +1,7 @@
 #pragma once
 
 #include "p3d/core/core.h"
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/eigen.hpp>

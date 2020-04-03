@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "p3d/console_logger.h"
+#include "p3d/core/logger.h"
 
 using std::string;
 
