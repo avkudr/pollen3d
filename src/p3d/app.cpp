@@ -21,16 +21,24 @@ void Application::initImGui(){
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigDockingWithShift = true;
 
+    std::string font = "SourceSansPro-Regular.ttf";
+    std::string fontMono = "UbuntuMono-R.ttf";
+
     std::string pathToFonts = "./assets/fonts/";
-    io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "Ubuntu-R.ttf").c_str(), 16.0f);
+    io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + font).c_str(),
+                                 18.0f);
 
-    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
     ImFontConfig icons_config; icons_config.MergeMode = true; icons_config.PixelSnapH = true;
-    io.Fonts->AddFontFromFileTTF( std::string(pathToFonts + FONT_ICON_FILE_NAME_FAS).c_str(), 16.0f, &icons_config, icons_ranges );
+    io.Fonts->AddFontFromFileTTF(
+        std::string(pathToFonts + FONT_ICON_FILE_NAME_FAS).c_str(), 16.0f,
+        &icons_config, icons_ranges);
 
-    m_fontMono = io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "UbuntuMono-R.ttf").c_str(), 16.0f);
+    m_fontMono = io.Fonts->AddFontFromFileTTF(
+        std::string(pathToFonts + fontMono).c_str(), 16.0f);
     ConsoleLogger::get()->setFont(m_fontMono);
-    m_fontMonoSmall = io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + "UbuntuMono-R.ttf").c_str(), 14.0f);
+    m_fontMonoSmall = io.Fonts->AddFontFromFileTTF(
+        std::string(pathToFonts + fontMono).c_str(), 14.0f);
 
     applyStyle();
 }
@@ -41,6 +49,7 @@ void Application::applyStyle() {
     ImGuiStyle& style = ImGui::GetStyle();
     style.Alpha = 1.0f;
     style.FrameRounding  = 4;
+    style.FramePadding = ImVec2(4, 2);
     style.WindowRounding = 0;
     style.WindowBorderSize = 1;
     style.IndentSpacing = 8.0f;
@@ -54,8 +63,6 @@ void Application::applyStyle() {
     style.Colors[ImGuiCol_TabUnfocusedActive] = style.Colors[ImGuiCol_TitleBg];
     style.Colors[ImGuiCol_Header] = ImVec4(0.216f,0.216f,0.239f,1.0f);
     style.Colors[ImGuiCol_Tab] = ImVec4(0.33f, 0.33f, 0.33f, 0.86f);
-
-
 }
 
 void Application::draw(int width, int height){
@@ -101,9 +108,11 @@ void Application::draw(int width, int height){
     ImGui::End();
     ImGui::PopStyleColor();
 
-    ImGui::Begin("Console",nullptr, flags);
-    ConsoleLogger::get()->render();
-    ImGui::End();
+    if (m_showConsole) {
+        ImGui::Begin("Console", nullptr, flags);
+        ConsoleLogger::get()->render();
+        ImGui::End();
+    }
 
     ImGui::PopStyleVar();
 
@@ -231,7 +240,9 @@ void Application::_drawMenuBar(int width)
         {
             ImGui::MenuItem("Reset docking",nullptr,&m_dockingNeedsReset);
             ImGui::Separator();
-            if(ImGui::MenuItem("Style dark")) ImGui::StyleColorsDark();
+            ImGui::MenuItem("Show console", "Ctrl+T", &m_showConsole);
+            ImGui::Separator();
+            if (ImGui::MenuItem("Style dark")) ImGui::StyleColorsDark();
             if(ImGui::MenuItem("Style light")) ImGui::StyleColorsLight();
             ImGui::EndMenu();
         }
@@ -245,12 +256,16 @@ void Application::_drawMenuBar(int width)
             ImGui::MenuItem("Long text display");
             ImGui::EndMenu();
         }
+
+#ifdef POLLEN3D_DEBUG
         if (ImGui::BeginMenu("Debug"))
         {
             ImGui::MenuItem("Show metrics", nullptr, &showImGuiMetrics);
             ImGui::MenuItem("Show demo", nullptr, &showDemoImGui);
             ImGui::EndMenu();
         }
+#endif
+
         ImGui::EndMenuBar();
     }
 
@@ -317,17 +332,18 @@ void Application::_drawMenuBar(int width)
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_LAYER_GROUP"",buttonSquare)) {
-        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
-        m_currentTab = Tab_Multiview;
+        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud}))
+    _resetAppState(); m_currentTab = Tab_Multiview;
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_CLOUD"",buttonSquare)) {
-        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
-        m_currentTab = Tab_PointCloud;
+        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud}))
+    _resetAppState(); m_currentTab = Tab_PointCloud;
     }
     ImGui::SameLine();
     */
 
+#ifdef POLLEN3D_DEBUG
     ImGui::PushStyleColor(ImGuiCol_Button,COLOR_GREEN);
     if (ImGui::Button("DBG_LOAD",buttonRect))
     {
@@ -378,6 +394,7 @@ void Application::_drawMenuBar(int width)
         _doHeavyTask(f);
     }
     ImGui::PopStyleColor();
+#endif
 
     ImGui::End();
 
@@ -420,6 +437,8 @@ void Application::_drawTab_Image()
 {
     if (ImGui::BeginTabItem(ICON_FA_IMAGE""))
     {
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
         bool disabled = false;
         auto image = m_projectData.image(m_currentImage);
         if (image == nullptr) disabled = true;
@@ -481,17 +500,23 @@ void Application::_drawTab_Image()
 
 void Application::_drawTab_Stereo()
 {
-    if (ImGui::BeginTabItem(ICON_FA_IMAGES""))
-    {
+    if (ImGui::BeginTabItem(ICON_FA_IMAGES "")) {
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
         int matchingWidgetW = 250;
 
         bool disabled = false;
         ImagePair * imPair = m_projectData.imagePair(m_currentImage);
         if (!imPair) disabled = true;
 
-        if (ImGui::CollapsingHeader("Matching",m_collapsingHeaderFlags))
-        {
-            const char* matchingAlgos[] = { "BruteForce-L1", "BruteForce", "FlannBased"};
+        if (ImGui::CollapsingHeader("Matching", m_collapsingHeaderFlags)) {
+            ImVec2 p0 = ImGui::GetCursorScreenPos();
+            p0.x += 5;
+            p0.y += 5;
+            ImGui::SetCursorScreenPos(p0);
+
+            ImGui::BeginGroup();
+            const char *matchingAlgos[] = {"BruteForce-L1", "BruteForce",
+                                           "FlannBased"};
             auto matcherCurAlg     = ProjectManager::get()->getSetting(p3dSetting_matcherCurAlg).cast<int>();
 
             if (ImGui::Combo("matcher", &matcherCurAlg, matchingAlgos, IM_ARRAYSIZE(matchingAlgos))) {
@@ -532,6 +557,8 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             if (disableButtons) ImGuiC::PopDisabled();
+            ImGui::Dummy(ImVec2(0.0f, 10.0f));
+            ImGui::EndGroup();
         }
 
         if (ImGui::CollapsingHeader("Epipolar geometry",m_collapsingHeaderFlags))
@@ -556,6 +583,7 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             if (disableButtons) ImGuiC::PopDisabled();
+            ImGui::Dummy(ImVec2(0.0f, 10.0f));
         }
 
         if (ImGui::CollapsingHeader("Rectification",m_collapsingHeaderFlags))
@@ -582,6 +610,7 @@ void Application::_drawTab_Stereo()
                 _doHeavyTask(f);
             }
             if (disableButtons) ImGuiC::PopDisabled();
+            ImGui::Dummy(ImVec2(0.0f, 10.0f));
         }
 
         if (ImGui::CollapsingHeader("Dense matching",m_collapsingHeaderFlags))
@@ -718,6 +747,7 @@ void Application::_drawTab_Stereo()
             }
 
             if (disableButtons) ImGuiC::PopDisabled();
+            ImGui::Dummy(ImVec2(0.0f, 10.0f));
         }
 
         ImGui::EndTabItem();
@@ -731,8 +761,9 @@ void Application::_drawTab_Multiview()
 {
     if (ImGui::BeginTabItem(ICON_FA_LAYER_GROUP""))
     {
-        if (ImGui::CollapsingHeader("Measurement matrix",m_collapsingHeaderFlags))
-        {
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+        if (ImGui::CollapsingHeader("Measurement matrix",
+                                    m_collapsingHeaderFlags)) {
             if (ImGui::Button("Get full W")) {
                 auto f = [&]() { ProjectManager::get()->findMeasurementMatrixFull(m_projectData); };
                 _doHeavyTask(f);
@@ -981,6 +1012,14 @@ void Application::_drawData()
         }
         return;
     }
+
+    if (m_currentTab == Tab_Multiview || m_currentTab == Tab_PointCloud) {
+#ifdef POLLEN3D_DEBUG
+        ImGui::Text("Sparce point cloud");
+        ImGui::Text("Dense point cloud");
+#endif
+        return;
+    }
 }
 
 void Application::_drawProperties()
@@ -1165,11 +1204,7 @@ void Application::_drawCentral()
             m_viewer3dNeedsUpdate = false;
         }
 
-        m_viewer3D->draw();
-        m_textureWidth = width;
-        m_textureHeight = height;
-        setTextureId(m_viewer3D->textureId());
-        textureDisplay(ImVec2(width, height),ImVec2(0,0),ImVec2(1,1));
+        m_viewer3D->draw(width, height);
         return;
     }
 
@@ -1325,11 +1360,12 @@ void Application::_processKeyboardInput()
                 //_resetAppState();
             };
             _doHeavyTask(f);
-        } else if (ImGui::IsKeyPressed(ImGuiKey_Z)){
+        } else if (ImGui::IsKeyPressed('t') || ImGui::IsKeyPressed('T')) {
+            m_showConsole = !m_showConsole;
+        } else if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
             m_textureNeedsUpdate = true;
             CommandManager::get()->undoCommand();
         } else if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
-
         }
         return;
     }

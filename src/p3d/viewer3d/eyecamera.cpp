@@ -19,7 +19,7 @@ void EyeCamera::resetParams()
     position = Eigen::Vector3f(0,0,distance);
     viewAxis = Eigen::Vector3f(0,0,1);
     upAxis   = Eigen::Vector3f(0,1,0);
-    vertAngle = 45.0f;
+    vertAngleDeg = 45.0f;
 }
 
 Eigen::Matrix4f EyeCamera::getWorldToViewMatrix() const
@@ -69,13 +69,13 @@ void EyeCamera::moveBackForward(float step)
 
 void EyeCamera::strafeLeftRight(float step)
 {
-    float sceneSize = 2 * distance * tan(vertAngle /180.0f * M_PI / 2.0f) * aspect;
+    float sceneSize = 2 * distance * tan(vertAngleDeg /180.0f * M_PI / 2.0f) * aspect;
     position += sceneSize * step * viewAxis.cross(upAxis);
 }
 
 void EyeCamera::moveUpDown(float step)
 {
-    float sceneSize = 2 * distance * tan(vertAngle /180.0f * M_PI / 2.0f);
+    float sceneSize = 2 * distance * tan(vertAngleDeg /180.0f * M_PI / 2.0f);
     position += sceneSize * step * upAxis;
 }
 
@@ -97,17 +97,17 @@ void EyeCamera::lookAtX()
 
 void EyeCamera::multiplyVertAngle(float coeff)
 {
-    float x = 2*distance*tan(vertAngle /180 * 3.1415 / 2);
-    vertAngle = std::abs(coeff*vertAngle);
+    float x = 2*distance*tan(vertAngleDeg /180 * 3.1415 / 2);
+    vertAngleDeg = std::abs(coeff*vertAngleDeg);
 
-    distance = x / 2.0 / tan(vertAngle  /180 * 3.1415 / 2);
+    distance = x / 2.0 / tan(vertAngleDeg  /180 * 3.1415 / 2);
 
     position(2) = distance;
 }
 
 Eigen::Matrix4f EyeCamera::getProjMatrix() const
 {
-    return perspective(vertAngle, aspect, nearClip, farClip);
+    return perspective(vertAngleDeg, aspect, nearClip, farClip);
 }
 
 Eigen::Matrix4f EyeCamera::perspective(float verticalAngle, float aspectRatio, float nearPlane, float farPlane) const
@@ -139,4 +139,11 @@ Eigen::Matrix4f EyeCamera::perspective(float verticalAngle, float aspectRatio, f
     m(2,3) = -1.0f;
     m(3,3) = 0.0f;
     return m;
+}
+
+const Eigen::Vector3f &EyeCamera::getViewAxis() const { return viewAxis; }
+
+void EyeCamera::setViewAxis(const Eigen::Vector3f &value)
+{
+    viewAxis = value;
 }

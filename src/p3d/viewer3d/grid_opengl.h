@@ -16,32 +16,27 @@ using namespace gl;
 #include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #endif
 
-#include "viewer3d.h"
-
-#include <iostream>
 #include <memory>
+#include <vector>
 
-#include "p3d/viewer3d/grid_opengl.h"
-#include "p3d/viewer3d/shader_opengl.h"
+class ShaderOpenGL;
 
-class Viewer3DOpenGL : public Viewer3D
+class GridOpenGL
 {
 public:
-    Viewer3DOpenGL();
+    GridOpenGL(const int gridSquareSize) : m_gridSquareSize(gridSquareSize)
+    {
+        init();
+    }
+    ~GridOpenGL() {}
 
-    virtual ~Viewer3DOpenGL() override { release(); }
-    void onSizeChanged() override { init(); }
-
-    void release() override;
-    void init() override;
-    void drawImpl(int width, int height) override;
-
-    void setPointCloud(const Mat3Xf& pcd, const Mat3Xf& colors) override;
+    void init();
+    void draw(std::shared_ptr<ShaderOpenGL> shader = nullptr);
 
 private:
-    unsigned int m_fbo{0};
-    unsigned int m_Tvbo{0}, m_Tvao{0};
+    GLuint vao{0}, vbo{0}, ibo{0};
+    GLuint length;
 
-    std::shared_ptr<ShaderOpenGL> m_shader{nullptr};
-    std::unique_ptr<GridOpenGL> m_grid{nullptr};
+    int m_gridSquareSize{100};
+    std::vector<float> m_color{0.33f, 0.33f, 0.33f, 1.0f};
 };

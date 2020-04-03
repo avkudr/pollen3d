@@ -122,6 +122,8 @@ protected:
 
     int m_currentSection = Section_Default;
 
+    bool m_showConsole{true};
+
     // ***** visuals
     int m_width = 1600;
     int m_height = 1000;

@@ -7,13 +7,11 @@
 
 class Viewer3D {
 public:
-    Viewer3D(){
-
-        // some initial world rotation
-        m_world.block(0,0,3,3) <<
-        -0.863589, 0.465148, 0.0765628,
-         0.231463, 0.279194,  0.914598,
-         0.410665, 0.820792,  -0.35449;
+    Viewer3D()
+    {
+        // some initial world rotation that was determined experimentally :)
+        m_world.block(0, 0, 3, 3) << -0.863589f, 0.465148f, 0.0765628f,
+            0.231463f, 0.279194f, 0.914598f, 0.410665f, 0.820792f, -0.35449f;
     }
     virtual ~Viewer3D(){}
 
@@ -32,8 +30,8 @@ public:
     void * textureId() { return m_textureId; }
 
     virtual void init() = 0;
-    void draw() {
-
+    void draw(int width, int height)
+    {
         float wx = ImGui::GetWindowPos().x;
         float wy = ImGui::GetWindowPos().y;
 
@@ -47,10 +45,14 @@ public:
                 float h = m_height;
                 x = x - w/2.0f;
                 y = y - h/2.0f;
-                float sphereRadius = w < h ? w*0.9f /2.0f : h*0.9f/2.0f;
-                Vec3f rotAxis(x,y,0.0f);
-                if ( x*x + y*y < sphereRadius*sphereRadius)
-                    rotAxis(2) = sqrt( sphereRadius*sphereRadius - x*x - y*y );
+                float sphereRadius =
+                    w < h ? (w * 0.9f / 2.0f) : (h * 0.9f / 2.0f);
+
+                Vec3f rotAxis(x, y, 0.0f);
+                if (x * x + y * y < sphereRadius * sphereRadius) {
+                    rotAxis(2) =
+                        sqrtf(sphereRadius * sphereRadius - x * x - y * y);
+                }
 
                 rotAxis.normalize();
                 m_rotationAxis = rotAxis;
@@ -81,10 +83,10 @@ public:
             //if (ImGui::IsM)
         }
 
-        drawImpl();
+        drawImpl(width, height);
     }
 
-    virtual void drawImpl() = 0;
+    virtual void drawImpl(int width, int height) = 0;
     virtual void release() = 0;
     virtual void onSizeChanged(){}
     virtual void setPointCloud(const Mat3Xf& pcd, const Mat3Xf& colors) = 0;
@@ -101,7 +103,7 @@ public:
                     a.toRotationMatrix() *
                     m_world.block(0,0,3,3);
         } else {
-            const auto & view = m_camera.viewAxis;
+            const auto& view = m_camera.getViewAxis();
             Eigen::AngleAxisf b( m_gainRotation * dy,view);
             m_world.block(0,0,3,3) =
                     b.toRotationMatrix() *

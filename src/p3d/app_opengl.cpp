@@ -9,10 +9,9 @@
 
 #define P3D_GLSL_VERSION "#version 410"
 
-void error_callback(int error, const char* description)
+void error_callback([[maybe_unused]] int error, const char* description)
 {
-    fputs(description, stderr);
-    std::cout << std::endl;
+    LOG_ERR("GLFW: %i, %s", error, description);
 }
 
 void ApplicationOpenGL::init()
@@ -20,9 +19,7 @@ void ApplicationOpenGL::init()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
-    if (!glfwInit()) {
-        throw "Failed to initialize OpenGL loader!";
-    }
+    if (!glfwInit()) throw "Failed to initialize OpenGL loader!";
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -180,6 +177,6 @@ void ApplicationOpenGL::textureDisplay(const ImVec2& size, ImVec2 uv0, ImVec2 uv
 {
     GLuint* tId = (GLuint*)m_textureId;
     if (*tId && isTextureReady()) {
-        ImGui::Image(ImTextureID(*tId), size, uv0, uv1);
+        ImGui::Image(reinterpret_cast<ImTextureID>(*tId), size, uv0, uv1);
     }
 }

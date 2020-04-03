@@ -113,11 +113,18 @@ endif()
 
 # ----- Add file dialogs --------------------------------------------
 
-set(SOURCES
-    ${SOURCES}
+set(FILE_DIALOG_SOURCES
     ./3rdparty/tinyfiledialogs/tinyfiledialogs.h
     ./3rdparty/tinyfiledialogs/tinyfiledialogs.c
 )
+
+set_source_files_properties(
+    ${FILE_DIALOG_SOURCES}
+    PROPERTIES
+    COMPILE_FLAGS "-w"
+)
+
+set(SOURCES ${SOURCES} ${FILE_DIALOG_SOURCES})
 
 include_directories(./3rdparty/)
 
@@ -175,6 +182,8 @@ set(SOURCES
     ./src/p3d/viewer3d/viewer3d_opengl.h
     ./src/p3d/viewer3d/viewer3d_opengl.cpp
     ./src/p3d/viewer3d/shader_opengl.h
+    ./src/p3d/viewer3d/grid_opengl.h
+    ./src/p3d/viewer3d/grid_opengl.cpp
 )
 
 # Add source files
@@ -187,6 +196,7 @@ set(SOURCES
 #	${CMAKE_SOURCE_DIR}/src/*.h
 #	${CMAKE_SOURCE_DIR}/src/*.hpp)
 
+set(RES_FILES "")
 if(POLLEN3D_OPENGL)
     message("OpenGL - FOUND")
     set(SOURCES
@@ -194,6 +204,8 @@ if(POLLEN3D_OPENGL)
         ./src/p3d/app_opengl.cpp
         ./src/p3d/app_opengl.h
     )
+    file(GLOB RES_FILES ./assets/*.vs ./assets/*.fs)
+
 elseif(POLLEN3D_VULKAN)
     error( "OpenGL not found" )
     error( "Vulkan not found" )
@@ -225,7 +237,7 @@ else()
     message("Tests: NO")
 endif()
 
-add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES})
+add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES} ${RES_FILES})
 target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
