@@ -13,107 +13,31 @@
 #include "p3d/core.h"
 #include "p3d/data/image.h"
 #include "p3d/serialization.h"
+#include "p3d/stereo/dense_matching.h"
 #include "p3d/stereo/fundmat.h"
+#include "p3d/stereo/match.h"
 
 namespace p3d
 {
-enum p3dDense_
-{
-    p3dDense_DispMap = 0,
-    p3dDense_DispMethod,
-    p3dDense_DispLowerBound,
-    p3dDense_DispUpperBound,
-    p3dDense_DispBlockSize,
-
-    p3dDense_DispFilterNewValue, // The disparity value used to paint-off the speckles
-    p3dDense_DispFilterMaxSpeckleSize, // The maximum speckle size to consider it a speckle. Larger blobs are not affected by the algorithm
-    p3dDense_DispFilterMaxDiff, // Maximum difference between neighbor disparity pixels to put them into the same blob. Note that since StereoBM,
-    //StereoSGBM and may be other algorithms return a fixed-point disparity map, where disparity values are multiplied by 16,
-    //this scale factor should be taken into account when specifying this parameter value.
-
-    p3dDense_BilateralD, // The disparity value used to paint-off the speckles
-    p3dDense_BilateralSigmaColor, // The maximum speckle size to consider it a speckle. Larger blobs are not affected by the algorithm
-    p3dDense_BilateralSigmaSpace, // Maximum difference between neighbor disparity pixels to put them into the same blob. Note that since StereoBM,
-    //StereoSGBM and may be other algorithms return a fixed-point disparity map, where disparity values are multiplied by 16,
-    //this scale factor should be taken into account when specifying this parameter value.
-
-
-};
-
-class DenseMatching : public Serializable<DenseMatching>{
-public:
-    enum DenseMatchingMethod_{
-        DenseMatchingMethod_SGBM      = cv::StereoSGBM::MODE_SGBM,          ///< Perform parabolic interpolation on the table
-        DenseMatchingMethod_HH        = cv::StereoSGBM::MODE_HH,          ///< Perform linear interpolation on the table
-        DenseMatchingMethod_SGBM_3WAY = cv::StereoSGBM::MODE_SGBM_3WAY           ///< Perform parabolic interpolation on the table
-    };
-
-    static int initMeta();
-
-    cv::Mat dispMap;
-
-    int dispMethod{DenseMatchingMethod_SGBM};
-    int dispLowerBound{-1};
-    int dispUpperBound{2};
-    int dispBlockSize{9};
-
-    int dispFilterNewValue{0};
-    int dispFilterMaxSpeckleSize{260};
-    int dispFilterMaxDiff{10};
-
-    int bilateralD{9};
-    int bilateralSigmaColor{180};
-    int bilateralSigmaSpace{180};
-
-};
-
-enum p3dMatch_
-{
-    p3dMatch_iPtL = 100,
-    p3dMatch_iPtR = 101,
-    p3dMatch_distance = 102,
-};
-
-class Match : public Serializable<Match>{
-public:
-    static int initMeta();
-
-    Match(){
-    }
-    Match(int idxPtImageL, int idxPtImageR, float dist = 0.0f) :
-        iPtL(idxPtImageL), iPtR(idxPtImageR), distance(dist)
-    {
-    }
-    ~Match(){}
-
-    int iPtL{0};
-    int iPtR{0};
-    float distance = 0;
-
-    inline bool operator==(const Match& a) const{
-        return iPtL == a.iPtL && iPtR == a.iPtR;
-    }
-};
-
-enum p3dImagePair_
-{
+P3D_EXPORTS enum p3dImagePair_ {
     p3dImagePair_matches = 0,
-    p3dImagePair_imL     = 1,
-    p3dImagePair_imR     = 2,
+    p3dImagePair_imL = 1,
+    p3dImagePair_imR = 2,
     p3dImagePair_fundMat = 3,
-    p3dImagePair_hasF    = 4,
+    p3dImagePair_hasF = 4,
     p3dImagePair_rectifyingTransformLeft,
     p3dImagePair_rectifyingTransformRight,
     p3dImagePair_rectifiedImageLeft,
     p3dImagePair_rectifiedImageRight,
     p3dImagePair_disparityMap,
-    p3dImagePair_Theta1, // theta_1
-    p3dImagePair_Rho   , // rho
-    p3dImagePair_Theta2, // theta_2
+    p3dImagePair_Theta1,  // theta_1
+    p3dImagePair_Rho,     // rho
+    p3dImagePair_Theta2,  // theta_2
     p3dImagePair_denseMatching,
 };
 
-class ImagePair : public Serializable<ImagePair>{
+P3D_EXPORTS class ImagePair : public Serializable<ImagePair>
+{
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -124,19 +48,19 @@ public:
 
     bool operator==(const ImagePair& i) const;
 
-    bool isValid() { return _imL >= 0 && _imR >= 0;}
-    bool hasMatches() { return getNbMatches() > 0; }
-    int getNbMatches() { return int(m_matches.size()); }
-    const std::vector<Match> & getMatches() const { return m_matches; }
-    void getMatchesAsMap(std::map<int,int> & map) const;
-    void setMatches(const std::vector<Match> & matches) { m_matches = matches; }
-
-    cv::Mat getOneStereoImage(cv::Mat im1, cv::Mat im2);
-
     int imL() { return _imL; }
     int imR() { return _imR; }
     void setLeftImage(int imL) { _imL = imL; }
     void setRightImage(int imR) { _imR = imR; }
+    bool isValid() { return _imL >= 0 && _imR >= 0; }
+
+    // ***** Matches
+
+    bool hasMatches() { return getNbMatches() > 0; }
+    int getNbMatches() { return int(m_matches.size()); }
+    const std::vector<Match> &getMatches() const { return m_matches; }
+    void getMatchesAsMap(std::map<int, int> &map) const;
+    void setMatches(const std::vector<Match> &matches) { m_matches = matches; }
 
     // ***** Epipolar geometry
 
@@ -146,10 +70,6 @@ public:
     void getEpilines(const std::vector<Vec2> & pts, std::vector<Vec3> & epilines, bool transpose) const;
     void getEpilinesLeft(const std::vector<Vec2> & ptsR, std::vector<Vec3> & epilinesL) const { getEpilines(ptsR, epilinesL, true);}
     void getEpilinesRight(const std::vector<Vec2> & ptsL, std::vector<Vec3> & epilinesR) const { getEpilines(ptsL, epilinesR, false); }
-
-    std::vector<cv::Point2d> getInliersLeftImageREFACTOR() { return getInliersREFACTOR(0); }
-    std::vector<cv::Point2d> getInliersRightImageREFACTOR() { return getInliersREFACTOR(1); }
-    std::vector<cv::Point2d> getInliersREFACTOR(int imageIdx) {return std::vector<cv::Point2d>();/*_matcher->getInliers(imageIdx);*/}
 
     // ***** Rectification
 
@@ -171,8 +91,11 @@ public:
     bool hasDisparityMap() { return !m_disparityMap.empty(); }
 
     const cv::Mat & getDisparityMap() const { return m_disparityMap; }
-    void setDisparityMap(const cv::Mat & im) { m_disparityMap = im; }
-    cv::Mat getDisparityMapPlot() const;
+    void setDisparityMap(const cv::Mat &im) { m_disparityMap = im; }
+
+    DenseMatchingPars *denseMatchingPars();
+    const DenseMatchingPars &getDenseMatchingPars() const;
+    void setDenseMatchingPars(const DenseMatchingPars &d);
 
     // **** rotation parameters
 
@@ -202,15 +125,13 @@ public:
         node["im_p" + std::to_string(int(p3dImagePair_disparityMap))] >> m_disparityMap;
     }
 
-    DenseMatching denseMatching{};
-
 private:
     int _imL = -1;
     int _imR = -1;
 
     std::vector<Match> m_matches;
 
-    Eigen::Matrix<double,3,3> F;
+    Eigen::Matrix<double, 3, 3> F;
 
     Mat3 m_rectifyingTransformL;
     Mat3 m_rectifyingTransformR;
@@ -223,6 +144,7 @@ private:
     double m_rho{0.0};
     double m_theta2{0.0};
 
+    DenseMatchingPars m_denseMatchingPars{};
 };
 }  // namespace p3d
 #endif // IMAGE_PAIR_H

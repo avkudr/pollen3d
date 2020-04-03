@@ -51,7 +51,7 @@ void normalizePoints(std::vector<cv::Point2d> &pts, cv::Mat &transformMatrix)
     }
 }
 
-Mat3 fundmat::findAffineGS(const std::vector<Vec2> &ptsX, const std::vector<Vec2> &ptsXt)
+Mat3 FundMatUtil::findAffineGS(const std::vector<Vec2> &ptsX, const std::vector<Vec2> &ptsXt)
 {
     Mat3 F;
     F.setZero(3,3);
@@ -113,7 +113,7 @@ struct FundamentalMatrixResidual {
         const T & e = p[4];
         T err1, err2;
         err1 = err2 = T(100000);
-        fundmat::epiporalDistances(
+        FundMatUtil::epiporalDistances(
                     a,b,c,d,e,
                     T(x),T(y),T(xt),T(yt),
                     &err1,&err2);
@@ -129,7 +129,7 @@ private:
     const double yt;
 };
 
-Mat3 fundmat::findAffineCeres(const std::vector<Vec2> &ptsX, const std::vector<Vec2> &ptsXt)
+Mat3 FundMatUtil::findAffineCeres(const std::vector<Vec2> &ptsX, const std::vector<Vec2> &ptsXt)
 {
     //Mat3 Fgs = findAffineGS(ptsX,ptsXt);
     //std::vector<double> params = {Fgs(0,2), Fgs(1,2), Fgs(2,0), Fgs(2,1), Fgs(2,2)};
@@ -165,7 +165,7 @@ Mat3 fundmat::findAffineCeres(const std::vector<Vec2> &ptsX, const std::vector<V
     return F;
 }
 
-Vec2 fundmat::epiporalDistancesF(const Mat3 &F, const Vec2 &q, const Vec2 &qT)
+Vec2 FundMatUtil::epiporalDistancesF(const Mat3 &F, const Vec2 &q, const Vec2 &qT)
 {
     const auto & a = F(0,2);
     const auto & b = F(1,2);
@@ -179,7 +179,7 @@ Vec2 fundmat::epiporalDistancesF(const Mat3 &F, const Vec2 &q, const Vec2 &qT)
     const auto & qy = q[1];
 
     double err,errT;
-    fundmat::epiporalDistances(a,b,c,d,e,qx,qy,qTx,qTy,&err,&errT);
+    FundMatUtil::epiporalDistances(a,b,c,d,e,qx,qy,qTx,qTy,&err,&errT);
 
     Vec2 errs;
     errs << err, errT;
@@ -190,7 +190,7 @@ Vec2 fundmat::epiporalDistancesF(const Mat3 &F, const Vec2 &q, const Vec2 &qT)
  * so that x2' * F * x1 = 0
  *
 
-Mat3 fundmat::affineFromP(const Mat34 &Pl, const Mat34 &Pr)
+Mat3 FundMatUtil::affineFromP(const Mat34 &Pl, const Mat34 &Pr)
 {
 
     // https://www.ijcai.org/Proceedings/97-2/Papers/102.pdf
@@ -215,7 +215,7 @@ Mat3 fundmat::affineFromP(const Mat34 &Pl, const Mat34 &Pr)
 }
  */
 
-std::pair<double, double> fundmat::slopAngles(const Mat3 &F)
+std::pair<double, double> FundMatUtil::slopAngles(const Mat3 &F)
 {
     std::pair<double, double> angles;
     const auto & a = F(0,2);
@@ -228,7 +228,7 @@ std::pair<double, double> fundmat::slopAngles(const Mat3 &F)
 }
 
 template<typename T>
-void fundmat::epiporalDistances(const T a, const T b, const T c, const T d, const T e,
+void FundMatUtil::epiporalDistances(const T a, const T b, const T c, const T d, const T e,
                                 const T qx, const T qy, const T qTx, const T qTy,
                                 T *errorL, T *errorR)
 {

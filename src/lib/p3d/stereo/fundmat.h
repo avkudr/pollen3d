@@ -16,7 +16,7 @@
 
 namespace p3d
 {
-struct fundmat{
+struct FundMatUtil {
     static Mat3 findAffineGS(const std::vector<Vec2> & ptsL,const std::vector<Vec2> & ptsR);
     static Mat3 findAffineCeres(const std::vector<Vec2> & ptsL, const std::vector<Vec2> & ptsR);
 

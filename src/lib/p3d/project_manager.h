@@ -62,7 +62,10 @@ public:
 
     template <typename T>
     void setProperty(T * instance, const P3D_ID_TYPE &propId, const entt::meta_any & v, bool force = false) {
-        if (instance == nullptr) return;
+        if (instance == nullptr) {
+            LOG_ERR("Can't set property of null");
+            return;
+        }
         CommandManager::get()->executeCommand(
                     new CommandSetProperty(instance,propId,v,force));
     }

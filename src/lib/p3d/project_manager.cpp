@@ -232,8 +232,8 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
             continue;
         }
 
-        Mat3 F = fundmat::findAffineCeres(ptsL,ptsR);
-        auto angles = fundmat::slopAngles(F);
+        Mat3 F = FundMatUtil::findAffineCeres(ptsL, ptsR);
+        auto angles = FundMatUtil::slopAngles(F);
         double theta1 = angles.first;
         double theta2 = angles.second;
 
@@ -386,17 +386,16 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
 
 void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPairsIds)
 {
-    int _method = cv::StereoSGBM::MODE_SGBM; // Default method
-
     if (data.nbImagePairs() == 0) return;
     if (imPairsIds.empty())
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
-    CommandGroup * groupCmd = new CommandGroup();
+    CommandGroup *groupCmd = new CommandGroup();
 
 #ifdef WITH_OPENMP
-    omp_set_num_threads(std::min(int(imPairsIds.size()),utils::nbAvailableThreads()));
-    #pragma omp parallel for
+    omp_set_num_threads(
+        std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
+#pragma omp parallel for
 #endif
     for (int idx = 0; idx < imPairsIds.size(); idx++) {
         auto i = imPairsIds[idx];
@@ -404,42 +403,26 @@ void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPair
         if (!data.imagePair(i)->isRectified()) continue;
 
         const auto & imLeftR = data.imagePair(i)->getRectifiedImageL();
-        const auto & imRightR = data.imagePair(i)->getRectifiedImageR();
+        const auto &imRightR = data.imagePair(i)->getRectifiedImageR();
 
-        const auto & lowerBound = 16*data.imagePair(i)->denseMatching.dispLowerBound;
-        const auto & upperBound = 16*data.imagePair(i)->denseMatching.dispUpperBound;
-        const auto & blockSize  = data.imagePair(i)->denseMatching.dispBlockSize;
+        cv::Mat disparityMap;
+        DenseMatchingUtil::findDisparity(
+            imLeftR, imRightR, disparityMap,
+            data.imagePair(i)->getDenseMatchingPars());
 
-        cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create( lowerBound,
-                                                               upperBound, //number of disparities
-                                                               blockSize);
-        sgbm->setMode(_method);
+        if (disparityMap.empty()) {
+            LOG_ERR("Pair %i: disparity estimation failed", i);
+            continue;
+        }
 
-        int cn = imLeftR.channels();
-        sgbm->setP1(8*cn*blockSize*blockSize);
-        sgbm->setP2(32*cn*blockSize*blockSize);
+        auto cmd = new CommandSetPropertyCV(
+            data.imagePair(i), &ImagePair::setDisparityMap,
+            &ImagePair::getDisparityMap, disparityMap);
 
-        try{
-            cv::Mat disparityMap;
-            sgbm->compute(imLeftR, imRightR, disparityMap);
-
-            if (disparityMap.type() != CV_32F)
-                disparityMap.convertTo(disparityMap,CV_32F);
-
-            //cv::bilateralFilter(temp,_dispValues,21,180,180); //use bilateral filter ?
-            //_dispValues = temp; // no filter
-
-            auto cmd = new CommandSetPropertyCV(
-                        data.imagePair(i),
-                        &ImagePair::setDisparityMap,&ImagePair::getDisparityMap,disparityMap);
-
-            #pragma omp critical
-            {
-                groupCmd->add(cmd);
-                LOG_OK("Pair %i, estimated disparity", i);
-            }
-        } catch(...) {
-            LOG_ERR("Pair %i, estimated disparity failed", i);
+#pragma omp critical
+        {
+            groupCmd->add(cmd);
+            LOG_OK("Pair %i, estimated disparity", i);
         }
     }
 
@@ -449,37 +432,52 @@ void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPair
 
 void ProjectManager::filterDisparityBilateral(ProjectData &data, std::vector<int> imPairsIds)
 {
-    auto pairIdx = 0;
-    auto imPair = data.imagePair(pairIdx);
-    if (!imPair) return;
-    if (!imPair->hasDisparityMap()) return;
+    if (data.nbImagePairs() == 0) return;
+    if (imPairsIds.empty())
+        for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
-    auto m = imPair->getDisparityMap().clone();
-    auto d = imPair->denseMatching.bilateralD;
-    auto sc = imPair->denseMatching.bilateralSigmaColor;
-    auto ss = imPair->denseMatching.bilateralSigmaSpace;
+    CommandGroup *groupCmd = new CommandGroup();
 
-    cv::Mat mFiltered;
+#ifdef WITH_OPENMP
+    omp_set_num_threads(
+        std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
+#pragma omp parallel for
+#endif
+    for (int idx = 0; idx < imPairsIds.size(); idx++) {
+        auto i = imPairsIds[idx];
+        auto imPair = data.imagePair(i);
+        if (!imPair) continue;
+        if (!imPair->hasDisparityMap()) continue;
 
-    LOG_DBG("Disparity map type: %i", m.type());
+        cv::Mat mFiltered;
+        DenseMatchingUtil::filterDisparityBilateral(
+            imPair->getDisparityMap(), mFiltered,
+            imPair->getDenseMatchingPars());
 
-    if (m.type() != CV_32F)
-        m.convertTo(m,CV_32F);
+        if (mFiltered.empty()) {
+            LOG_OK("Pair %i, bilateral filter failed", i);
+            continue;
+        }
 
-    LOG_DBG("Disparity map type: %i", m.type());
+        auto cmd =
+            new CommandSetPropertyCV(imPair, &ImagePair::setDisparityMap,
+                                     &ImagePair::getDisparityMap, mFiltered);
+#pragma omp critical
+        {
+            groupCmd->add(cmd);
+            LOG_OK("Pair %i, bilateral filter applied", i);
+        }
+    }
 
-    cv::bilateralFilter(m,mFiltered,d,sc,ss); //use bilateral filter ?
-
-    auto cmd = new CommandSetPropertyCV(
-                imPair,
-                &ImagePair::setDisparityMap,&ImagePair::getDisparityMap,mFiltered);
-    CommandManager::get()->executeCommand(cmd);
-    LOG_OK("Filtered disparity (bilateral)");
+    if (groupCmd->empty())
+        delete groupCmd;
+    else
+        CommandManager::get()->executeCommand(groupCmd);
 }
 
 void ProjectManager::filterDisparitySpeckles(ProjectData &data, std::vector<int> imPairsIds)
 {
-
+    LOG_ERR("Not implemented yet");
 }
 
 void ProjectManager::findMeasurementMatrixFull(ProjectData &data)

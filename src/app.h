@@ -19,8 +19,8 @@ class Application
 {
 public:
     Application() {
-        m_consoleLogger = std::make_unique<ConsoleLogger>();
-        p3d::_logger = m_consoleLogger.get();
+        m_widgetLogger = std::make_unique<WidgetLogger>();
+        p3d::_logger = m_widgetLogger.get();
 
         LOG_OK("Welcome to Pollen3D!");
     }
@@ -147,7 +147,7 @@ protected:
     int m_viewer3dNeedsUpdate = false;
 
     std::unique_ptr<Viewer3D> m_viewer3D{nullptr};
-    std::unique_ptr<ConsoleLogger> m_consoleLogger{nullptr};
+    std::unique_ptr<WidgetLogger> m_widgetLogger{nullptr};
 
     bool m_initialised = false;
 

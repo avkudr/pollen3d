@@ -137,14 +137,14 @@ TEST(DIAMOND, test1_fundMatCeres)
     int id2 = 2;
     std::vector<Vec2> pts1 = d.pts(id1);
     std::vector<Vec2> pts2 = d.pts(id2);
-    Mat3 F = fundmat::findAffineCeres(pts1, pts2);
+    Mat3 F = FundMatUtil::findAffineCeres(pts1, pts2);
 
     double maxErrDistance = -1.0;
     double maxErrResidual = -1.0;
 
     for (int i = 0; i < pts1.size(); ++i) {
         // **** distance error
-        Vec2 errs = fundmat::epiporalDistancesF(F, pts1[i], pts2[i]);
+        Vec2 errs = FundMatUtil::epiporalDistancesF(F, pts1[i], pts2[i]);
         if (errs.norm() > maxErrDistance) maxErrDistance = errs.norm();
 
         // **** residual error
@@ -166,9 +166,9 @@ TEST(DIAMOND, test2_slopAngles)
         int id2 = id1 + 1;
         std::vector<Vec2> pts1 = d.pts(id1);
         std::vector<Vec2> pts2 = d.pts(id2);
-        Mat3 F = fundmat::findAffineCeres(pts1, pts2);
+        Mat3 F = FundMatUtil::findAffineCeres(pts1, pts2);
 
-        auto angles = fundmat::slopAngles(F);
+        auto angles = FundMatUtil::slopAngles(F);
         EXPECT_FLOAT_EQ(utils::rad2deg(angles.first), d.slopes(0, id2));
         EXPECT_FLOAT_EQ(utils::rad2deg(angles.second), d.slopes(1, id2));
     }

@@ -95,7 +95,7 @@ void Application::initImGui()
 
     m_fontMono = io.Fonts->AddFontFromFileTTF(
         std::string(pathToFonts + fontMono).c_str(), 16.0f);
-    m_consoleLogger->setFont(m_fontMono);
+    m_widgetLogger->setFont(m_fontMono);
     m_fontMonoSmall = io.Fonts->AddFontFromFileTTF(
         std::string(pathToFonts + fontMono).c_str(), 14.0f);
 
@@ -167,9 +167,9 @@ void Application::draw(int width, int height){
     ImGui::End();
     ImGui::PopStyleColor();
 
-    if (m_showConsole && m_consoleLogger) {
+    if (m_showConsole && m_widgetLogger) {
         ImGui::Begin("Console", nullptr, flags);
-        m_consoleLogger->render();
+        m_widgetLogger->render();
         ImGui::End();
     }
 
@@ -674,29 +674,42 @@ void Application::_drawTab_Stereo()
             if (disableButtons) ImGuiC::PushDisabled();
 
             const char* denseMatchingAlgos[] = { "SGBM", "HH", "SGBM_3WAY"};
-            auto matcherCurAlg = imPair ? imPair->denseMatching.dispMethod : 0;
+            auto matcherCurAlg =
+                imPair ? imPair->getDenseMatchingPars().dispMethod : 0;
 
-            if (ImGui::Combo("method", &matcherCurAlg, denseMatchingAlgos, IM_ARRAYSIZE(denseMatchingAlgos))) {
-                ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_DispMethod,matcherCurAlg);
+            if (ImGui::Combo("method", &matcherCurAlg, denseMatchingAlgos,
+                             IM_ARRAYSIZE(denseMatchingAlgos))) {
+                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
+                                                   p3dDense_DispMethod,
+                                                   matcherCurAlg);
             }
 
             {
-                auto dispLowerBound = imPair ? imPair->denseMatching.dispLowerBound : -1;
-                auto dispUpperBound = imPair ? imPair->denseMatching.dispUpperBound : 2;
-                auto dispBlockSize  = imPair ? imPair->denseMatching.dispBlockSize  : 9;
+                auto dispLowerBound =
+                    imPair ? imPair->getDenseMatchingPars().dispLowerBound : -1;
+                auto dispUpperBound =
+                    imPair ? imPair->getDenseMatchingPars().dispUpperBound : 2;
+                auto dispBlockSize =
+                    imPair ? imPair->getDenseMatchingPars().dispBlockSize : 9;
 
                 ImGui::InputInt("lowew bound",&dispLowerBound);
                 if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_DispLowerBound,dispLowerBound);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(), p3dDense_DispLowerBound,
+                        dispLowerBound);
                 ImGui::InputInt("upper bound",&dispUpperBound);
                 if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_DispUpperBound,dispUpperBound);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(), p3dDense_DispUpperBound,
+                        dispUpperBound);
                 ImGui::InputInt("block size",&dispBlockSize,2,2);
                 if (ImGui::IsItemEdited()) {
                     if (dispBlockSize % 2 == 0) dispBlockSize--;
                     dispBlockSize = std::min(dispBlockSize,21);
                     dispBlockSize = std::max(dispBlockSize,1);
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_DispBlockSize,dispBlockSize);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(), p3dDense_DispBlockSize,
+                        dispBlockSize);
                 }
             }
 
@@ -721,26 +734,36 @@ void Application::_drawTab_Stereo()
 
             ImGui::Text("Bilateral filter: ");
             {
-                auto v1 = imPair ? imPair->denseMatching.bilateralD : 9;
-                auto v2 = imPair ? imPair->denseMatching.bilateralSigmaColor : 180;
-                auto v3 = imPair ? imPair->denseMatching.bilateralSigmaSpace  : 180;
+                auto v1 =
+                    imPair ? imPair->getDenseMatchingPars().bilateralD : 9;
+                auto v2 =
+                    imPair ? imPair->getDenseMatchingPars().bilateralSigmaColor
+                           : 180;
+                auto v3 =
+                    imPair ? imPair->getDenseMatchingPars().bilateralSigmaSpace
+                           : 180;
 
                 ImGui::InputInt("diameter",&v1);
                 if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_BilateralD,v1);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(), p3dDense_BilateralD, v1);
                 ImGuiC::HelpMarker("Diameter of each pixel neighborhood that is used during filtering. "
                            "If it is non-positive, it is computed from sigmaSpace.");
 
                 ImGui::InputInt("sigma color",&v2);
                 if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_BilateralSigmaColor,v2);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(),
+                        p3dDense_BilateralSigmaColor, v2);
                 ImGuiC::HelpMarker("Filter sigma in the color space. A larger value of the parameter means that "
                            "farther colors within the pixel neighborhood (see sigmaSpace) will be mixed "
                            "together, resulting in larger areas of semi-equal color.");
 
                 ImGui::InputInt("sigma space",&v3);
                 if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_BilateralSigmaSpace,v3);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(),
+                        p3dDense_BilateralSigmaSpace, v3);
                 ImGuiC::HelpMarker("Filter sigma in the coordinate space. A larger value of the parameter means that "
                            "farther pixels will influence each other as long as their colors are close enough (see sigmaColor"
                            "). When diameter>0, it specifies the neighborhood size regardless of sigmaSpace. Otherwise, d is"
@@ -768,19 +791,33 @@ void Application::_drawTab_Stereo()
 
             ImGui::Text("Speckles filter: ");
             {
-                auto dispFilterNewValue = imPair ? imPair->denseMatching.dispFilterNewValue : 0;
-                auto dispFilterMaxSpeckleSize = imPair ? imPair->denseMatching.dispFilterMaxSpeckleSize : 260;
-                auto dispFilterMaxDiff  = imPair ? imPair->denseMatching.dispFilterMaxDiff  : 10;
+                auto dispFilterNewValue =
+                    imPair ? imPair->getDenseMatchingPars().dispFilterNewValue
+                           : 0;
+                auto dispFilterMaxSpeckleSize =
+                    imPair ? imPair->getDenseMatchingPars()
+                                 .dispFilterMaxSpeckleSize
+                           : 260;
+                auto dispFilterMaxDiff =
+                    imPair ? imPair->getDenseMatchingPars().dispFilterMaxDiff
+                           : 10;
 
                 ImGui::InputInt("new value",&dispFilterNewValue);
                 if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_DispFilterNewValue,dispFilterNewValue);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(),
+                        p3dDense_DispFilterNewValue, dispFilterNewValue);
                 ImGui::InputInt("max speckle size",&dispFilterMaxSpeckleSize);
                 if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_DispFilterMaxSpeckleSize,dispFilterMaxSpeckleSize);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(),
+                        p3dDense_DispFilterMaxSpeckleSize,
+                        dispFilterMaxSpeckleSize);
                 ImGui::InputInt("max diff",&dispFilterMaxDiff);
                 if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(&imPair->denseMatching,p3dDense_DispFilterMaxDiff,dispFilterMaxDiff);
+                    ProjectManager::get()->setProperty(
+                        imPair->denseMatchingPars(), p3dDense_DispFilterMaxDiff,
+                        dispFilterMaxDiff);
             }
 
             if (ImGui::Button("Filter##speckles"))
@@ -1300,7 +1337,8 @@ void Application::_drawCentral()
                         if (!imL.empty() && !imR.empty())
                             matToBind = utils::concatenateCvMat({imL,imR},utils::CONCAT_HORIZONTAL);
                     } else if (m_currentSection == Section_DisparityMap) {
-                        matToBind = imPair->getDisparityMapPlot();
+                        auto disp = imPair->getDisparityMap();
+                        DenseMatchingUtil::getPlot(disp, matToBind);
                     }
                 }
             }

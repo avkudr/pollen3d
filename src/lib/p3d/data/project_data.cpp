@@ -117,7 +117,7 @@ void ProjectData::getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distan
 
     distances.setZero(2,ptsL.size());
     for (int i = 0; i < ptsL.size(); ++i) {
-        Vec2 errs = fundmat::epiporalDistancesF(F,ptsL[i],ptsR[i]);
+        Vec2 errs = FundMatUtil::epiporalDistancesF(F,ptsL[i],ptsR[i]);
         distances.col(i) = errs;
     }
 }

@@ -2,7 +2,7 @@
 
 using namespace p3d;
 
-void ConsoleLogger::render(ImGuiWindowFlags flags)
+void WidgetLogger::render(ImGuiWindowFlags flags)
 {
     if (flags)
         ImGui::Begin("Console", nullptr, flags);

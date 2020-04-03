@@ -9,15 +9,7 @@
 #define M_PI       3.141592653589793238462643383279502884L
 #endif
 
-#ifndef P3D_EXPORTS
-#if (defined _WIN32 || defined WINCE || defined __CYGWIN__) && \
-    defined(CVAPI_EXPORTS)
-#define P3D_EXPORTS __declspec(dllexport)
-#elif defined __GNUC__ && __GNUC__ >= 4 && \
-    (defined(CVAPI_EXPORTS) || defined(__APPLE__))
-#define P3D_EXPORTS __attribute__((visibility("default")))
-#endif
-#endif
+#define P3D_EXPORTS
 
 #include "meta/meta.hpp"
 #include "meta/factory.hpp"

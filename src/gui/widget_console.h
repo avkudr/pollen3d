@@ -23,11 +23,11 @@ private:
     std::string m_str{};
 };
 
-class ConsoleLogger : public p3d::Logger
+class WidgetLogger : public p3d::Logger
 {
 public:
-    ConsoleLogger() : p3d::Logger() {}
-    ~ConsoleLogger() {}
+    WidgetLogger() : p3d::Logger() {}
+    ~WidgetLogger() {}
     void render(ImGuiWindowFlags flags = 0);
 
     void setFont(ImFont* f) { font = f; }
