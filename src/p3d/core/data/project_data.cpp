@@ -10,8 +10,8 @@
 
 #include <Eigen/Dense>
 
-#include "p3d/core/fundmat.h"
 #include "p3d/core/core.h"
+#include "p3d/core/stereo/fundmat.h"
 
 int dummyProjectData_ = ProjectData::initMeta();
 

@@ -9,11 +9,11 @@
 #include <vector>
 #include <map>
 
+#include "p3d/core/data/image.h"
 #include "p3d/core/logger.h"
-#include "p3d/data/image.h"
+#include "p3d/core/multiview/autocalib.h"
+#include "p3d/core/multiview/bundle_adjustment.h"
 #include "p3d/core/utils.h"
-#include "p3d/core/autocalib.h"
-#include "p3d/core/bundle_adjustment.h"
 
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 

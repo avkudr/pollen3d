@@ -2,12 +2,12 @@
 
 #include "gtest/gtest.h"
 
-#include "p3d/commands.h"
+#include "p3d/core/commands.h"
 #include "p3d/core/core.h"
+#include "p3d/core/data/project_data.h"
+#include "p3d/core/project_manager.h"
 #include "p3d/core/serialization.h"
 #include "p3d/core/utils.h"
-#include "p3d/data/project_data.h"
-#include "p3d/project_manager.h"
 
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"

@@ -2,11 +2,11 @@
 
 #include <opencv2/core.hpp>
 
-#include "p3d/data/project_settings.h"
-#include "p3d/data/project_data.h"
+#include "p3d/core/commands.h"
 #include "p3d/core/core.h"
+#include "p3d/core/data/project_data.h"
+#include "p3d/core/data/project_settings.h"
 #include "p3d/core/logger.h"
-#include "p3d/commands.h"
 
 class ProjectManager{
 public:

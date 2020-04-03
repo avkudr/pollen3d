@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "p3d/core/core.h"
-#include "p3d/core/bundle_params.h"
+#include "p3d/core/multiview/bundle_params.h"
 
 class AutoCalibrator
 {

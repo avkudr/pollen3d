@@ -4,11 +4,11 @@
 
 #include "gtest/gtest.h"
 
-#include "p3d/core/autocalib.h"
 #include "p3d/core/core.h"
+#include "p3d/core/data/project_data.h"
+#include "p3d/core/multiview/autocalib.h"
+#include "p3d/core/project_manager.h"
 #include "p3d/core/utils.h"
-#include "p3d/data/project_data.h"
-#include "p3d/project_manager.h"
 
 #include <Eigen/Eigen>
 
@@ -131,8 +131,6 @@ TEST(DIAMOND, draw)
 
 TEST(DIAMOND, test1_fundMatCeres)
 {
-    std::cout.setstate(std::ios_base::failbit);
-
     Diamond d;
 
     int id1 = 0;
@@ -163,8 +161,6 @@ TEST(DIAMOND, test1_fundMatCeres)
 
 TEST(DIAMOND, test2_slopAngles)
 {
-    std::cout.setstate(std::ios_base::failbit);
-
     Diamond d;
     for (int id1 = 0; id1 < d.nbIm() - 1; ++id1) {
         int id2 = id1 + 1;
@@ -180,8 +176,6 @@ TEST(DIAMOND, test2_slopAngles)
 
 TEST(DIAMOND, test3_autocalib)
 {
-    std::cout.setstate(std::ios_base::failbit);
-
     Diamond d;
     auto W = d.W();
 

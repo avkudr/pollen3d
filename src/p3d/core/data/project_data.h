@@ -5,10 +5,10 @@
 #include <vector>
 
 #include "p3d/core/core.h"
+#include "p3d/core/data/image.h"
+#include "p3d/core/data/image_pair.h"
 #include "p3d/core/logger.h"
 #include "p3d/core/serialization.h"
-#include "p3d/data/image.h"
-#include "p3d/data/image_pair.h"
 
 #ifdef WITH_OPTIM
 #include <p3d/optimization.h>

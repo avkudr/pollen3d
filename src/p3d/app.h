@@ -9,8 +9,8 @@
 #include "imgui_internal.h"
 
 #include "p3d/core/logger.h"
-#include "p3d/data/project_data.h"
-#include "p3d/data/project_settings.h"
+#include "p3d/core/data/project_data.h"
+#include "p3d/core/data/project_settings.h"
 #include "p3d/gui/widget_console.h"
 
 #include "p3d/viewer3d/viewer3d.h"

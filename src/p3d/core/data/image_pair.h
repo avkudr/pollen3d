@@ -11,9 +11,9 @@
 #include <opencv2/calib3d.hpp>
 
 #include "p3d/core/core.h"
-#include "p3d/data/image.h"
-#include "p3d/core/fundmat.h"
+#include "p3d/core/data/image.h"
 #include "p3d/core/serialization.h"
+#include "p3d/core/stereo/fundmat.h"
 
 using std::vector;
 using std::string;

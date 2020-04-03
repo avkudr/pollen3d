@@ -8,8 +8,11 @@
 
 #include "p3d/core/serialization.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
+    std::cout.setstate(std::ios_base::failbit);
+    std::cerr.setstate(std::ios_base::failbit);
 
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

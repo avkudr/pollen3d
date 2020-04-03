@@ -7,11 +7,10 @@
 
 #include "../assets/fonts/IconsFontAwesome5.h"
 
-#include "p3d/project_manager.h"
-#include "p3d/commands.h"
-#include "p3d/gui/palette.h"
+#include "p3d/core/commands.h"
+#include "p3d/core/project_manager.h"
 #include "p3d/gui/imgui_custom.h"
-
+#include "p3d/gui/palette.h"
 
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"

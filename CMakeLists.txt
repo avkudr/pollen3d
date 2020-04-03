@@ -133,6 +133,8 @@ include_directories(./3rdparty/)
 
 # ----- pollen3d ---------------------------------------------
 
+file(GLOB_RECURSE SOURCES ./src/p3d/core/*.cpp ./src/p3d/core/*.h)
+
 set(SOURCES_GUI
     ${SOURCES_GUI}
     ./src/p3d/app.h
@@ -142,40 +144,6 @@ set(SOURCES_GUI
     ./src/p3d/gui/imgui_custom.cpp
     ./src/p3d/gui/widget_console.h
     ./src/p3d/gui/widget_console.cpp
-)
-
-set(SOURCES
-    ${SOURCES}
-    ./src/p3d/commands.h
-    ./src/p3d/commands.cpp
-    ./src/p3d/project_manager.h
-    ./src/p3d/project_manager.cpp
-    ./src/p3d/core/core.cpp
-    ./src/p3d/core/core.h
-    ./src/p3d/core/serialization.h
-    ./src/p3d/core/serialization.cpp
-    ./src/p3d/core/logger.h
-    ./src/p3d/core/logger.cpp
-    ./src/p3d/core/fundmat.cpp
-    ./src/p3d/core/fundmat.h
-    ./src/p3d/core/robust_estim.hpp
-    ./src/p3d/core/utils.cpp
-    ./src/p3d/core/utils.h
-    ./src/p3d/core/bundle_params.h
-    ./src/p3d/core/bundle_adjustment.h
-    ./src/p3d/core/bundle_adjustment.cpp
-    ./src/p3d/core/autocalib.cpp
-    ./src/p3d/core/autocalib.h
-    ./src/p3d/data/affine_camera.h
-    ./src/p3d/data/affine_camera.cpp
-    ./src/p3d/data/project_data.cpp
-    ./src/p3d/data/project_data.h
-    ./src/p3d/data/project_settings.cpp
-    ./src/p3d/data/project_settings.h
-    ./src/p3d/data/image.cpp
-    ./src/p3d/data/image.h
-    ./src/p3d/data/image_pair.cpp
-    ./src/p3d/data/image_pair.h
 )
 
 set(SOURCES_GUI

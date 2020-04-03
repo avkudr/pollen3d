@@ -1,8 +1,8 @@
 #pragma once
 
 #include "p3d/core/core.h"
-#include "p3d/core/bundle_params.h"
-#include "p3d/data/affine_camera.h"
+#include "p3d/core/data/affine_camera.h"
+#include "p3d/core/multiview/bundle_params.h"
 
 struct BundleProblem {
     std::vector<Vec3> R;
