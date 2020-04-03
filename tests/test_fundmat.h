@@ -4,10 +4,10 @@
 
 #include "gtest/gtest.h"
 
-#include "p3d/core/core.h"
-#include "p3d/core/data/project_data.h"
-#include "p3d/core/project_manager.h"
-#include "p3d/core/utils.h"
+#include "p3d/core.h"
+#include "p3d/data/project_data.h"
+#include "p3d/project_manager.h"
+#include "p3d/utils.h"
 
 TEST(FUNDMAT, fundmat_testData)
 {

@@ -133,49 +133,39 @@ include_directories(./3rdparty/)
 
 # ----- pollen3d ---------------------------------------------
 
-file(GLOB_RECURSE SOURCES ./src/p3d/core/*.cpp ./src/p3d/core/*.h)
+file(GLOB_RECURSE SOURCES ./src/lib/*.*)
 
 set(SOURCES_GUI
     ${SOURCES_GUI}
-    ./src/p3d/app.h
-    ./src/p3d/app.cpp
-    ./src/p3d/gui/palette.h
-    ./src/p3d/gui/imgui_custom.h
-    ./src/p3d/gui/imgui_custom.cpp
-    ./src/p3d/gui/widget_console.h
-    ./src/p3d/gui/widget_console.cpp
+    ./src/app.h
+    ./src/app.cpp
+    ./src/gui/palette.h
+    ./src/gui/imgui_custom.h
+    ./src/gui/imgui_custom.cpp
+    ./src/gui/widget_console.h
+    ./src/gui/widget_console.cpp
 )
 
 set(SOURCES_GUI
     ${SOURCES_GUI}
-    ./src/p3d/viewer3d/viewer3d.h
-    ./src/p3d/viewer3d/viewer3d.cpp
-    ./src/p3d/viewer3d/eyecamera.h
-    ./src/p3d/viewer3d/eyecamera.cpp
-    ./src/p3d/viewer3d/viewer3d_opengl.h
-    ./src/p3d/viewer3d/viewer3d_opengl.cpp
-    ./src/p3d/viewer3d/shader_opengl.h
-    ./src/p3d/viewer3d/grid_opengl.h
-    ./src/p3d/viewer3d/grid_opengl.cpp
+    ./src/viewer3d/viewer3d.h
+    ./src/viewer3d/viewer3d.cpp
+    ./src/viewer3d/eyecamera.h
+    ./src/viewer3d/eyecamera.cpp
+    ./src/viewer3d/viewer3d_opengl.h
+    ./src/viewer3d/viewer3d_opengl.cpp
+    ./src/viewer3d/shader_opengl.h
+    ./src/viewer3d/grid_opengl.h
+    ./src/viewer3d/grid_opengl.cpp
 )
-
-# Add source files
-#file(GLOB_RECURSE SOURCE_FILES 
-#	${CMAKE_SOURCE_DIR}/src/*.c
-#	${CMAKE_SOURCE_DIR}/src/*.cpp)
-	
-# Add header files
-#file(GLOB_RECURSE HEADER_FILES 
-#	${CMAKE_SOURCE_DIR}/src/*.h
-#	${CMAKE_SOURCE_DIR}/src/*.hpp)
 
 set(RES_FILES "")
 if(POLLEN3D_OPENGL)
     message("OpenGL - FOUND")
     set(SOURCES_GUI
         ${SOURCES_GUI}
-        ./src/p3d/app_opengl.cpp
-        ./src/p3d/app_opengl.h
+        ./src/app_opengl.cpp
+        ./src/app_opengl.h
     )
     file(GLOB RES_FILES ./assets/*.vs ./assets/*.fs)
 
@@ -187,7 +177,7 @@ else()
 endif()
 
 include_directories(./3rdparty/entt/src/entt/)
-include_directories(./src/)
+include_directories(./src/lib)
 
 set(TARGET_LIBS ${TARGET_LIBS} ${ImGui_LIBS} ${CONAN_LIBS})
 if(Eigen_FOUND)
@@ -210,7 +200,7 @@ else()
     message("Tests: NO")
 endif()
 
-add_executable( ${PROJECT_NAME} ./src/p3d/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES})
+add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES})
 target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR}/bin)

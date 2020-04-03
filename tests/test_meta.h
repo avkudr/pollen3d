@@ -2,16 +2,18 @@
 
 #include "gtest/gtest.h"
 
-#include "p3d/core/commands.h"
-#include "p3d/core/core.h"
-#include "p3d/core/data/project_data.h"
-#include "p3d/core/project_manager.h"
-#include "p3d/core/serialization.h"
-#include "p3d/core/utils.h"
+#include "p3d/commands.h"
+#include "p3d/core.h"
+#include "p3d/data/project_data.h"
+#include "p3d/project_manager.h"
+#include "p3d/serialization.h"
+#include "p3d/utils.h"
 
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 #endif
+
+using namespace p3d;
 
 class A
 {
@@ -55,7 +57,7 @@ private:
     Eigen::Matrix<double, -1, -1> m_eigMat;
 };
 
-struct ClassA : public Serializable<ClassA> {
+struct ClassA : public p3d::Serializable<ClassA> {
 public:
     ClassA()
     {
@@ -87,7 +89,7 @@ public:
     std::vector<double> vectorDouble = {0.0, 0.2};
     Eigen::Matrix3f eigenMatrix;
     Eigen::MatrixXf eigenMatrixDyn;
-    std::vector<Vec2> eigenVec;
+    std::vector<p3d::Vec2> eigenVec;
 };
 
 #define EXPECT_TYPE_SERIALIZABLE(x)                   \
@@ -108,14 +110,14 @@ TEST(META, meta_serializedTypes)
     EXPECT_TYPE_SERIALIZABLE(std::vector<double>);
 
     EXPECT_TYPE_SERIALIZABLE(Eigen::MatrixXf);
-    EXPECT_TYPE_SERIALIZABLE(AffineCamera);
+    EXPECT_TYPE_SERIALIZABLE(p3d::AffineCamera);
 }
 
 TEST(META, meta_nbReflectedDataMembers)
 {
-    ProjectData data;
+    p3d::ProjectData data;
     int cnt = 0;
-    entt::resolve<ProjectData>().data([&](entt::meta_data data) {
+    entt::resolve<p3d::ProjectData>().data([&](entt::meta_data data) {
         (void)data;
         cnt++;
     });
@@ -132,7 +134,7 @@ TEST(META, meta_serializeClass)
     a.vectorDouble = {0.65, 5465};
     a.eigenMatrix.setOnes();
     a.eigenMatrixDyn.setOnes();
-    a.eigenVec = {Vec2(0, 0), Vec2(1, 1), Vec2(4, 2)};
+    a.eigenVec = {p3d::Vec2(0, 0), p3d::Vec2(1, 1), p3d::Vec2(4, 2)};
 
     {
         cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
@@ -164,7 +166,7 @@ TEST(META, meta_serializeClass)
         cv::FileStorage fs("test.xml", cv::FileStorage::WRITE); \
         fs << "node1"                                           \
            << "{";                                              \
-        impl::_write<Type>(fs, id, X);                          \
+        p3d::impl::_write<Type>(fs, id, X);                     \
         fs << "}";                                              \
         fs.release();                                           \
     }                                                           \
@@ -172,7 +174,7 @@ TEST(META, meta_serializeClass)
         cv::FileStorage fs("test.xml", cv::FileStorage::READ);  \
         cv::FileNode node = fs["node1"];                        \
         auto id = entt::resolve<Type>().identifier();           \
-        impl::_read<Type>(node, id, Y);                         \
+        p3d::impl::_read<Type>(node, id, Y);                    \
         fs.release();                                           \
     }
 

@@ -6,7 +6,7 @@
 #include "test_fundmat.h"
 #include "test_diamond.h"
 
-#include "p3d/core/serialization.h"
+#include "p3d/serialization.h"
 
 int main(int argc, char **argv)
 {

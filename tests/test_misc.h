@@ -4,12 +4,14 @@
 
 #include "gtest/gtest.h"
 
-#include "p3d/core/core.h"
-#include "p3d/core/data/affine_camera.h"
-#include "p3d/core/data/project_data.h"
-#include "p3d/core/multiview/bundle_params.h"
-#include "p3d/core/project_manager.h"
-#include "p3d/core/utils.h"
+#include "p3d/core.h"
+#include "p3d/data/affine_camera.h"
+#include "p3d/data/project_data.h"
+#include "p3d/multiview/bundle_params.h"
+#include "p3d/project_manager.h"
+#include "p3d/utils.h"
+
+using namespace p3d;
 
 TEST(MISC, test_matchesToTable)
 {
