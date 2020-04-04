@@ -10,6 +10,7 @@
 #include "p3d/commands.h"
 #include "p3d/project_manager.h"
 
+#include "gui/common.h"
 #include "gui/imgui_custom.h"
 #include "gui/palette.h"
 
@@ -494,61 +495,29 @@ void Application::_drawTab_Image()
     {
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
-        bool disabled = false;
-        auto image = m_projectData.image(m_currentImage);
-        if (image == nullptr) disabled = true;
+        // ***** Feature extraction (widget)
 
-        if (disabled) ImGuiC::PushDisabled();
+        if (m_widgetFeat) {
+            m_widgetFeat->draw(m_projectData, m_currentImage);
 
-        if (ImGui::CollapsingHeader("Feature extraction",m_collapsingHeaderFlags))
-        {
-            auto v2 = ProjectManager::get()->settings().featuresDescSize;
-            auto v3 = ProjectManager::get()->settings().featuresDescChannels;
-            auto v4 = ProjectManager::get()->settings().featuresThreshold;
-
-            ImGui::Text("AKAZE keypoint detector");
-            ImGuiC::HelpMarker("Fast Explicit Diffusion for Accelerated Features in Nonlinear "
-                               "Scale Spaces. Pablo F. Alcantarilla, Jesús Nuevo and Adrien "
-                               "Bartoli. (BMVC 2013)");
-
-            ImGui::InputInt("desc size",&v2);
-            if (ImGui::IsItemEdited())
-                ProjectManager::get()->setSetting(p3dSetting_featuresDescSize,v2);
-            ImGuiC::HelpMarker("Size of the descriptor in bits. 0 => Full size");
-
-            ImGui::InputInt("desc channels",&v3);
-            if (ImGui::IsItemEdited()) {
-                v3 = std::min(std::max(v3,1),3);
-                ProjectManager::get()->setSetting(p3dSetting_featuresDescChannels,v3);
-            }
-            ImGuiC::HelpMarker("Number of channels in the descriptor (1, 2, 3)");
-
-            ImGui::InputFloat("threshold",&v4,0.0002f,0.0f,"%0.5f",ImGuiInputTextFlags_CharsScientific);
-            if (ImGui::IsItemEdited())
-                ProjectManager::get()->setSetting(p3dSetting_featuresThreshold,v4);
-            ImGuiC::HelpMarker("Detector response threshold to accept point");
-
-            if (ImGui::Button("Extract features"))
-            {
+            if (m_widgetFeat->runRequested()) {
                 auto f = [&]() {
-                    ProjectManager::get()->extractFeatures(m_projectData, {m_currentImage});
+                    ProjectManager::get()->extractFeatures(m_projectData,
+                                                           {m_currentImage});
                 };
                 _doHeavyTask(f);
             }
-            ImGui::SameLine();
-            if (ImGui::Button("ALL##extract_features"))
-            {
+            if (m_widgetFeat->runAllRequested()) {
                 auto f = [&]() {
                     ProjectManager::get()->extractFeatures(m_projectData);
                 };
                 _doHeavyTask(f);
             }
         }
-        if (disabled) ImGuiC::PopDisabled();
 
         ImGui::EndTabItem();
 
-        if (!isOneOf(m_currentTab, {Tab_General,Tab_Image})) _resetAppState();
+        if (!isOneOf(m_currentTab, {Tab_General, Tab_Image})) _resetAppState();
         m_currentTab = Tab_Image;
     }
 }

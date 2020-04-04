@@ -139,11 +139,15 @@ set(SOURCES_GUI
     ${SOURCES_GUI}
     ./src/app.h
     ./src/app.cpp
+    ./src/gui/common.h
     ./src/gui/palette.h
+    ./src/gui/widget.h
     ./src/gui/imgui_custom.h
     ./src/gui/imgui_custom.cpp
     ./src/gui/widget_console.h
     ./src/gui/widget_console.cpp
+    ./src/gui/widget_feature_extract.h
+    ./src/gui/widget_feature_extract.cpp
 )
 
 set(SOURCES_GUI

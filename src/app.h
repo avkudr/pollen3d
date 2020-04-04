@@ -13,6 +13,7 @@
 #include "p3d/logger.h"
 
 #include "gui/widget_console.h"
+#include "gui/widget_feature_extract.h"
 #include "viewer3d/viewer3d.h"
 
 class Application
@@ -22,6 +23,7 @@ public:
         m_widgetLogger = std::make_unique<WidgetLogger>();
         p3d::_logger = m_widgetLogger.get();
 
+        m_widgetFeat = std::make_unique<WidgetFeatureExtract>();
         LOG_OK("Welcome to Pollen3D!");
     }
 
@@ -148,6 +150,7 @@ protected:
 
     std::unique_ptr<Viewer3D> m_viewer3D{nullptr};
     std::unique_ptr<WidgetLogger> m_widgetLogger{nullptr};
+    std::unique_ptr<WidgetFeatureExtract> m_widgetFeat{nullptr};
 
     bool m_initialised = false;
 
