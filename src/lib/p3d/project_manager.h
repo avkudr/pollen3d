@@ -49,7 +49,8 @@ public:
     void triangulateStereo(ProjectData & data);
     void triangulateDense(ProjectData & data);
     void bundleAdjustment(ProjectData & data);
-    void exportPLY(ProjectData & data);
+    void exportPLYSparse(ProjectData & data);
+    void exportPLYDense(ProjectData &data);
 
     // ***** Settings
 

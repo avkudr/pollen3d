@@ -9,16 +9,16 @@
 
 using namespace p3d;
 
-void WidgetFeatureExtract::drawImpl(p3d::ProjectData& m_projectData)
+void WidgetFeatureExtract::drawImpl(p3d::ProjectData& data)
 {
     bool disabled = false;
-    auto image = m_projectData.image(m_currentItemIdx);
+    auto image = data.image(m_currentItemIdx);
     if (image == nullptr) disabled = true;
 
     if (disabled) ImGuiC::PushDisabled();
 
-    m_run = m_runAll = false;
-    if (ImGuiC::Collapsing("Feature extraction", &m_run, &m_runAll)) {
+    bool run = false, runAll = false;
+    if (ImGuiC::Collapsing("Feature extraction", &run, &runAll)) {
         auto v2 = ProjectManager::get()->settings().featuresDescSize;
         auto v3 = ProjectManager::get()->settings().featuresDescChannels;
         auto v4 = ProjectManager::get()->settings().featuresThreshold;
@@ -48,10 +48,18 @@ void WidgetFeatureExtract::drawImpl(p3d::ProjectData& m_projectData)
             ProjectManager::get()->setSetting(p3dSetting_featuresThreshold, v4);
         ImGuiC::HelpMarker("Detector response threshold to accept point");
 
-        if (ImGui::Button(P3D_ICON_RUN " Extract features")) m_run = true;
+        if (ImGui::Button(P3D_ICON_RUN " Extract features")) run = true;
         ImGui::SameLine();
         if (ImGui::Button(P3D_ICON_RUNALL " ALL##extract_features"))
-            m_runAll = true;
+            runAll = true;
     }
-    if (disabled) ImGuiC::PopDisabled();
+
+    if (disabled) {
+        ImGuiC::HoveredTooltip("Project has no images");
+        ImGuiC::PopDisabled();
+    }
+
+    m_tasks.clear();
+    if (run) m_tasks.insert("run");
+    if (runAll) m_tasks.insert("run_all");
 }

@@ -858,7 +858,7 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
     LOG_OK("Bundle adjustement: done");
 }
 
-void ProjectManager::exportPLY(ProjectData &data)
+void ProjectManager::exportPLYSparse(ProjectData &data)
 {
     auto X = data.getPts3DSparse();
     if (X.cols() == 0) {
@@ -866,10 +866,23 @@ void ProjectManager::exportPLY(ProjectData &data)
         return;
     }
 
-    utils::exportToPly(X,"point_cloud.ply");
+    utils::exportToPly(X.topRows(3).cast<float>(), "point_cloud.ply");
 
-    LOG_OK("Exported point cloud: %i points", X.cols());
+    LOG_OK("Exported point cloud (sparse): %i points", X.cols());
+}
 
+void ProjectManager::exportPLYDense(ProjectData &data)
+{
+    const Mat3Xf &X = data.getPts3DDense();
+    if (X.cols() == 0) {
+        LOG_ERR("No reconstructed points...");
+        return;
+    }
+    const Mat3Xf &c = data.getPts3DDenseColors();
+
+    utils::exportToPly(X, "point_cloud_dense.ply", c);
+
+    LOG_OK("Exported point cloud (dense): %i points", X.cols());
 }
 
 entt::meta_any ProjectManager::getSetting(const p3dSetting &name) {

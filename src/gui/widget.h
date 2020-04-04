@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 #include "p3d/core.h"
 #include "p3d/data/project_data.h"
 
@@ -14,13 +16,14 @@ public:
         drawImpl(data);
     }
 
-    bool runRequested() const { return m_run; }
-    bool runAllRequested() const { return m_runAll; }
+    bool isRequested(const std::string& task) const
+    {
+        return m_tasks.count(task) > 0;
+    }
 
 protected:
     virtual void drawImpl(p3d::ProjectData& data) = 0;
 
     int m_currentItemIdx{0};
-    bool m_run{false};
-    bool m_runAll{false};
+    std::set<std::string> m_tasks;
 };

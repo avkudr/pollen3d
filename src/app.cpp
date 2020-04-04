@@ -14,6 +14,10 @@
 #include "gui/imgui_custom.h"
 #include "gui/palette.h"
 
+#include "gui/widget_dense_matching.h"
+#include "gui/widget_feature_extract.h"
+#include "gui/widget_matching.h"
+
 #ifndef P3D_PROJECT_EXTENSION
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 #endif
@@ -73,11 +77,23 @@ std::string saveProjectDialog()
     return out;
 }
 
+Application::Application()
+{
+    m_widgetLogger = std::make_unique<WidgetLogger>();
+    p3d::_logger = m_widgetLogger.get();
+
+    m_widgetFeat = std::make_unique<WidgetFeatureExtract>();
+    m_widgetMatching = std::make_unique<WidgetMatching>();
+    m_widgetDenseMatching = std::make_unique<WidgetDenseMatching>();
+    LOG_OK("Welcome to Pollen3D!");
+}
+
 void Application::initImGui()
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigDockingWithShift = true;
 
@@ -500,14 +516,14 @@ void Application::_drawTab_Image()
         if (m_widgetFeat) {
             m_widgetFeat->draw(m_projectData, m_currentImage);
 
-            if (m_widgetFeat->runRequested()) {
+            if (m_widgetFeat->isRequested("run")) {
                 auto f = [&]() {
                     ProjectManager::get()->extractFeatures(m_projectData,
                                                            {m_currentImage});
                 };
                 _doHeavyTask(f);
             }
-            if (m_widgetFeat->runAllRequested()) {
+            if (m_widgetFeat->isRequested("run_all")) {
                 auto f = [&]() {
                     ProjectManager::get()->extractFeatures(m_projectData);
                 };
@@ -532,283 +548,133 @@ void Application::_drawTab_Stereo()
         ImagePair * imPair = m_projectData.imagePair(m_currentImage);
         if (!imPair) disabled = true;
 
-        if (ImGui::CollapsingHeader("Matching", m_collapsingHeaderFlags)) {
-            ImVec2 p0 = ImGui::GetCursorScreenPos();
-            p0.x += 5;
-            p0.y += 5;
-            ImGui::SetCursorScreenPos(p0);
+        // ***** Matching (widget)
 
-            ImGui::BeginGroup();
-            const char *matchingAlgos[] = {"BruteForce-L1", "BruteForce",
-                                           "FlannBased"};
-            auto matcherCurAlg     = ProjectManager::get()->getSetting(p3dSetting_matcherCurAlg).cast<int>();
+        if (m_widgetMatching) {
+            m_widgetMatching->draw(m_projectData, m_currentImage);
 
-            if (ImGui::Combo("matcher", &matcherCurAlg, matchingAlgos, IM_ARRAYSIZE(matchingAlgos))) {
-                ProjectManager::get()->setSetting(p3dSetting_matcherCurAlg,matcherCurAlg);
-            }
-
-            {
-                auto matcherFilterCoef = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
-                float min = 0.1f;
-                float max = 1.0f;
-                ImGui::InputFloat("filter coef", &matcherFilterCoef, min, max, "%.2f");
-                matcherFilterCoef = std::max(min,std::min(matcherFilterCoef,max));
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setSetting(p3dSetting_matcherFilterCoef,matcherFilterCoef);
-            }
-
-            bool disableButtons = disabled;
-            auto imL = m_projectData.imagePairL(m_currentImage);
-            auto imR = m_projectData.imagePairR(m_currentImage);
-            disableButtons = !((imL != nullptr) && imL->hasFeatures());
-            disableButtons = !((imR != nullptr) && imR->hasFeatures());
-
-            if (disableButtons) ImGuiC::PushDisabled();
-            if (ImGui::Button("Match features"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->matchFeatures(m_projectData, {m_currentImage});
-                };
-                _doHeavyTask(f);
-            }
-
-            ImGui::SameLine();
-            if (ImGui::Button("ALL##matching"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->matchFeatures(m_projectData);
-                };
-                _doHeavyTask(f);
-            }
-            if (disableButtons) ImGuiC::PopDisabled();
-            ImGui::Dummy(ImVec2(0.0f, 10.0f));
-            ImGui::EndGroup();
-        }
-
-        if (ImGui::CollapsingHeader("Epipolar geometry",m_collapsingHeaderFlags))
-        {
-            bool disableButtons = disabled || !imPair->hasMatches();
-            if (disableButtons) ImGuiC::PushDisabled();
-
-            if (ImGui::Button("Find fundamental matrix"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->findFundamentalMatrix(m_projectData, {m_currentImage});
-                };
-                _doHeavyTask(f);
-            }
-
-            ImGui::SameLine();
-            if (ImGui::Button("ALL##fundamental"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->findFundamentalMatrix(m_projectData);
-                };
-                _doHeavyTask(f);
-            }
-            if (disableButtons) ImGuiC::PopDisabled();
-            ImGui::Dummy(ImVec2(0.0f, 10.0f));
-        }
-
-        if (ImGui::CollapsingHeader("Rectification",m_collapsingHeaderFlags))
-        {
-            bool disableButtons = disabled || !imPair->hasF();
-            if (disableButtons) ImGuiC::PushDisabled();
-
-            if (ImGui::Button("Rectify image pair"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->rectifyImagePairs(m_projectData, {m_currentImage});
+            if (m_widgetMatching->isRequested("run")) {
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->matchFeatures(m_projectData,
+                                                         {m_currentImage});
                     m_textureNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
+                });
             }
+            if (m_widgetMatching->isRequested("run_all")) {
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->matchFeatures(m_projectData);
+                    m_textureNeedsUpdate = true;
+                });
+            }
+        }
 
-            ImGui::SameLine();
-            if (ImGui::Button("ALL##rectify"))
-            {
-                auto f = [&]() {
+        // ***** Epipolar geometry
+
+        {
+            bool disableButtons = disabled || !imPair || !imPair->hasMatches();
+            if (disableButtons) ImGuiC::PushDisabled();
+
+            bool run{false}, runAll{false};
+            if (ImGuiC::Collapsing("Epipolar geometry", &run, &runAll)) {
+                if (ImGui::Button(P3D_ICON_RUN " Find fundamental matrix"))
+                    run = true;
+                ImGui::SameLine();
+                if (ImGui::Button(P3D_ICON_RUNALL " ALL##fundamental"))
+                    runAll = true;
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+            }
+            if (disableButtons) ImGuiC::PopDisabled();
+
+            if (run)
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->findFundamentalMatrix(
+                        m_projectData, {m_currentImage});
+                    m_textureNeedsUpdate = true;
+                });
+            if (runAll)
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->findFundamentalMatrix(m_projectData);
+                    m_textureNeedsUpdate = true;
+                });
+        }
+
+        // ***** Rectification
+
+        {
+            bool disableButtons = disabled;
+            if (disableButtons) ImGuiC::PushDisabled();
+
+            bool run{false}, runAll{false};
+            if (ImGuiC::Collapsing("Rectification", &run, &runAll)) {
+                if (ImGui::Button(P3D_ICON_RUN " Rectify image pair"))
+                    run = true;
+                ImGui::SameLine();
+                if (ImGui::Button(P3D_ICON_RUNALL " ALL##rectify"))
+                    runAll = true;
+                ImGui::Dummy(ImVec2(0.0f, 10.0f));
+            }
+            if (disableButtons) ImGuiC::PopDisabled();
+
+            if (run)
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->rectifyImagePairs(m_projectData,
+                                                             {m_currentImage});
+                    m_textureNeedsUpdate = true;
+                });
+            if (runAll)
+                _doHeavyTask([&]() {
                     ProjectManager::get()->rectifyImagePairs(m_projectData);
                     m_textureNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
-            }
-            if (disableButtons) ImGuiC::PopDisabled();
-            ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                });
         }
 
-        if (ImGui::CollapsingHeader("Dense matching",m_collapsingHeaderFlags))
-        {
-            bool disableButtons = disabled || !imPair->hasF();
-            if (disableButtons) ImGuiC::PushDisabled();
+        // ***** Dense matching (widget)
 
-            const char* denseMatchingAlgos[] = { "SGBM", "HH", "SGBM_3WAY"};
-            auto matcherCurAlg =
-                imPair ? imPair->getDenseMatchingPars().dispMethod : 0;
+        if (m_widgetDenseMatching) {
+            m_widgetDenseMatching->draw(m_projectData, m_currentImage);
 
-            if (ImGui::Combo("method", &matcherCurAlg, denseMatchingAlgos,
-                             IM_ARRAYSIZE(denseMatchingAlgos))) {
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_DispMethod,
-                                                   matcherCurAlg);
-            }
-
-            {
-                auto dispLowerBound =
-                    imPair ? imPair->getDenseMatchingPars().dispLowerBound : -1;
-                auto dispUpperBound =
-                    imPair ? imPair->getDenseMatchingPars().dispUpperBound : 2;
-                auto dispBlockSize =
-                    imPair ? imPair->getDenseMatchingPars().dispBlockSize : 9;
-
-                ImGui::InputInt("lowew bound",&dispLowerBound);
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(), p3dDense_DispLowerBound,
-                        dispLowerBound);
-                ImGui::InputInt("upper bound",&dispUpperBound);
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(), p3dDense_DispUpperBound,
-                        dispUpperBound);
-                ImGui::InputInt("block size",&dispBlockSize,2,2);
-                if (ImGui::IsItemEdited()) {
-                    if (dispBlockSize % 2 == 0) dispBlockSize--;
-                    dispBlockSize = std::min(dispBlockSize,21);
-                    dispBlockSize = std::max(dispBlockSize,1);
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(), p3dDense_DispBlockSize,
-                        dispBlockSize);
-                }
-            }
-
-            if (ImGui::Button("Dense match"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->findDisparityMap(m_projectData, {m_currentImage});
+            if (m_widgetDenseMatching->isRequested("run")) {
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->findDisparityMap(m_projectData,
+                                                            {m_currentImage});
                     m_textureNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
+                });
             }
-            ImGui::SameLine();
-            if (ImGui::Button("ALL##densematch"))
-            {
-                auto f = [&]() {
+            if (m_widgetDenseMatching->isRequested("run_all")) {
+                _doHeavyTask([&]() {
                     ProjectManager::get()->findDisparityMap(m_projectData);
                     m_textureNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
+                });
             }
-            ImGui::Separator();
-
-            ImGui::Text("Bilateral filter: ");
-            {
-                auto v1 =
-                    imPair ? imPair->getDenseMatchingPars().bilateralD : 9;
-                auto v2 =
-                    imPair ? imPair->getDenseMatchingPars().bilateralSigmaColor
-                           : 180;
-                auto v3 =
-                    imPair ? imPair->getDenseMatchingPars().bilateralSigmaSpace
-                           : 180;
-
-                ImGui::InputInt("diameter",&v1);
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(), p3dDense_BilateralD, v1);
-                ImGuiC::HelpMarker("Diameter of each pixel neighborhood that is used during filtering. "
-                           "If it is non-positive, it is computed from sigmaSpace.");
-
-                ImGui::InputInt("sigma color",&v2);
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(),
-                        p3dDense_BilateralSigmaColor, v2);
-                ImGuiC::HelpMarker("Filter sigma in the color space. A larger value of the parameter means that "
-                           "farther colors within the pixel neighborhood (see sigmaSpace) will be mixed "
-                           "together, resulting in larger areas of semi-equal color.");
-
-                ImGui::InputInt("sigma space",&v3);
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(),
-                        p3dDense_BilateralSigmaSpace, v3);
-                ImGuiC::HelpMarker("Filter sigma in the coordinate space. A larger value of the parameter means that "
-                           "farther pixels will influence each other as long as their colors are close enough (see sigmaColor"
-                           "). When diameter>0, it specifies the neighborhood size regardless of sigmaSpace. Otherwise, d is"
-                           "proportional to sigmaSpace.");
+            if (m_widgetDenseMatching->isRequested("run_bilateral")) {
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->filterDisparityBilateral(
+                        m_projectData, {m_currentImage});
+                    m_textureNeedsUpdate = true;
+                });
             }
-
-            if (ImGui::Button("Filter##bilateral"))
-            {
+            if (m_widgetDenseMatching->isRequested("run_bilateral_all")) {
                 auto f = [&]() {
-                    ProjectManager::get()->filterDisparityBilateral(m_projectData, {m_currentImage});
+                    ProjectManager::get()->filterDisparityBilateral(
+                        m_projectData);
                     m_textureNeedsUpdate = true;
                 };
                 _doHeavyTask(f);
             }
-            ImGui::SameLine();
-            if (ImGui::Button("ALL##bilateral"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->filterDisparityBilateral(m_projectData);
+            if (m_widgetDenseMatching->isRequested("run_filter_speckles")) {
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->filterDisparitySpeckles(
+                        m_projectData, {m_currentImage});
                     m_textureNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
+                });
             }
-            ImGui::Separator();
-
-            ImGui::Text("Speckles filter: ");
-            {
-                auto dispFilterNewValue =
-                    imPair ? imPair->getDenseMatchingPars().dispFilterNewValue
-                           : 0;
-                auto dispFilterMaxSpeckleSize =
-                    imPair ? imPair->getDenseMatchingPars()
-                                 .dispFilterMaxSpeckleSize
-                           : 260;
-                auto dispFilterMaxDiff =
-                    imPair ? imPair->getDenseMatchingPars().dispFilterMaxDiff
-                           : 10;
-
-                ImGui::InputInt("new value",&dispFilterNewValue);
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(),
-                        p3dDense_DispFilterNewValue, dispFilterNewValue);
-                ImGui::InputInt("max speckle size",&dispFilterMaxSpeckleSize);
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(),
-                        p3dDense_DispFilterMaxSpeckleSize,
-                        dispFilterMaxSpeckleSize);
-                ImGui::InputInt("max diff",&dispFilterMaxDiff);
-                if (ImGui::IsItemEdited())
-                    ProjectManager::get()->setProperty(
-                        imPair->denseMatchingPars(), p3dDense_DispFilterMaxDiff,
-                        dispFilterMaxDiff);
-            }
-
-            if (ImGui::Button("Filter##speckles"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->filterDisparitySpeckles(m_projectData, {m_currentImage});
+            if (m_widgetDenseMatching->isRequested("run_filter_speckles_all")) {
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->filterDisparitySpeckles(
+                        m_projectData);
                     m_textureNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
+                });
             }
-            ImGui::SameLine();
-            if (ImGui::Button("ALL##speckles"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->filterDisparitySpeckles(m_projectData);
-                    m_textureNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
-            }
-
-            if (disableButtons) ImGuiC::PopDisabled();
-            ImGui::Dummy(ImVec2(0.0f, 10.0f));
         }
 
         ImGui::EndTabItem();
@@ -823,68 +689,81 @@ void Application::_drawTab_Multiview()
     if (ImGui::BeginTabItem(ICON_FA_LAYER_GROUP""))
     {
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
-        if (ImGui::CollapsingHeader("Measurement matrix",
-                                    m_collapsingHeaderFlags)) {
-            if (ImGui::Button("Get full W")) {
-                auto f = [&]() { ProjectManager::get()->findMeasurementMatrixFull(m_projectData); };
-                _doHeavyTask(f);
+
+        {  // ***** Measurement matrix
+            bool run{false};
+            if (ImGuiC::Collapsing("Measurement matrix", &run)) {
+                if (ImGui::Button("Get full W")) {
+                    auto f = [&]() {
+                        ProjectManager::get()->findMeasurementMatrixFull(
+                            m_projectData);
+                    };
+                    _doHeavyTask(f);
+                }
+                if (ImGui::Button(P3D_ICON_RUN " Get W")) {
+                    auto f = [&]() {
+                        ProjectManager::get()->findMeasurementMatrix(
+                            m_projectData);
+                    };
+                    _doHeavyTask(f);
+                }
             }
-            if (ImGui::Button("Get W")) {
-                auto f = [&]() { ProjectManager::get()->findMeasurementMatrix(m_projectData); };
-                _doHeavyTask(f);
-            }
+            if (run)
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->findMeasurementMatrixFull(
+                        m_projectData);
+                    ProjectManager::get()->findMeasurementMatrix(m_projectData);
+                });
         }
 
-        if (ImGui::CollapsingHeader("Autocalibration",m_collapsingHeaderFlags))
         {
-            if (ImGui::Button("Autocalibrate"))
-            {
-                auto f = [&]() {
+            bool run{false};
+            if (ImGuiC::Collapsing("Autocalibration", &run)) {
+                if (ImGui::Button(P3D_ICON_RUN " Autocalibrate")) run = true;
+            }
+            if (run)
+                _doHeavyTask([&]() {
                     ProjectManager::get()->autocalibrate(m_projectData);
                     m_viewer3dNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
-            }
+                });
         }
 
-        if (ImGui::CollapsingHeader("Triangulation",m_collapsingHeaderFlags))
         {
-            if (ImGui::Button("Triangulate (sparse)"))
-            {
-                auto f = [&]() {
+            bool run{false};
+            if (ImGuiC::Collapsing("Triangulation", &run)) {
+                if (ImGui::Button(P3D_ICON_RUN " Triangulate (sparse)"))
+                    run = true;
+                if (ImGui::Button("Triangulate dense (stereo)")) {
+                    _doHeavyTask([&]() {
+                        ProjectManager::get()->triangulateStereo(m_projectData);
+                        m_viewer3dNeedsUpdate = true;
+                    });
+                }
+                if (ImGui::Button("Triangulate dense (multi-view)")) {
+                    _doHeavyTask([&]() {
+                        ProjectManager::get()->triangulateDense(m_projectData);
+                        m_viewer3dNeedsUpdate = true;
+                    });
+                }
+            }
+            if (run)
+                _doHeavyTask([&]() {
                     ProjectManager::get()->triangulate(m_projectData);
                     m_viewer3dNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
-            }
-            if (ImGui::Button("Triangulate dense (stereo)"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->triangulateStereo(m_projectData);
-                    m_viewer3dNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
-            }
-            if (ImGui::Button("Triangulate dense (multi-view)"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->triangulateDense(m_projectData);
-                    m_viewer3dNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
-            }
+                });
         }
 
-        if (ImGui::CollapsingHeader("Bundle adjustment",m_collapsingHeaderFlags))
         {
-            if (ImGui::Button("Bundle adjustment (sparse)"))
-            {
-                auto f = [&]() {
+            bool run{false};
+            if (ImGuiC::Collapsing("Bundle adjustment", &run)) {
+                if (ImGui::Button(P3D_ICON_RUN " Bundle adjustment (sparse)"))
+                    run = true;
+            }
+            if (run)
+                _doHeavyTask([&]() {
                     ProjectManager::get()->bundleAdjustment(m_projectData);
                     m_viewer3dNeedsUpdate = true;
-                };
-                _doHeavyTask(f);
-            }
+                });
         }
 
         if (ImGui::CollapsingHeader("Export",m_collapsingHeaderFlags))
@@ -892,7 +771,13 @@ void Application::_drawTab_Multiview()
             if (ImGui::Button("Export PLY (sparse)"))
             {
                 auto f = [&]() {
-                    ProjectManager::get()->exportPLY(m_projectData);
+                    ProjectManager::get()->exportPLYSparse(m_projectData);
+                };
+                _doHeavyTask(f);
+            }
+            if (ImGui::Button("Export PLY (dense)")) {
+                auto f = [&]() {
+                    ProjectManager::get()->exportPLYDense(m_projectData);
                 };
                 _doHeavyTask(f);
             }

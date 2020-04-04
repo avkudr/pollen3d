@@ -7,10 +7,10 @@
 
 #include "common.h"
 
-void ImGuiC::PushDisabled()
+void ImGuiC::PushDisabled(bool disable)
 {
-    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, disable);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, disable ? 0.6f : 1.0f);
 }
 
 void ImGuiC::PopDisabled()
@@ -62,7 +62,10 @@ bool ImGuiC::Collapsing(const char *label, bool *btnRun, bool *btnRunAll)
     if (btnRun || btnRunAll)
         flags |= ImGuiTreeNodeFlags_AllowItemOverlap |
                  ImGuiTreeNodeFlags_ClipLabelForTrailingButton;
+
+    ImGuiC::PushDisabled(false);
     bool is_open = ImGui::TreeNodeBehavior(id, flags, label);
+    ImGuiC::PopDisabled();
     if (btnRun || btnRunAll) {
         // Create a small overlapping close button
         // FIXME: We can evolve this into user accessible helpers to add extra
@@ -132,7 +135,14 @@ bool ImGuiC::RunButton(ImGuiID id, const ImVec2 &pos,
         GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
     ImVec2 center = bb.GetCenter();
     auto radius = ImMax(2.0f, g.FontSize * 0.5f + 1.0f);
-    if (hovered) window->DrawList->AddCircleFilled(center, radius, col, 12);
+    if (hovered) {
+        window->DrawList->AddCircleFilled(center, radius, col, 12);
+        if (icon == P3D_ICON_RUN)
+            ImGui::SetTooltip(
+                "Run the task for current item (image, pair, etc.)");
+        else
+            ImGui::SetTooltip("Run the task for all items (images, pairs)");
+    }
 
     float fontScale = 0.8;
     float cross_extent = g.FontSize * 0.5f * 0.7071f - 1.0f;
@@ -143,4 +153,17 @@ bool ImGuiC::RunButton(ImGuiID id, const ImVec2 &pos,
     window->DrawList->AddText(font, g.FontSize * 0.8, center, cross_col, icon,
                               icon + strlen(icon));
     return pressed;
+}
+
+void ImGuiC::HoveredTooltip(const char *desc)
+{
+    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
+    if (ImGui::IsItemHovered()) {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+    ImGui::PopItemFlag();
 }

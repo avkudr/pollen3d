@@ -12,20 +12,14 @@
 #include "p3d/data/project_settings.h"
 #include "p3d/logger.h"
 
+#include "gui/widget.h"
 #include "gui/widget_console.h"
-#include "gui/widget_feature_extract.h"
 #include "viewer3d/viewer3d.h"
 
 class Application
 {
 public:
-    Application() {
-        m_widgetLogger = std::make_unique<WidgetLogger>();
-        p3d::_logger = m_widgetLogger.get();
-
-        m_widgetFeat = std::make_unique<WidgetFeatureExtract>();
-        LOG_OK("Welcome to Pollen3D!");
-    }
+    Application();
 
     virtual ~Application() { destroy(); }
 
@@ -150,7 +144,9 @@ protected:
 
     std::unique_ptr<Viewer3D> m_viewer3D{nullptr};
     std::unique_ptr<WidgetLogger> m_widgetLogger{nullptr};
-    std::unique_ptr<WidgetFeatureExtract> m_widgetFeat{nullptr};
+    std::unique_ptr<Widget> m_widgetFeat{nullptr};
+    std::unique_ptr<Widget> m_widgetMatching{nullptr};
+    std::unique_ptr<Widget> m_widgetDenseMatching{nullptr};
 
     bool m_initialised = false;
 

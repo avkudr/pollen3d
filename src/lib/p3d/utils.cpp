@@ -236,26 +236,34 @@ double utils::nullspace(const Eigen::Ref<const Mat> &A, Vec * nullsp)
     return nullspace( A_extended, nullsp );
 }
 
-bool utils::exportToPly(const Mat4X &vec_points_white, const std::string &sFileName)
+bool utils::exportToPly(const Mat3Xf &vec_points_white,
+                        const std::string &sFileName, const Mat3Xf &colors)
 {
     std::ofstream outfile;
     outfile.open(sFileName.c_str(), std::ios_base::out);
-    outfile << "ply"
-            << '\n' << "format ascii 1.0"
-            << '\n' << "element vertex " << vec_points_white.cols()
-            << '\n' << "property float x"
-            << '\n' << "property float y"
-            << '\n' << "property float z"
-            << '\n' << "property uchar red"
-            << '\n' << "property uchar green"
-            << '\n' << "property uchar blue"
-            << '\n' << "end_header" << std::endl;
+    outfile << "ply" << '\n'
+            << "format ascii 1.0" << '\n'
+            << "element vertex " << vec_points_white.cols() << '\n'
+            << "property float x" << '\n'
+            << "property float y" << '\n'
+            << "property float z" << '\n'
+            << "property uchar red" << '\n'
+            << "property uchar green" << '\n'
+            << "property uchar blue" << '\n'
+            << "end_header" << std::endl;
 
-    for (auto i=0; i < vec_points_white.cols(); ++i)
-    {
-        outfile << vec_points_white.col(i).topRows(3).transpose()
-                << " 255 255 255" << "\n";
+    Mat3Xf col;
+    if (colors.cols() != vec_points_white.cols())
+        col = colors;
+    else {
+        col.setOnes(3, vec_points_white.cols());
+        col *= 255;
     }
+    for (auto i = 0; i < vec_points_white.cols(); ++i) {
+        outfile << vec_points_white.col(i).transpose() << " "
+                << col.col(i).cast<int>().transpose() << "\n";
+    }
+    outfile << "\n";
     outfile.flush();
     bool bOk = outfile.good();
     outfile.close();

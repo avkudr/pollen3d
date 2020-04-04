@@ -84,7 +84,8 @@ std::pair<Vec2,Vec2> lineIntersectBox(const Vec3& line, double w, double h/*, do
 
 void matchesMapsToTable(std::vector<std::map<int, int> > matchesMaps, Mati &table);
 
-bool exportToPly(const Mat4X & vec_points_white, const std::string & sFileName);
+bool exportToPly(const Mat3Xf &vec_points_white, const std::string &sFileName,
+                 const Mat3Xf &colors = Mat3Xf());
 
 // **** Rotations
 

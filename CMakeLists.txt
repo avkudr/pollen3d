@@ -148,6 +148,10 @@ set(SOURCES_GUI
     ./src/gui/widget_console.cpp
     ./src/gui/widget_feature_extract.h
     ./src/gui/widget_feature_extract.cpp
+    ./src/gui/widget_matching.h
+    ./src/gui/widget_matching.cpp
+    ./src/gui/widget_dense_matching.h
+    ./src/gui/widget_dense_matching.cpp
 )
 
 set(SOURCES_GUI
