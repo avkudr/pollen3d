@@ -110,8 +110,8 @@ void AutoCalibrator::run()
     optimizer.set_upper_bounds(ub);
     optimizer.set_min_objective( *AutoCalibrator::wrap, this);
 //    optimizer.set_ftol_rel(1e-8);
-    optimizer.set_stopval(1e-10);
-    optimizer.set_ftol_abs(1e-10);
+    optimizer.set_stopval(1e-5);
+    optimizer.set_ftol_abs(1e-5);
     optimizer.set_xtol_abs(1e-10);
 //    optimizer.set_xtol_rel(1e-8);
     optimizer.set_maxtime(m_maxTime);

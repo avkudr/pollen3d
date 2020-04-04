@@ -228,7 +228,7 @@ void ProjectData::setCamerasExtrinsics(std::vector<Vec3> &Rvec,
         m_images[i].setTranslation(t[i]);
 }
 
-std::vector<Mat34> ProjectData::getCameraMatrices()
+std::vector<Mat34> ProjectData::getCameraMatrices() const
 {
     if (nbImages() == 0) return {};
 
@@ -250,7 +250,7 @@ std::vector<Mat34> ProjectData::getCameraMatrices()
     return Ps;
 }
 
-Mat ProjectData::getCameraMatricesMat()
+Mat ProjectData::getCameraMatricesMat() const
 {
     Mat Pm;
     std::vector<Mat34> Ps = getCameraMatrices();

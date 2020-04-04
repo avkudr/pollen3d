@@ -68,4 +68,9 @@ public:
 #define LOG_INFO(...) LOG_IMPL("[INFO] ", COLOR_INFO, __VA_ARGS__)
 #define LOG_WARN(...) LOG_IMPL("[WARN] ", COLOR_WARN, __VA_ARGS__)
 #define LOG_ERR(...) LOG_IMPL("[ERR ] ", COLOR_ERR_, __VA_ARGS__)
+
+#ifdef POLLEN3D_DEBUG
 #define LOG_DBG(...) LOG_IMPL("[DEBUG] ", COLOR_DBG, __VA_ARGS__)
+#else
+#define LOG_DBG(...)
+#endif

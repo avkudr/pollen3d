@@ -1,6 +1,5 @@
 #pragma once
 
-// from https://iquilezles.org/www/articles/palettes/palettes.htm
 
 #include "p3d/core.h"
 
@@ -19,25 +18,26 @@ inline Vec3f pal(float t, const Vec3f& a, const Vec3f& b, const Vec3f& c,
 
 namespace p3d::palette
 {
-Vec3f color1(float t)
+// from https://iquilezles.org/www/articles/palettes/palettes.htm
+static Vec3f color1(float t)
 {
     return impl::pal(t, Vec3f(0.5f, 0.5f, 0.5f), Vec3f(0.5f, 0.5f, 0.5f),
                      Vec3f(1.0f, 1.0f, 1.0f), Vec3f(0.0f, 0.33f, 0.67f));
 }
 
-Vec3f color2(float t)
+static Vec3f color2(float t)
 {
     return impl::pal(t, Vec3f(0.5f, 0.5f, 0.5f), Vec3f(0.5f, 0.5f, 0.5f),
                      Vec3f(1.0f, 1.0f, 1.0f), Vec3f(0.0f, 0.10f, 0.20f));
 }
 
-Vec3f color6(float t)
+static Vec3f color6(float t)
 {
     return impl::pal(t, Vec3f(0.5f, 0.5f, 0.5f), Vec3f(0.5f, 0.5f, 0.5f),
                      Vec3f(2.0f, 1.0f, 0.0f), Vec3f(0.5f, 0.20f, 0.25f));
 }
 
-Vec3f color7(float t)
+static Vec3f color7(float t)
 {
     return impl::pal(t, Vec3f(0.8f, 0.5f, 0.4f), Vec3f(0.2f, 0.4f, 0.2f),
                      Vec3f(2.0f, 1.0f, 1.0f), Vec3f(0.0f, 0.25f, 0.25f));

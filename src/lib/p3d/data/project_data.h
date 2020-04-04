@@ -89,8 +89,8 @@ public:
                               std::vector<Vec2> *t) const;
     void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t);
 
-    std::vector<Mat34> getCameraMatrices();
-    Mat getCameraMatricesMat();
+    std::vector<Mat34> getCameraMatrices() const;
+    Mat getCameraMatricesMat() const;
 
     const Mat4X & getPts3DSparse() const { return m_pts3DSparse; }
     void setPts3DSparse(const Mat4X &pts3D) { m_pts3DSparse = pts3D; }

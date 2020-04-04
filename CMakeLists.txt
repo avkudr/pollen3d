@@ -141,6 +141,8 @@ set(SOURCES_GUI
     ./src/app.cpp
     ./src/gui/common.h
     ./src/gui/palette.h
+    ./src/gui/plots.h
+    ./src/gui/plots.cpp
     ./src/gui/widget.h
     ./src/gui/imgui_custom.h
     ./src/gui/imgui_custom.cpp
