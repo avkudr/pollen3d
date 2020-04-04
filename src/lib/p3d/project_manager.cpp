@@ -858,7 +858,8 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
     LOG_OK("Bundle adjustement: done");
 }
 
-void ProjectManager::exportPLYSparse(ProjectData &data)
+void ProjectManager::exportPLYSparse(const ProjectData &data,
+                                     const std::string &filepath)
 {
     auto X = data.getPts3DSparse();
     if (X.cols() == 0) {
@@ -866,12 +867,13 @@ void ProjectManager::exportPLYSparse(ProjectData &data)
         return;
     }
 
-    utils::exportToPly(X.topRows(3).cast<float>(), "point_cloud.ply");
+    utils::exportToPly(X.topRows(3).cast<float>(), filepath);
 
     LOG_OK("Exported point cloud (sparse): %i points", X.cols());
 }
 
-void ProjectManager::exportPLYDense(ProjectData &data)
+void ProjectManager::exportPLYDense(const ProjectData &data,
+                                    const std::string &filepath)
 {
     const Mat3Xf &X = data.getPts3DDense();
     if (X.cols() == 0) {
@@ -880,7 +882,7 @@ void ProjectManager::exportPLYDense(ProjectData &data)
     }
     const Mat3Xf &c = data.getPts3DDenseColors();
 
-    utils::exportToPly(X, "point_cloud_dense.ply", c);
+    utils::exportToPly(X, filepath, c);
 
     LOG_OK("Exported point cloud (dense): %i points", X.cols());
 }

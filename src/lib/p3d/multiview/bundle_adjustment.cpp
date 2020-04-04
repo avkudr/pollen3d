@@ -36,33 +36,15 @@ struct BAFunctor_Affine
 
         Eigen::Matrix<T,2,2> A;
 
-        const auto t1  = cam_R[0];
-        const auto rho = cam_R[1];
-        const auto t2  = cam_R[2];
-        const auto c0 = ceres::cos(t1);
-        const auto c1 = ceres::cos(rho);
-        const auto c2 = ceres::cos(t2);
-        const auto s0 = ceres::sin(t1);
-        const auto s1 = ceres::sin(rho);
-        const auto s2 = ceres::sin(t2);
+        const auto& a = T(cam_R[0]);
+        const auto& b = T(cam_R[1]);
+        const auto& c = T(cam_R[2]);
 
-        Eigen::Matrix<T, 2, 3> R;
-//        R(0,0) = c0*c1*c2 - s0*s2;
-//        R(0,1) = -c0*c1*s2 - s0*c2;
-//        R(0,2) = c0*s1;
-//        R(1,0) = s0*c1*c2+c0*s2 ;
-//        R(1,1) = -s0*c1*s2 + c0*c2 ;
-//        R(1,2) = s0*s1;
-        R(0,0) = s0*s2 + c1*c0*c2;
-        R(0,1) = c1*c0*s2 - c2*s0;
-        R(0,2) = c0*s1;
-        R(1,0) = c1*c2*s0 - c0*s2;
-        R(1,1) = c0*c2 + c1*s0*s2;
-        R(1,2) = s1*s0;
+        Eigen::Matrix<T, 3, 3> R = utils::RfromEulerZYZt(a, b, c);
 
         A << cam_K[0] * cam_K[2], cam_K[1], T(0.0), cam_K[2];
 
-        P.topLeftCorner(2,3) = A * R;
+        P.topLeftCorner(2, 3) = A * R.topRows(2);
         P(0,3) = cam_t[0];
         P(1,3) = cam_t[1];
         P(2,3) = T(1.0);

@@ -84,3 +84,30 @@ TEST(MISC, test_affineCamera)
     EXPECT_TRUE(c.getA().isApprox(c1));
 }
 
+TEST(MISC, test_rotations)
+{
+    auto random = []() {
+        return (double)M_PI * rand() / RAND_MAX - M_PI / 2.0;
+    };
+
+    for (int i = 0; i < 100; i++) {
+        double a = random(), b = random(), c = random();
+
+        double a1, b1, c1;
+        auto R1 = utils::RfromEulerZYZt(a, b, c);
+        {
+            utils::EulerZYZtfromR(R1, a1, b1, c1);
+            EXPECT_NEAR(a, a1, 1e-5);
+            EXPECT_NEAR(b, b1, 1e-5);
+            EXPECT_NEAR(c, c1, 1e-5);
+        }
+        {
+            auto R1inv = utils::RfromEulerZYZt_inv(a, b, c);
+            EXPECT_TRUE(R1inv.isApprox(R1.inverse()));
+        }
+    }
+
+    //    EXPECT_EQ(table.rows(), 4);
+    //    EXPECT_EQ(table.cols(), 6);
+    //    EXPECT_EQ(table, tableTrue);
+}

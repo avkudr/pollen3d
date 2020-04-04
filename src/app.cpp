@@ -3,8 +3,6 @@
 #include <filesystem>
 #include <future>
 
-#include "tinyfiledialogs/tinyfiledialogs.h"
-
 #include "../assets/fonts/IconsFontAwesome5.h"
 
 #include "p3d/commands.h"
@@ -18,64 +16,12 @@
 #include "gui/widget_feature_extract.h"
 #include "gui/widget_matching.h"
 
-#ifndef P3D_PROJECT_EXTENSION
-#define P3D_PROJECT_EXTENSION ".yml.gz"
-#endif
-
 #define COLOR_GREEN \
     ImVec4 { 0.0f, 0.7f, 0.3f, 1.0f }
 #define COLOR_PINK \
     ImVec4 { 1.0f, 0.3f, 0.6f, 1.0f }
 
 using namespace p3d;
-
-std::vector<std::string> loadImagesDialog()
-{
-    std::vector<std::string> out;
-    char const *lTheOpenFileName;
-    char const *lFilterPatterns[] = {"*.jpg", "*.jpeg", "*.png", "*.tif",
-                                     "*.tiff"};
-
-    lTheOpenFileName = tinyfd_openFileDialog("Load images...", "", 5,
-                                             lFilterPatterns, nullptr, 1);
-    if (!lTheOpenFileName) return out;
-
-    std::string allFiles(lTheOpenFileName);
-    out = utils::split(lTheOpenFileName, "|");
-    return out;
-}
-
-std::string openProjectDialog()
-{
-    char const *lTheOpenFileName;
-    std::string ext = "*" + std::string(P3D_PROJECT_EXTENSION);
-    char const *lFilterPatterns[] = {ext.c_str()};
-
-    lTheOpenFileName = tinyfd_openFileDialog("Load images...", "", 1,
-                                             lFilterPatterns, nullptr, 0);
-    if (!lTheOpenFileName) return "";
-
-    std::string projectFile(lTheOpenFileName);
-    return projectFile;
-}
-
-std::string saveProjectDialog()
-{
-    char const *saveFilePath;
-    std::string ext = "*" + std::string(P3D_PROJECT_EXTENSION);
-    char const *saveFilePattern[] = {ext.c_str()};
-
-    saveFilePath = tinyfd_saveFileDialog("Save project as...", "",
-                                         1,  // nb files to save
-                                         saveFilePattern, "Pollen3D project");
-
-    if (!saveFilePath) return "";
-
-    std::string out(saveFilePath);
-    if (!utils::endsWith(out, P3D_PROJECT_EXTENSION))
-        out += P3D_PROJECT_EXTENSION;
-    return out;
-}
 
 Application::Application()
 {
@@ -686,8 +632,7 @@ void Application::_drawTab_Stereo()
 
 void Application::_drawTab_Multiview()
 {
-    if (ImGui::BeginTabItem(ICON_FA_LAYER_GROUP""))
-    {
+    if (ImGui::BeginTabItem(ICON_FA_LAYER_GROUP "")) {
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
         {  // ***** Measurement matrix
@@ -766,72 +711,90 @@ void Application::_drawTab_Multiview()
                 });
         }
 
-        if (ImGui::CollapsingHeader("Export",m_collapsingHeaderFlags))
-        {
-            if (ImGui::Button("Export PLY (sparse)"))
-            {
-                auto f = [&]() {
-                    ProjectManager::get()->exportPLYSparse(m_projectData);
-                };
-                _doHeavyTask(f);
+        if (ImGui::CollapsingHeader("Export", m_collapsingHeaderFlags)) {
+            if (ImGui::Button("Export PLY (sparse)")) {
+                std::string filepath = exportPointCloudDialog();
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->exportPLYSparse(m_projectData,
+                                                           filepath);
+                });
             }
             if (ImGui::Button("Export PLY (dense)")) {
-                auto f = [&]() {
-                    ProjectManager::get()->exportPLYDense(m_projectData);
-                };
-                _doHeavyTask(f);
+                std::string filepath = exportPointCloudDialog();
+                _doHeavyTask([&]() {
+                    ProjectManager::get()->exportPLYDense(m_projectData,
+                                                          filepath);
+                });
             }
         }
 
-        if (ImGui::CollapsingHeader("Analyze",m_collapsingHeaderFlags))
-        {
+        if (ImGui::CollapsingHeader("Analyze", m_collapsingHeaderFlags)) {
             static bool showReprojectionErrorPlot = false;
-            if (ImGui::Button("Plot reprojection error (sparse)"))
-            {
+            if (ImGui::Button("Plot reprojection error (sparse)")) {
                 showReprojectionErrorPlot = true;
             }
 
             if (showReprojectionErrorPlot) {
                 float w = 600;
-                ImGui::SetNextWindowSize(ImVec2(w,w));
-                if (ImGui::Begin("Reproj error##plot",&showReprojectionErrorPlot,ImGuiWindowFlags_Modal)) {
-
+                ImGui::SetNextWindowSize(ImVec2(w, w));
+                if (ImGui::Begin("Reproj error##plot",
+                                 &showReprojectionErrorPlot,
+                                 ImGuiWindowFlags_Modal)) {
                     ImVec2 a1 = ImGui::GetWindowPos();
-                    ImVec2 center = ImVec2(a1.x+w/2.0f,a1.y+w/2.0f);
+                    ImVec2 center = ImVec2(a1.x + w / 2.0f, a1.y + w / 2.0f);
 
-                    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-                    ImU32 color32 = IM_COL32(255,255,255,255*0.4f);
-                    draw_list->AddLine(ImVec2(center.x,center.y - w*0.5f), ImVec2(center.x,center.y + w*0.5f), color32);
-                    draw_list->AddLine(ImVec2(center.x - w*0.5f,center.y), ImVec2(center.x + w*0.5f,center.y), color32);
-                    draw_list->AddCircle(center, w*0.5f*0.4f, color32, 32, 1);
-                    draw_list->AddCircle(center, w*0.5f*0.8f, color32, 32, 1);
+                    ImDrawList *draw_list = ImGui::GetWindowDrawList();
+                    ImU32 color32 = IM_COL32(255, 255, 255, 255 * 0.4f);
+                    draw_list->AddLine(ImVec2(center.x, center.y - w * 0.5f),
+                                       ImVec2(center.x, center.y + w * 0.5f),
+                                       color32);
+                    draw_list->AddLine(ImVec2(center.x - w * 0.5f, center.y),
+                                       ImVec2(center.x + w * 0.5f, center.y),
+                                       color32);
+                    draw_list->AddCircle(center, w * 0.5f * 0.4f, color32, 32,
+                                         1);
+                    draw_list->AddCircle(center, w * 0.5f * 0.8f, color32, 32,
+                                         1);
 
                     auto X = m_projectData.getPts3DSparse();
                     auto W = m_projectData.getMeasurementMatrixFull();
                     auto P = m_projectData.getCameraMatricesMat();
 
+                    decltype(W) Wc = P * X;
+
                     Mat error = W - P * X;
+
+                    std::cout << "error\n" << error.rightCols(30) << std::endl;
+
                     int less1px = 0;
                     int less05px = 0;
+                    int total = 0;
                     int nbCams = P.rows() / 3;
                     for (int c = 0; c < P.rows() / 3; ++c) {
-                        ImU32 color2 = IM_COL32(0,255*c/float(nbCams),255,255*0.9f);
+                        ImU32 color2 = IM_COL32(0, 255 * c / float(nbCams), 255,
+                                                255 * 0.9f);
                         for (int i = 0; i < error.cols(); ++i) {
-                            Vec2 e = error.block(3*c,i,2,1);
-                            if (e.norm() < 1.0f) less1px++;
-                            if (e.norm() < 0.5f) less05px++;
+                            if (error(3 * c + 2, i) != 0.0) continue;
 
-                            e *= w*0.5f*0.8f;
+                            Vec2f e = error.block(3 * c, i, 2, 1).cast<float>();
+                            const auto enorm = e.norm();
+                            if (enorm < 1.0f) less1px++;
+                            if (enorm < 0.5f) less05px++;
+                            total++;
+
+                            e *= w * 0.5f * 0.8f;
                             e(0) += center.x;
                             e(1) += center.y;
-                            draw_list->AddCircle(ImVec2(e(0),e(1)), 2, color2, 6, 1);
+                            draw_list->AddCircle(ImVec2(e(0), e(1)), 2, color2,
+                                                 6, 1);
                         }
                     }
 
                     ImGui::Text("From %i points", int(error.cols()));
-                    ImGui::Text("< 1px: %0.1f", 100.0f * less1px / float(nbCams * error.cols()));
-                    ImGui::Text("< 0.5px: %0.1f", 100.0f * less05px / float(nbCams * error.cols()));
-
+                    ImGui::Text("< 1px: %0.1f",
+                                100.0f * less1px / float(total));
+                    ImGui::Text("< 0.5px: %0.1f",
+                                100.0f * less05px / float(total));
                 }
                 ImGui::End();
             }
@@ -839,7 +802,8 @@ void Application::_drawTab_Multiview()
 
         ImGui::EndTabItem();
 
-        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud})) _resetAppState();
+        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
+            _resetAppState();
         m_currentTab = Tab_Multiview;
     }
 }
@@ -1138,15 +1102,14 @@ void Application::_drawCentral()
     float width  = ImGui::GetWindowContentRegionMax().x;
     float height = ImGui::GetWindowContentRegionMax().y;
 
-    if (m_currentTab == Tab_Multiview && m_viewer3D != nullptr) {
-        m_viewer3D->setSize(width,height);
+    if (isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}) &&
+        m_viewer3D != nullptr) {
+        m_viewer3D->setSize(width, height);
 
         if (m_viewer3dNeedsUpdate) {
             m_viewer3D->init();
-            m_viewer3D->setPointCloud(
-                        m_projectData.getPts3DDense(),
-                        m_projectData.getPts3DDenseColors()
-                        );
+            m_viewer3D->setPointCloud(m_projectData.getPts3DDense(),
+                                      m_projectData.getPts3DDenseColors());
             m_viewer3dNeedsUpdate = false;
         }
 

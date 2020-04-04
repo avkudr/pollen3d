@@ -82,9 +82,12 @@ public:
     void setMeasurementMatrixFull(const Mat & Wf) { m_measurementMatrixFull = Wf; }
 
     void getCamerasIntrinsics(std::vector<Vec3> * cam) const;
-    void setCamerasIntrinsics(std::vector<Vec3> & cam);
-    void getCamerasExtrinsics(std::vector<Vec3> *R, std::vector<Vec2> * t) const;
-    void setCamerasExtrinsics(std::vector<Vec3> &R, std::vector<Vec2> & t);
+    void setCamerasIntrinsics(std::vector<Vec3> &cam);
+
+    void getCamerasRotations(std::vector<Mat3> *R) const;
+    void getCamerasExtrinsics(std::vector<Vec3> *Rvec,
+                              std::vector<Vec2> *t) const;
+    void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t);
 
     std::vector<Mat34> getCameraMatrices();
     Mat getCameraMatricesMat();

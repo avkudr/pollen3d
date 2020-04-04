@@ -20,6 +20,8 @@
 #define P3D_ID_TYPE std::size_t
 #endif
 
+#define P3D_PROJECT_EXTENSION ".yml.gz"
+
 // Unfortunately, we have to do it because of the fact that
 // operator== throws an exception on comparing two Eigen::Matrix's
 #undef eigen_assert
@@ -29,25 +31,28 @@
 
 namespace p3d
 {
-using Vec2   = Eigen::Vector2d;
-using Vec3   = Eigen::Vector3d;
-using Vec3f  = Eigen::Vector3f;
-using Vec4   = Eigen::Matrix<double,4,1>;
-using Vec4f  = Eigen::Matrix<float,4,1>;
-using Mat2   = Eigen::Matrix<double,2,2>;
-using Mat23  = Eigen::Matrix<double,2,3>;
-using Mat3   = Eigen::Matrix3d;
-using Mat34  = Eigen::Matrix<double,3,4>;
-using Mat4   = Eigen::Matrix<double,4,4>;
-using Mat4f  = Eigen::Matrix<float,4,4>;
-using Mat    = Eigen::MatrixXd;
-using Mati   = Eigen::Matrix<int,-1,-1>;
-using Mat2X  = Eigen::Matrix<double,2,-1>;
-using Mat3X  = Eigen::Matrix<double,3,-1>;
-using Mat3Xf = Eigen::Matrix<float,3,-1>;
-using Mat4X  = Eigen::Matrix<double,4,-1>;
-using Vec    = Eigen::VectorXd;
-using Veci   = Eigen::Matrix<int,-1, 1>;
+// clang-format off
+using  Vec2   = Eigen::Vector2d;
+using  Vec2f  = Eigen::Vector2f;
+using  Vec3   = Eigen::Vector3d;
+using  Vec3f  = Eigen::Vector3f;
+using  Vec4   = Eigen::Matrix<double,4,1>;
+using  Vec4f  = Eigen::Matrix<float,4,1>;
+using  Mat2   = Eigen::Matrix<double,2,2>;
+using  Mat23  = Eigen::Matrix<double,2,3>;
+using  Mat3   = Eigen::Matrix3d;
+using  Mat34  = Eigen::Matrix<double,3,4>;
+using  Mat4   = Eigen::Matrix<double,4,4>;
+using  Mat4f  = Eigen::Matrix<float,4,4>;
+using  Mat    = Eigen::MatrixXd;
+using  Mati   = Eigen::Matrix<int,-1,-1>;
+using  Mat2X  = Eigen::Matrix<double,2,-1>;
+using  Mat3X  = Eigen::Matrix<double,3,-1>;
+using  Mat3Xf = Eigen::Matrix<float,3,-1>;
+using  Mat4X  = Eigen::Matrix<double,4,-1>;
+using  Vec    = Eigen::VectorXd;
+using  Veci   = Eigen::Matrix<int,-1, 1>;
+// clang-format on
 
 class Exception : public std::exception
 {

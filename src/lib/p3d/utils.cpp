@@ -286,32 +286,6 @@ Vec4 utils::triangulate(const std::vector<Vec2> &x, const std::vector<Mat34> &Ps
     return Vec4(X_and_alphas.head(4));
 }
 
-void utils::EulerZYZfromR(const Mat3 &R, double &t1, double &rho, double &t2){
-    std::cout << "Must be utils::EulerZYZtfromR" << std::endl;
-    std::cout << "Must be utils::EulerZYZtfromR" << std::endl;
-    std::cout << "Must be utils::EulerZYZtfromR" << std::endl;
-
-    const auto &rotmat = R;
-
-    if (rotmat(2,2) < 1){
-        if (rotmat(2,2) > -1){
-            rho = acos(rotmat(2,2));
-            t1  = atan2(rotmat(1,2),rotmat(0,2));
-            t2  = atan2(rotmat(2,1),-rotmat(2,0));
-        }
-        else{
-            rho = M_PI;
-            t1  = -atan2(rotmat(1,0),rotmat(1,1));
-            t2  = 0;
-        }
-    }
-    else{
-        rho = 0;
-        t1  = atan2(rotmat(1,0),rotmat(1,1));
-        t2  = 0;
-    }
-}
-
 void utils::EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2)
 {
     const auto &rotmat = R;
@@ -333,6 +307,16 @@ void utils::EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2)
         t1  = atan2(rotmat(1,0),rotmat(1,1));
         t2  = 0;
     }
+
+    if (t1 < M_PI_2) {
+        t1 += M_PI;
+        rho = -rho;
+    }
+    if (t1 > M_PI_2) {
+        t1 -= M_PI;
+        rho = -rho;
+    }
+    wrapHalfPI(t2);
 }
 
 void utils::EulerZYZtfromRinv(const Mat3 &R, double &t1, double &rho, double &t2) {
