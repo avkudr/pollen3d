@@ -7,6 +7,10 @@
 
 #endif
 
+#ifdef _WIN32
+#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+#endif
+
 int main()
 {
 #ifndef POLLEN3D_DEBUG

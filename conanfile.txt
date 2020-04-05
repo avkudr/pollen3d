@@ -10,8 +10,14 @@ gtest/1.8.1@bincrafters/stable
 
 [options]
 gtest:build_gmock=False
+gtest:shared=True
 opencv:jasper=False
+opencv:shared=True
 
 [generators]
 cmake_find_package
 cmake
+
+[imports]
+bin, *.dll -> ./bin 
+lib, *.dylib* -> ./bin
