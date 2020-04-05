@@ -159,10 +159,11 @@ void ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsId
 
     int nbPairs = imPairsIds.size();
 
-    float filterCoef = getSetting(p3dSetting_matcherFilterCoef).cast<float>();
+    CommandGroup *groupCmd = new CommandGroup();
 
 #ifdef WITH_OPENMP
-    omp_set_num_threads(std::min(int(data.nbImagePairs()), utils::nbAvailableThreads()));
+    omp_set_num_threads(
+        std::min(int(data.nbImagePairs()), utils::nbAvailableThreads()));
 #pragma omp parallel for
 #endif
     for (int i = 0; i < nbPairs; i++) {
@@ -179,37 +180,35 @@ void ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsId
             LOG_ERR("Features must be extracted before matching");
             continue;
         }
-        std::vector<std::vector<cv::DMatch>> poor_matches;
-        std::vector<cv::DMatch> matches;
-        std::vector<Match> matchesPair;
+
+        MatchingPars pars = imPair->getMatchingPars();
+
         const auto &_descriptorsLeftImage = imL->getDescriptors();
         const auto &_descriptorsRightImage = imR->getDescriptors();
+        std::vector<Match> matchesPair;
+        MatchingUtil::match(_descriptorsLeftImage, _descriptorsRightImage, pars,
+                            matchesPair);
 
-        cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-L1");
-        matcher->knnMatch(_descriptorsLeftImage, _descriptorsRightImage, poor_matches, 2);  // 2  best matches
-
-        for (int im = 0; im < cv::min(_descriptorsLeftImage.rows - 1, (int)poor_matches.size()); im++) {
-            if ((poor_matches[im][0].distance < filterCoef * (poor_matches[im][1].distance)) &&
-                ((int)poor_matches[im].size() <= 2 && (int)poor_matches[im].size() > 0)) {
-                matches.push_back(poor_matches[im][0]);
-
-                matchesPair.emplace_back(
-                    Match(
-                        poor_matches[im][0].queryIdx,
-                        poor_matches[im][0].trainIdx,
-                        poor_matches[im][0].distance));
-            }
+        if (matchesPair.empty()) {
+            LOG_ERR("Pair %i, matching failed", imPairsIds[i]);
+            continue;
         }
 
-        imPair->setMatches(matchesPair);
+        auto cmd1 =
+            new CommandSetProperty(imPair, p3dImagePair_matches, matchesPair);
 
 #pragma omp critical
         {
-            LOG_OK("Pair %i, matched %i features", imPairsIds[i], matchesPair.size());
+            groupCmd->add(cmd1);
+            LOG_OK("Pair %i, matched %i features", imPairsIds[i],
+                   matchesPair.size());
         }
     }
 
-    LOG_WARN("No Undo functionnality");
+    if (groupCmd->empty())
+        delete groupCmd;
+    else
+        CommandManager::get()->executeCommand(groupCmd);
 }
 
 void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> imPairsIds)

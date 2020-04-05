@@ -440,27 +440,31 @@ TEST(COMMANDS, command_setPropertyCV)
 
 TEST(META, meta_setSettings)
 {
-    float f = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
-    ProjectManager::get()->setSetting(p3dSetting_matcherFilterCoef, 2.0f * f);
-    float f2 = ProjectManager::get()->getSetting(p3dSetting_matcherFilterCoef).cast<float>();
+    float f = ProjectManager::get()
+                  ->getSetting(p3dSetting_featuresThreshold)
+                  .cast<float>();
+    ProjectManager::get()->setSetting(p3dSetting_featuresThreshold, 2.0f * f);
+    float f2 = ProjectManager::get()
+                   ->getSetting(p3dSetting_featuresThreshold)
+                   .cast<float>();
     EXPECT_FLOAT_EQ(f2, 2.0f * f);
 }
 
 TEST(META, meta_setValue)
 {
-    auto identifier = P3D_ID_TYPE(1002);
+    auto identifier = P3D_ID_TYPE(1103);
     ProjectSettings s;
     auto data = entt::resolve<ProjectSettings>().data(identifier);
     entt::meta_any v = data.get(s);  // default value is 0.3f
     data.set(s, v);
-    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.3f);  // ok
+    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.001f);  // ok
     data.set(s, 2.0f);
     EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 2.0f);  // ok
     data.set(s, 2.0f * 2.0f);
     EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 4.0f);  // ok
 
     CommandManager::get()->executeCommand(new CommandSetProperty(&s, identifier, v));
-    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.3f);
+    EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 0.001f);
     CommandManager::get()->executeCommand(new CommandSetProperty(&s, identifier, 2.0f));
     EXPECT_FLOAT_EQ(data.get(s).cast<float>(), 2.0f);
     CommandManager::get()->executeCommand(new CommandSetProperty(&s, identifier, 2.0f * 2.0f));

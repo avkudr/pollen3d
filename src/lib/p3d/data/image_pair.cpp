@@ -13,7 +13,9 @@ int ImagePair::initMeta()
             .type("ImagePair"_hs)
             .data<&ImagePair::setDenseMatchingPars,
                   &ImagePair::getDenseMatchingPars>(
-                P3D_ID_TYPE(p3dImagePair_denseMatching))
+                P3D_ID_TYPE(p3dImagePair_denseMatchingPars))
+            .data<&ImagePair::setMatchingPars, &ImagePair::getMatchingPars>(
+                P3D_ID_TYPE(p3dImagePair_matchingPars))
             .data<&ImagePair::setMatches, &ImagePair::getMatches>(
                 P3D_ID_TYPE(p3dImagePair_matches))
             .data<&ImagePair::setLeftImage, &ImagePair::imL>(
@@ -105,3 +107,12 @@ void ImagePair::setDenseMatchingPars(const DenseMatchingPars &d)
 {
     m_denseMatchingPars = d;
 }
+
+MatchingPars *ImagePair::matchingPars() { return &m_matchingPars; }
+
+const MatchingPars &ImagePair::getMatchingPars() const
+{
+    return m_matchingPars;
+}
+
+void ImagePair::setMatchingPars(const MatchingPars &d) { m_matchingPars = d; }

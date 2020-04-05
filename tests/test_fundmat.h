@@ -64,11 +64,11 @@ TEST(FUNDMAT, fundmat_testData)
 TEST(FUNDMAT, fundmat_testImages)
 {
     ProjectData data;
-    ProjectSettings settings;
-    settings.matcherFilterCoef = 0.2f;
+    ProjectManager::get()->loadImages(
+        &data, {"../../_datasets/brassica/Brassica01.jpg",
+                "../../_datasets/brassica/Brassica02.jpg"});
 
-    ProjectManager::get()->loadImages(&data, {"../../_datasets/brassica/Brassica01.jpg",
-                                              "../../_datasets/brassica/Brassica02.jpg"});
+    data.imagePair(0)->matchingPars()->filterCoeff = 0.2f;
 
     // --- extract features from all images. {} = all
     ProjectManager::get()->extractFeatures(data, {});

@@ -15,7 +15,7 @@
 #include "p3d/serialization.h"
 #include "p3d/stereo/dense_matching.h"
 #include "p3d/stereo/fundmat.h"
-#include "p3d/stereo/match.h"
+#include "p3d/stereo/matching.h"
 
 namespace p3d
 {
@@ -33,7 +33,8 @@ P3D_EXPORTS enum p3dImagePair_ {
     p3dImagePair_Theta1,  // theta_1
     p3dImagePair_Rho,     // rho
     p3dImagePair_Theta2,  // theta_2
-    p3dImagePair_denseMatching,
+    p3dImagePair_denseMatchingPars,
+    p3dImagePair_matchingPars,
 };
 
 P3D_EXPORTS class ImagePair : public Serializable<ImagePair>
@@ -97,6 +98,10 @@ public:
     const DenseMatchingPars &getDenseMatchingPars() const;
     void setDenseMatchingPars(const DenseMatchingPars &d);
 
+    MatchingPars *matchingPars();
+    const MatchingPars &getMatchingPars() const;
+    void setMatchingPars(const MatchingPars &d);
+
     // **** rotation parameters
 
     void setTheta1(double a) { m_theta1 = a; }
@@ -145,6 +150,7 @@ private:
     double m_theta2{0.0};
 
     DenseMatchingPars m_denseMatchingPars{};
+    MatchingPars m_matchingPars{};
 };
 }  // namespace p3d
 #endif // IMAGE_PAIR_H

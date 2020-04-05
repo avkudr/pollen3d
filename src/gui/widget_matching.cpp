@@ -36,31 +36,33 @@ void WidgetMatching::drawImpl(ProjectData& data)
         if (disableButtons) ImGuiC::PushDisabled();
 
         ImGui::BeginGroup();
-        const char* matchingAlgos[] = {"BruteForce-L1", "BruteForce",
-                                       "FlannBased"};
-        auto matcherCurAlg = ProjectManager::get()
-                                 ->getSetting(p3dSetting_matcherCurAlg)
-                                 .cast<int>();
+        const char* matchingAlgos[] = {"FlannBased",
+                                       "BruteForce",
+                                       "BruteForce-L1",
+                                       "BruteForce-Hamming",
+                                       "BruteForce-HammmingLUT",
+                                       "BruteForce-SL2"};
+        auto matcherCurAlg = imPair ? imPair->getMatchingPars().method : 2;
 
         if (ImGui::Combo("matcher", &matcherCurAlg, matchingAlgos,
                          IM_ARRAYSIZE(matchingAlgos))) {
-            ProjectManager::get()->setSetting(p3dSetting_matcherCurAlg,
-                                              matcherCurAlg);
+            ProjectManager::get()->setProperty(
+                imPair->matchingPars(), p3dMatching_method, matcherCurAlg);
         }
 
         {
             auto matcherFilterCoef =
-                ProjectManager::get()
-                    ->getSetting(p3dSetting_matcherFilterCoef)
-                    .cast<float>();
+                imPair ? imPair->getMatchingPars().filterCoeff : 0.3f;
+
             float min = 0.1f;
             float max = 1.0f;
             ImGui::InputFloat("filter coef", &matcherFilterCoef, min, max,
                               "%.2f");
             matcherFilterCoef = std::max(min, std::min(matcherFilterCoef, max));
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setSetting(p3dSetting_matcherFilterCoef,
-                                                  matcherFilterCoef);
+                ProjectManager::get()->setProperty(imPair->matchingPars(),
+                                                   p3dMatching_filterCoeff,
+                                                   matcherFilterCoef);
         }
 
         if (ImGui::Button("Match features")) run = true;
