@@ -87,30 +87,6 @@ void matchesMapsToTable(std::vector<std::map<int, int> > matchesMaps, Mati &tabl
 bool exportToPly(const Mat3Xf &vec_points_white, const std::string &sFileName,
                  const Mat3Xf &colors = Mat3Xf());
 
-// **** Rotations
-
-// template<typename T>
-// Eigen::Matrix<T, 3, 3> RfromEulerZYZ(const T& t1, const T& rho, const T& t2){
-//    auto c0 = cos(t1);
-//    auto c1 = cos(rho);
-//    auto c2 = cos(t2);
-//    auto s0 = sin(t1);
-//    auto s1 = sin(rho);
-//    auto s2 = sin(t2);
-
-//    Eigen::Matrix<T, 3, 3> R;
-//    R(0,0) = c0*c1*c2 - s0*s2;
-//    R(0,1) = -c0*c1*s2 - s0*c2;
-//    R(0,2) = c0*s1;
-//    R(1,0) = s0*c1*c2+c0*s2 ;
-//    R(1,1) = -s0*c1*s2 + c0*c2 ;
-//    R(1,2) = s0*s1;
-//    R(2,0) = -s1*c2;
-//    R(2,1) = s1*s2;
-//    R(2,2) = c1;
-//    return R;
-//}
-
 // [1] page(42) eq(2.17)
 template <typename T>
 Eigen::Matrix<T, 3, 3> RfromEulerZYZt(const T &t1, const T &rho, const T &t2)
@@ -146,6 +122,7 @@ void EulerZYZtfromRinv(const Mat3 &R, double &t1, double &rho, double &t2);
 void wrapHalfPI(double & angleRad);
 
 // **** Math
+
 Mat3 skewSym(const Vec3 & a);
 double nullspace(const Eigen::Ref<const Mat> & A, Vec * nullsp);
 

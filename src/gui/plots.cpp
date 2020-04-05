@@ -64,8 +64,8 @@ void ReprojectionError(const ProjectData& data, bool* open, int width)
             }
 
             ImGui::Text("From %i points", int(error.cols()));
-            ImGui::Text("< 1px: %0.1f", 100.0f * less1px / float(total));
-            ImGui::Text("< 0.5px: %0.1f", 100.0f * less05px / float(total));
+            ImGui::Text("< 1px: %0.1f %%", 100.0f * less1px / float(total));
+            ImGui::Text("< 0.5px: %0.1f %%", 100.0f * less05px / float(total));
             ImGui::EndChild();
         }
         ImGui::EndPopup();

@@ -35,13 +35,6 @@ conan_check()
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(STATUS "Compiling in Debug")
-    add_compile_definitions(POLLEN3D_DEBUG)
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    message(STATUS "Compiling in Release")
-endif()
-
 OPTION(BUILD_UNIT_TESTS "Build unit tests" ON)
 OPTION(USE_OPENMP "Use OpenMP" ON)
 
@@ -208,6 +201,13 @@ if (BUILD_UNIT_TESTS)
     include(${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt)
 else()
     message("Tests: NO")
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Compiling in Debug")
+    add_compile_definitions(POLLEN3D_DEBUG)
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Compiling in Release")
 endif()
 
 add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES})

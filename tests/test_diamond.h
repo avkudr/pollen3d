@@ -12,6 +12,7 @@
 
 #include <Eigen/Eigen>
 
+using namespace p3d;
 using utils::deg2rad;
 
 struct Diamond {
@@ -185,6 +186,10 @@ TEST(DIAMOND, test3_autocalib)
 
     autocalib.setMeasurementMatrix(W);
     autocalib.setSlopeAngles(utils::deg2rad(d.slopes));
+    autocalib.setStopValue(1e-10);
+    autocalib.setFtolRel(1e-10);
+    autocalib.setFtolAbs(1e-10);
+    autocalib.setXtolRel(1e-10);
     autocalib.run();
 
     Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
