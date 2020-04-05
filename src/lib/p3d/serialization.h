@@ -202,11 +202,9 @@ template<typename T>
 class Serializable{
 
 public:
-    Serializable(){
+    Serializable() {}
 
-    }
-
-    virtual ~Serializable(){}
+    virtual ~Serializable() {}
 
     void write(cv::FileStorage& fs) {
 
@@ -225,7 +223,8 @@ public:
             }
         });
 
-        // **** additionally, we can write something that can't be in meta (such as cv::Mat)
+        // additionally, we can write something that can't be in meta (such as
+        // cv::Mat)
         writeAdditional(fs);
         fs << "}";
     }
@@ -248,7 +247,8 @@ public:
             }
         });
 
-        // **** additionally, we can read something that can't be in meta (such as cv::Mat)
+        // additionally, we can read something that can't be in meta (such as
+        // cv::Mat)
         readAdditional(nodeL);
     }
 

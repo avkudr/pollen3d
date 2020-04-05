@@ -116,6 +116,31 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
         ImGui::Image(reinterpret_cast<ImTextureID>(*tId), ImVec2(width, height),
                      ImVec2(0, 0), ImVec2(1, 1));
     }
+    ImGui::SetCursorPos(ImVec2(15, 35));
+    ImGui::BeginGroup();
+    ImGui::Text("<G> to set the grid %s", m_showGrid ? "off" : "on");
+    ImGui::Text("<R> to reset view");
+    ImGui::Text("<Alt + Wheel> to change point size");
+    ImGui::EndGroup();
+
+    //    painter.drawText(10,15,"Press M to on/off the mesh");
+
+    //    painter.drawText(10,30,"Press Ctrl + Wheel to change the focal
+    //    length");
+
+    //    painter.drawText(10,45,"Press  Alt + Wheel to size of points");
+
+    //    painter.drawText(10, height()-70, "Camera distance : " +
+    //    QString::number(cam.getDistance()));
+
+    //    painter.drawText(10, height()-55, "Camera wide angle : " +
+    //    QString::number(cam.getVertAngle()));
+
+    //    painter.drawText(10, height()-40, "Vertices number : " +
+    //    QString::number(m_vertArr.size()));
+
+    //    painter.drawText(10, height()-25, "Faces number : " +
+    //    QString::number(m_indexArr.size() / 3));
 }
 
 void Viewer3DOpenGL::setPointCloud(const Mat3Xf &pcd, const Mat3Xf &colors)

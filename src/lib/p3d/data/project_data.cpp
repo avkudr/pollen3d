@@ -52,10 +52,31 @@ void ProjectData::setImageList(const std::vector<Image> &imList){
     }
 }
 
+void ProjectData::setImagePairs(const std::vector<ImagePair> &imPairs)
+{
+    if (m_images.size() - 1 != imPairs.size()) {
+        LOG_ERR("Can't load imagePairs: %i != %i", m_images.size() - 1,
+                imPairs.size());
+        return;
+    }
+    m_imagesPairs.clear();
+    m_imagesPairs = imPairs;
+}
+
 void ProjectData::clear()
 {
     m_images.clear();
     m_imagesPairs.clear();
+}
+
+Image *ProjectData::imagePairL(const std::size_t idx)
+{
+    return imagePairImage(idx, true);
+}
+
+Image *ProjectData::imagePairR(const std::size_t idx)
+{
+    return imagePairImage(idx, false);
 }
 
 void ProjectData::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &ptsL, std::vector<Vec2> &ptsR)
@@ -63,9 +84,9 @@ void ProjectData::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &pts
     ptsL.clear();
     ptsR.clear();
 
-    ImagePair * imPair = imagePair(i);
+    ImagePair *imPair = imagePair(i);
     if (!imPair) return;
-    Image * iL = imagePairL(i);
+    Image *iL = imagePairL(i);
     Image * iR = imagePairR(i);
     if (!iL || !iR) return;
 

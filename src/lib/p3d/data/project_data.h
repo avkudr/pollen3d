@@ -39,19 +39,11 @@ public:
     const std::vector<Image> & getImageList() const { return m_images; }
     void setImageList(const std::vector<Image> & imList);
     const std::vector<ImagePair> & getImagePairs() const { return m_imagesPairs; }
-    void setImagePairs(const std::vector<ImagePair> & imPairs) {
-        if (m_images.size() - 1 != imPairs.size()) {
-            LOG_ERR("Can't load imagePairs: %i != %i", m_images.size() - 1, imPairs.size());
-            return;
-        }
-        m_imagesPairs.clear();
-        m_imagesPairs = imPairs;
-    }
+    void setImagePairs(const std::vector<ImagePair> &imPairs);
 
     void clear();
     size_t nbImages() const { return m_images.size(); }
     size_t nbImagePairs() const { return m_imagesPairs.size(); }
-
     bool empty() const { return nbImages() == 0; }
 
     std::string getProjectPath() const { return m_projectPath; }
@@ -69,19 +61,29 @@ public:
         return &m_imagesPairs[idx];
     }
 
-    Image * imagePairL(const std::size_t idx) { return imagePairImage(idx,true); }
-    Image * imagePairR(const std::size_t idx) { return imagePairImage(idx,false); }
+    // ***** image pair (simplified accessors)
 
-    void getPairwiseMatches(const std::size_t idx, std::vector<Vec2> & ptsL, std::vector<Vec2> & ptsR);
+    Image *imagePairL(const std::size_t idx);
+    Image *imagePairR(const std::size_t idx);
+
+    void getPairwiseMatches(const std::size_t idx, std::vector<Vec2> &ptsL,
+                            std::vector<Vec2> &ptsR);
     void getEpipolarErrorsResidual(const std::size_t idx, Vec & errorsSquared);
     void getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances);
 
-    const Mat & getMeasurementMatrix() const { return m_measurementMatrix; }
+    // ***** measurement matrix
+
+    const Mat &getMeasurementMatrix() const { return m_measurementMatrix; }
     void setMeasurementMatrix(const Mat & W) { m_measurementMatrix = W; }
     const Mat & getMeasurementMatrixFull() const { return m_measurementMatrixFull; } // [3*nbImages,nbPts]
-    void setMeasurementMatrixFull(const Mat & Wf) { m_measurementMatrixFull = Wf; }
+    void setMeasurementMatrixFull(const Mat &Wf)
+    {
+        m_measurementMatrixFull = Wf;
+    }
 
-    void getCamerasIntrinsics(std::vector<Vec3> * cam) const;
+    // ***** cameras (intrinsic, extrinsic)
+
+    void getCamerasIntrinsics(std::vector<Vec3> *cam) const;
     void setCamerasIntrinsics(std::vector<Vec3> &cam);
 
     void getCamerasRotations(std::vector<Mat3> *R) const;
@@ -92,15 +94,18 @@ public:
     std::vector<Mat34> getCameraMatrices() const;
     Mat getCameraMatricesMat() const;
 
-    const Mat4X & getPts3DSparse() const { return m_pts3DSparse; }
-    void setPts3DSparse(const Mat4X &pts3D) { m_pts3DSparse = pts3D; }
-    const Mat3Xf & getPts3DDense() const { return m_pts3DDense; }
-    void setPts3DDense(const Mat3Xf &pts3D) { m_pts3DDense = pts3D; }
-    const Mat3Xf & getPts3DDenseColors() const { return m_pts3DDenseColors; }
-    void setPts3DDenseColors(const Mat3Xf &pts3D) { m_pts3DDenseColors = pts3D; }
-private:
+    // ***** point cloud
 
-    Image * imagePairImage(const std::size_t idx, bool left) {
+    const Mat4X &getPts3DSparse() const { return m_pts3DSparse; }
+    void setPts3DSparse(const Mat4X &pcd) { m_pts3DSparse = pcd; }
+    const Mat3Xf & getPts3DDense() const { return m_pts3DDense; }
+    void setPts3DDense(const Mat3Xf &pcd) { m_pts3DDense = pcd; }
+    const Mat3Xf & getPts3DDenseColors() const { return m_pts3DDenseColors; }
+    void setPts3DDenseColors(const Mat3Xf &pcd) { m_pts3DDenseColors = pcd; }
+
+private:
+    Image *imagePairImage(const std::size_t idx, bool left)
+    {
         if (idx >= m_imagesPairs.size()) return nullptr;
         int idxImage = left ? m_imagesPairs[idx].imL() : m_imagesPairs[idx].imR();
         if (idxImage >= m_images.size()) return nullptr;
@@ -109,12 +114,12 @@ private:
 
     std::vector<Image> m_images{};
     std::vector<ImagePair> m_imagesPairs{};
-    std::string m_projectPath = "";
+    std::string m_projectPath{""};
 
-    Mat m_measurementMatrix{Mat::Zero(0,0)};
-    Mat m_measurementMatrixFull{Mat::Zero(0,0)};
+    Mat m_measurementMatrix{};
+    Mat m_measurementMatrixFull{};
 
-    Mat4X m_pts3DSparse;
+    Mat4X m_pts3DSparse{};
     Mat3Xf m_pts3DDense{};
     Mat3Xf m_pts3DDenseColors{};
 };

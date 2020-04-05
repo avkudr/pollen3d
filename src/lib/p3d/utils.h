@@ -126,7 +126,6 @@ void wrapHalfPI(double & angleRad);
 Mat3 skewSym(const Vec3 & a);
 double nullspace(const Eigen::Ref<const Mat> & A, Vec * nullsp);
 
-
 Vec4 triangulate(const std::vector<Vec2> &x, const std::vector<Mat34> &Ps);
 
 }

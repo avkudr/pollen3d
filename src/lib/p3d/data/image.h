@@ -32,11 +32,13 @@ public:
     Image(){}
     Image(cv::Mat im);
     Image(const std::string &path);
-    ~Image(){}
+    ~Image() {}
 
-    // Interface
-    cv::Mat getREFACTOR(){ return _imageCV; } //original, withInterestPoints...
-    const cv::Mat & cvMat() const { return _imageCV; } //original, withInterestPoints...
+    inline bool operator==(const Image &i) const;
+
+    // ***** interface
+
+    const cv::Mat &cvMat() const { return _imageCV; }
     int width() const { return _imageCV.cols; }
     int height() const { return _imageCV.rows; }
     cv::Size size() const { return _imageCV.size(); }
@@ -48,11 +50,9 @@ public:
     std::string getPath() const { return _path; }
     std::string name() const { return utils::baseNameFromPath(_path); }
 
-    bool isValid(){
-        return _path != "" && !_imageCV.empty();
-    }
+    bool isValid() { return _path != "" && !_imageCV.empty(); }
 
-    // Features
+    // ***** features
 
     bool hasFeatures(){ return _kpts.size() > 0; }
     int getNbFeatures() const { return _kpts.size();}
@@ -62,31 +62,8 @@ public:
     const cv::Mat & getDescriptors() const { return _desc; }
     void setDescriptors(cv::Mat desc) { _desc = desc.clone(); }
 
-    void writeAdditional(cv::FileStorage &fs) override {
-        fs << "im_p" + std::to_string(int(p3dImage_descriptors)) << _desc;
-        fs << "im_p" + std::to_string(int(p3dImage_keypoints)) << _kpts;
-    }
-
-    void readAdditional(const cv::FileNode &node) override {
-        if (_path != EMPTY_PATH) {
-            _imageCV = cv::imread(_path);
-            if(! _imageCV.data){
-                LOG_INFO("No such image: %s", _path.c_str());
-                return;
-            }
-        }
-
-        node["im_p" + std::to_string(int(p3dImage_descriptors))] >> _desc;
-        node["im_p" + std::to_string(int(p3dImage_keypoints))  ] >> _kpts;
-    }
-
-    inline bool operator==(const Image& i) const{
-        if ( _path != i._path ) return false;
-        if (!(getCamera() == i.getCamera())) return false;
-        if (!utils::floatEq(m_t[0],i.getTranslation()[0])) return false;
-        if (!utils::floatEq(m_t[1],i.getTranslation()[1])) return false;
-        return true;
-    }
+    void writeAdditional(cv::FileStorage &fs) override;
+    void readAdditional(const cv::FileNode &node) override;
 
     // ***** camera parameters
 
@@ -98,15 +75,13 @@ public:
     Vec2 getTranslation() const { return m_t; }
 
 private:
-
-    std::string EMPTY_PATH = "<not found>";
-    std::string _path = "<not found>";
-    cv::Mat _imageCV;
+    std::string EMPTY_PATH{"<not found>"};
+    std::string _path{"<not found>"};
+    cv::Mat _imageCV{};
     AffineCamera m_camera{};
     Vec2 m_t{0,0};
 
-public:
     std::vector<cv::KeyPoint> _kpts{};
-    cv::Mat _desc;
+    cv::Mat _desc{};
 };
 }  // namespace p3d

@@ -77,7 +77,8 @@ void ImagePair::getMatchesAsMap(std::map<int, int> &map) const
     }
 }
 
-void ImagePair::getEpilines(const std::vector<Vec2> &pts, std::vector<Vec3> &epilines, bool transpose) const
+void ImagePair::getEpilines(const std::vector<Vec2> &pts,
+                            std::vector<Vec3> &epilines, bool transpose) const
 {
     if (pts.empty()) return;
     auto nbPts = pts.size();
@@ -89,6 +90,11 @@ void ImagePair::getEpilines(const std::vector<Vec2> &pts, std::vector<Vec3> &epi
         else pt = F*pt;
         epilines.emplace_back(pt);
     }
+}
+
+const Mat3 ImagePair::getRrelative() const
+{
+    return utils::RfromEulerZYZt(m_theta1, m_rho, m_theta2);
 }
 
 bool ImagePair::hasF() const { return !F.isApprox(Mat3::Zero()); }
@@ -116,3 +122,25 @@ const MatchingPars &ImagePair::getMatchingPars() const
 }
 
 void ImagePair::setMatchingPars(const MatchingPars &d) { m_matchingPars = d; }
+
+void ImagePair::writeAdditional(cv::FileStorage &fs)
+{
+    fs << "im_p" + std::to_string(int(p3dImagePair_rectifiedImageLeft))
+       << m_imLrectified;
+    fs << "im_p" + std::to_string(int(p3dImagePair_rectifiedImageRight))
+       << m_imRrectified;
+    fs << "im_p" + std::to_string(int(p3dImagePair_disparityMap))
+       << m_disparityMap;
+}
+
+void ImagePair::readAdditional(const cv::FileNode &node)
+{
+    LOG_DBG("Maybe there is no need to store rectified images");
+    // we could just regenerate them on project loading ?
+    node["im_p" + std::to_string(int(p3dImagePair_rectifiedImageLeft))] >>
+        m_imLrectified;
+    node["im_p" + std::to_string(int(p3dImagePair_rectifiedImageRight))] >>
+        m_imRrectified;
+    node["im_p" + std::to_string(int(p3dImagePair_disparityMap))] >>
+        m_disparityMap;
+}

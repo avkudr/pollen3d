@@ -11,8 +11,10 @@ public:
     Viewer3D()
     {
         // some initial world rotation that was determined experimentally :)
-        m_world.block(0, 0, 3, 3) << -0.863589f, 0.465148f, 0.0765628f,
-            0.231463f, 0.279194f, 0.914598f, 0.410665f, 0.820792f, -0.35449f;
+        m_worldDefaultRotation << -0.863589f, 0.465148f, 0.0765628f, 0.231463f,
+            0.279194f, 0.914598f, 0.410665f, 0.820792f, -0.35449f;
+
+        m_world.block(0, 0, 3, 3) = m_worldDefaultRotation;
     }
     virtual ~Viewer3D(){}
 
@@ -79,9 +81,10 @@ public:
             if (ImGui::IsKeyPressed('A'))
                 m_showAxis = !m_showAxis;
 
-            if (ImGui::IsKeyPressed('G'))
-                m_showGrid = !m_showGrid;
-            //if (ImGui::IsM)
+            if (ImGui::IsKeyPressed('G')) m_showGrid = !m_showGrid;
+
+            if (ImGui::IsKeyPressed('R'))
+                m_world.block(0, 0, 3, 3) = m_worldDefaultRotation;
         }
 
         drawImpl(width, height);
@@ -132,6 +135,7 @@ protected:
     int m_height{1024};
 
     int m_nbPoints{0};
+    p3d::Mat3f m_worldDefaultRotation;
     p3d::Mat4f m_world{p3d::Mat4f::Identity()};
 
     EyeCamera m_camera;

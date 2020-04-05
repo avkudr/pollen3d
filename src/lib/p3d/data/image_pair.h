@@ -63,6 +63,10 @@ public:
     void getMatchesAsMap(std::map<int, int> &map) const;
     void setMatches(const std::vector<Match> &matches) { m_matches = matches; }
 
+    MatchingPars *matchingPars();
+    const MatchingPars &getMatchingPars() const;
+    void setMatchingPars(const MatchingPars &d);
+
     // ***** Epipolar geometry
 
     bool hasF() const;
@@ -98,10 +102,6 @@ public:
     const DenseMatchingPars &getDenseMatchingPars() const;
     void setDenseMatchingPars(const DenseMatchingPars &d);
 
-    MatchingPars *matchingPars();
-    const MatchingPars &getMatchingPars() const;
-    void setMatchingPars(const MatchingPars &d);
-
     // **** rotation parameters
 
     void setTheta1(double a) { m_theta1 = a; }
@@ -109,26 +109,15 @@ public:
     void setTheta2(double a) { m_theta2 = a; }
 
     bool  hasRrelative() { return !utils::floatEq(m_rho,0.0); }
-    const Mat3 getRrelative() const { return utils::RfromEulerZYZt(m_theta1,m_rho,m_theta2); }
+    const Mat3 getRrelative() const;
     double getTheta1() const { return m_theta1; }
     double getRho   () const { return m_rho   ; }
     double getTheta2() const { return m_theta2; }
 
     // **** serialization
 
-    void writeAdditional(cv::FileStorage &fs) override {
-        fs << "im_p" + std::to_string(int(p3dImagePair_rectifiedImageLeft))  << m_imLrectified;
-        fs << "im_p" + std::to_string(int(p3dImagePair_rectifiedImageRight)) << m_imRrectified;
-        fs << "im_p" + std::to_string(int(p3dImagePair_disparityMap)) << m_disparityMap;
-    }
-
-    void readAdditional(const cv::FileNode &node) override {
-        LOG_DBG("Maybe there is no need to store rectified images");
-        // we could just regenerate them on project loading ?
-        node["im_p" + std::to_string(int(p3dImagePair_rectifiedImageLeft)) ] >> m_imLrectified;
-        node["im_p" + std::to_string(int(p3dImagePair_rectifiedImageRight))] >> m_imRrectified;
-        node["im_p" + std::to_string(int(p3dImagePair_disparityMap))] >> m_disparityMap;
-    }
+    void writeAdditional(cv::FileStorage &fs) override;
+    void readAdditional(const cv::FileNode &node) override;
 
 private:
     int _imL = -1;

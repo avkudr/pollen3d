@@ -5,10 +5,10 @@
 #include <string_view>
 #include <vector>
 
+#include <opencv2/core.hpp>
+
 #include "p3d/logger.h"
 #include "p3d/core.h"
-
-#include <opencv2/core.hpp>
 
 namespace p3d
 {
@@ -91,14 +91,12 @@ public:
             m_data.set(*m_instance, m_to);
         }
         LOG_DBG("SetProperty: %i", m_propId);
-        //if (m_to.try_cast<int>()) printf("SetProperty: %i (%i)\n", m_propId, m_to.cast<int>());
     }
     void undo()
     {
         if (!m_instance) return;
         if (!m_data) return;
         m_data.set(*m_instance, m_from);
-        //if (m_from.try_cast<int>()) printf("Undo SetProperty: %i (%i)\n", m_propId, m_from.cast<int>());
     }
 
 private:

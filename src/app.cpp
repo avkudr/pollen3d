@@ -1100,7 +1100,9 @@ void Application::_drawCentral()
             m_viewer3dNeedsUpdate = false;
         }
 
+        ImGui::PushFont(m_fontMonoSmall);
         m_viewer3D->draw(width, height);
+        ImGui::PopFont();
         return;
     }
 
@@ -1276,9 +1278,9 @@ void Application::_processKeyboardInput()
     if (io.KeyCtrl) {
         if (ImGui::IsKeyPressed('s') || ImGui::IsKeyPressed('S')) {
             auto f = [&]() {
-                ProjectManager::get()->saveProject(
-                    &m_projectData, m_projectData.getProjectPath());
-                //_resetAppState();
+                std::string path = m_projectData.getProjectPath();
+                if (path == "") path = saveProjectDialog();
+                ProjectManager::get()->saveProject(&m_projectData, path);
             };
             _doHeavyTask(f);
         } else if (ImGui::IsKeyPressed('t') || ImGui::IsKeyPressed('T')) {

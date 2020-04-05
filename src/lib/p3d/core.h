@@ -50,6 +50,7 @@ using  Vec4f  = Eigen::Matrix<float,4,1>;
 using  Mat2   = Eigen::Matrix<double,2,2>;
 using  Mat23  = Eigen::Matrix<double,2,3>;
 using  Mat3   = Eigen::Matrix3d;
+using  Mat3f  = Eigen::Matrix3f;
 using  Mat34  = Eigen::Matrix<double,3,4>;
 using  Mat4   = Eigen::Matrix<double,4,4>;
 using  Mat4f  = Eigen::Matrix<float,4,4>;
