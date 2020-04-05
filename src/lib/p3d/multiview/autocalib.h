@@ -20,8 +20,9 @@ namespace p3d
 class AutoCalibrator
 {
 public:
+    /*! Available objective functions */
     enum ObjFuncMethod_ {
-        ObjFuncMethod_WminusMMW
+        ObjFuncMethod_WminusMMW  ///< f(x) = W - M * Minv * W, [1]
     };
 
     AutoCalibrator() = delete;

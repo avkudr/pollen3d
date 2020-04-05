@@ -54,7 +54,6 @@ struct BAFunctor_Affine
         q = P * X;
         q = q / q(2);
 
-        //q3[1] = q3[1] - T(x3[1]);
         // Compute and return the error is the difference between the predicted
         //  and observed position
         out_residuals[0] = q(0) - T(x[0]);
@@ -67,6 +66,11 @@ struct BAFunctor_Affine
 
 void BundleAdjustment::run(BundleProblem &data, BundleParams &params)
 {
+    if (!data.isValid()) {
+        LOG_ERR("bundle: the problem is not valid");
+        return;
+    }
+
     const auto nbCams = params.nbCams();
     const auto X = data.X;
     const auto W = data.W;
@@ -129,7 +133,6 @@ void BundleAdjustment::run(BundleProblem &data, BundleParams &params)
     options.minimizer_progress_to_stdout = true;
     options.use_explicit_schur_complement = true;
     options.num_threads = utils::nbAvailableThreads();
-
 
     std::stringstream buffer;
     std::streambuf * old = std::cout.rdbuf(buffer.rdbuf());

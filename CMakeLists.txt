@@ -19,10 +19,19 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
             "${CMAKE_BINARY_DIR}/conan.cmake")
 endif()
 include(${CMAKE_BINARY_DIR}/conan.cmake)
-conan_cmake_run(
-        CONANFILE conanfile.txt
+
+if (WIN32)
+    conan_cmake_run(
+        CONANFILE conanfile_win.txt
         BASIC_SETUP
         BUILD missing)
+
+else()
+    conan_cmake_run(
+	CONANFILE conanfile.txt
+	BASIC_SETUP
+	BUILD missing)
+endif (WIN32)
 
 conan_check()
 

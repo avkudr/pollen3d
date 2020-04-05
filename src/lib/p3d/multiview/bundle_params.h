@@ -4,38 +4,44 @@
 
 namespace p3d
 {
-enum p3dBundleIdx_{
-    p3dBundleIdx_Alpha  = 0, ///< fx/fy, misscaling of axis
-    p3dBundleIdx_Skew   = 1, ///< skew
-    p3dBundleIdx_Focal  = 2, ///< skew
+enum p3dBundleIdx_ {
+    p3dBundleIdx_Alpha = 0,  ///< fx/fy, aspect ratio
+    p3dBundleIdx_Skew = 1,   ///< skew
+    p3dBundleIdx_Focal = 2,  ///< focal length
 
-    p3dBundleIdx_Theta1 = 3, // theta_1
-    p3dBundleIdx_Rho    = 4, // rho
-    p3dBundleIdx_Theta2 = 5, // theta_2
+    p3dBundleIdx_Theta1 = 3,  ///< theta_1
+    p3dBundleIdx_Rho = 4,     ///< rho
+    p3dBundleIdx_Theta2 = 5,  ///< theta_2
 
-    p3dBundleIdx_t      = 6,
-    p3dBundleIdx_TOTAL  = 7
+    p3dBundleIdx_t = 6,  ///< translation
+    p3dBundleIdx_TOTAL = 7
 };
 
-enum p3dBundleParam_{
-    p3dBundleParam_Alpha  = 1 << p3dBundleIdx_Alpha, ///< fx/fy, misscaling of axis
-    p3dBundleParam_Skew   = 1 << p3dBundleIdx_Skew, ///< skew
-    p3dBundleParam_Focal  = 1 << p3dBundleIdx_Focal, ///< skew
-    p3dBundleParam_K = p3dBundleParam_Focal +
-                       p3dBundleParam_Skew +
-                       p3dBundleParam_Alpha,
+enum p3dBundleParam_ {
+    p3dBundleParam_Alpha = 1 << p3dBundleIdx_Alpha,  ///< fx/fy, aspect ratio
+    p3dBundleParam_Skew = 1 << p3dBundleIdx_Skew,    ///< skew
+    p3dBundleParam_Focal = 1 << p3dBundleIdx_Focal,  ///< skew
+    p3dBundleParam_K =
+        p3dBundleParam_Focal + p3dBundleParam_Skew + p3dBundleParam_Alpha,
 
-    p3dBundleParam_Theta1 = 1 << p3dBundleIdx_Theta1, // theta_1
-    p3dBundleParam_Rho    = 1 << p3dBundleIdx_Rho, // rho
-    p3dBundleParam_Theta2 = 1 << p3dBundleIdx_Theta2, // theta_2
-    p3dBundleParam_R = p3dBundleParam_Theta1 +
-                       p3dBundleParam_Rho +
-                       p3dBundleParam_Theta2,
+    p3dBundleParam_Theta1 = 1 << p3dBundleIdx_Theta1,  // theta_1
+    p3dBundleParam_Rho = 1 << p3dBundleIdx_Rho,        // rho
+    p3dBundleParam_Theta2 = 1 << p3dBundleIdx_Theta2,  // theta_2
+    p3dBundleParam_R =
+        p3dBundleParam_Theta1 + p3dBundleParam_Rho + p3dBundleParam_Theta2,
 
-    p3dBundleParam_t      = 1 << p3dBundleIdx_t,
+    p3dBundleParam_t = 1 << p3dBundleIdx_t,
 
     p3dBundleParam_ALL = 0xFFFF
 };
+
+/**
+ * @brief BundleParams is a class collecting the parameters of bundle
+ * adjustment (BA) problem
+ *
+ * It mostly serves to define which parameters will be held constant during BA
+ * and which will not
+ */
 
 class BundleParams{
 
@@ -48,8 +54,14 @@ public:
     inline int nbCams() const { return m_constCams.size(); }
     int getParIdx(p3dBundleParam_ p) { return 0; }
 
-    bool isConst(p3dBundleParam_ param, size_t camIdx) const { return ((m_constCams[camIdx] & param) != 0);}
-    bool isVarying(p3dBundleParam_ param, size_t camIdx) const { return !isConst(param,camIdx); }
+    bool isConst(p3dBundleParam_ param, size_t camIdx) const
+    {
+        return ((m_constCams[camIdx] & param) != 0);
+    }
+    bool isVarying(p3dBundleParam_ param, size_t camIdx) const
+    {
+        return !isConst(param, camIdx);
+    }
 
     void setConst(p3dBundleParam_ param, std::vector<int> cams){ setParam(param,cams,true);}
     void setConstAllCams(p3dBundleParam_ param){ setConst(param,{}); }
