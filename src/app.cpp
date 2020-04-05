@@ -473,10 +473,18 @@ void Application::_drawControls()
     ImGui::SameLine();
     const char *tabName = "";
     switch (m_currentTab) {
-    case Tab_Image: tabName = "image"; break;
-    case Tab_Stereo: tabName = "stereo"; break;
-    case Tab_Multiview: tabName = "multiview"; break;
-    case Tab_PointCloud: tabName = "point cloud"; break;
+    case Tab_Image:
+        tabName = "image";
+        break;
+    case Tab_Stereo:
+        tabName = "stereo";
+        break;
+    case Tab_Multiview:
+        tabName = "multiview";
+        break;
+    case Tab_PointCloud:
+        tabName = "point cloud";
+        break;
     }
     ImGui::Text("%s", tabName);
 }
