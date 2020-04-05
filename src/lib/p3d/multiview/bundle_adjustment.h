@@ -7,10 +7,10 @@
 namespace p3d
 {
 /**
- * @brief BundleProblem holds the data that on which the bundle adjustment will
+ * @brief BundleData holds the data that on which the bundle adjustment will
  * operate
  */
-struct BundleProblem {
+struct BundleData {
     /**
      * @brief vector of rotation vectors (3\times1)
      *
@@ -63,6 +63,6 @@ class BundleAdjustment {
 
 public:
     /*! @brief magic happens here. */
-    void run(BundleProblem & p, BundleParams & params);
+    void run(BundleData& p, BundleParams& params);
 };
 }  // namespace p3d

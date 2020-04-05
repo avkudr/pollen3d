@@ -64,7 +64,7 @@ struct BAFunctor_Affine
     double x[2]; // The 2D observation
 };
 
-void BundleAdjustment::run(BundleProblem &data, BundleParams &params)
+void BundleAdjustment::run(BundleData &data, BundleParams &params)
 {
     if (!data.isValid()) {
         LOG_ERR("bundle: the problem is not valid");

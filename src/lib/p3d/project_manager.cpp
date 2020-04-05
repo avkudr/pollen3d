@@ -13,6 +13,8 @@
 #include "p3d/logger.h"
 #include "p3d/multiview/autocalib.h"
 #include "p3d/multiview/bundle_adjustment.h"
+#include "p3d/stereo/fundmat.h"
+#include "p3d/stereo/rectification.h"
 #include "p3d/utils.h"
 
 #define P3D_PROJECT_EXTENSION ".yml.gz"
@@ -269,8 +271,11 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
             imPairsIds.push_back(i);
         }
 
+    CommandGroup *groupCmd = new CommandGroup();
+
 #ifdef WITH_OPENMP
-    omp_set_num_threads(std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
+    omp_set_num_threads(
+        std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
 #pragma omp parallel for
 #endif
     for (int idx = 0; idx < imPairsIds.size(); idx++) {
@@ -286,102 +291,54 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
         double angleL = imPair->getTheta1();
         double angleR = imPair->getTheta2();
 
-        if (utils::floatEq(angleL, 0.0) && utils::floatEq(angleR, 0.0)) continue;
-
-        Mat3 Tl, Tr;
-        cv::Mat imLrect, imRrect;
-        {
-            Tr.setIdentity(3, 3);
-            Tl.setIdentity(3, 3);
-
-            cv::Mat Rl = cv::getRotationMatrix2D(cv::Point2d(imL->width() / 2.0, imL->height() / 2.0), angleL * 180.0 / CV_PI, 1);
-            cv::Mat Rr = cv::getRotationMatrix2D(cv::Point2d(imR->width() / 2.0, imR->height() / 2.0), angleR * 180.0 / CV_PI, 1);
-
-            cv::warpAffine(imL->cvMat(), imLrect, Rl, imL->size());
-            cv::warpAffine(imR->cvMat(), imRrect, Rr, imR->size());
-            for (int u = 0; u < 2; u++) {
-                for (int v = 0; v < 3; v++) {
-                    Tl(u, v) = Rl.at<double>(u, v);
-                    Tr(u, v) = Rr.at<double>(u, v);
-                }
-            }
-        }
+        if (utils::floatEq(angleL, 0.0) && utils::floatEq(angleR, 0.0))
+            continue;
 
         std::vector<Vec2> ptsL, ptsR;
         data.getPairwiseMatches(i, ptsL, ptsR);
 
-        std::vector<Vec2> ptsLrect, ptsRrect;
-        ptsLrect.reserve(ptsL.size());
-        ptsRrect.reserve(ptsR.size());
+        RectificationData rectif;
+        rectif.imL = imL->cvMat();
+        rectif.imR = imR->cvMat();
+        rectif.angleL = angleL;
+        rectif.angleR = angleR;
+        rectif.ptsL = ptsL;
+        rectif.ptsR = ptsR;
 
-        Vec rectErrors;
-        rectErrors.setZero(ptsL.size(), 1);
+        RectificationUtil::rectify(rectif);
 
-        for (int i = 0; i < ptsL.size(); i++) {
-            Vec3 tempPoint;
-            tempPoint << ptsL[i][0], ptsL[i][1], 1;
-            tempPoint = Tl * tempPoint;
-            ptsLrect.emplace_back(Vec2(tempPoint(0), tempPoint(1)));
+        //        imPair->setRectifyingTransformL(rectif.Tl);
+        //        imPair->setRectifyingTransformR(rectif.Tr);
+        //        imPair->setRectifiedImageL(rectif.imLrect);
+        //        imPair->setRectifiedImageR(rectif.imRrect);
 
-            tempPoint << ptsR[i][0], ptsR[i][1], 1;
-            tempPoint = Tr * tempPoint;
-            ptsRrect.emplace_back(Vec2(tempPoint(0), tempPoint(1)));
-
-            rectErrors(i) = ptsLrect[i][1] - ptsRrect[i][1];
-        }
-
-        double meanErr = rectErrors.mean();
-
-        cv::Mat imLrectShifted;
-        cv::Mat imRrectShifted;
-        int shift = std::round(std::abs(meanErr));
-
-        Mat3 Tshift;
-        Tshift.setIdentity(3, 3);
-        Tshift(1, 2) = shift;
-
-        if (meanErr > 0) {  // features of 2nd are higher than the 1st - shift to the second
-            imLrectShifted = imLrect;
-            imRrectShifted = cv::Mat::zeros(shift, imRrect.cols, imRrect.type());
-            imLrectShifted.push_back(imRrectShifted);
-            imRrectShifted.push_back(imRrect);
-            for (int i = 0; i < ptsRrect.size(); i++) {
-                ptsRrect[i][1] += shift;
-            }
-            Tr = Tr * Tshift;
-        } else {
-            imRrectShifted = imRrect;
-            imLrectShifted = cv::Mat::zeros(shift, imLrect.cols, imLrect.type());
-            imRrectShifted.push_back(imLrectShifted);
-            imLrectShifted.push_back(imLrect);
-            for (int i = 0; i < ptsLrect.size(); i++) {
-                ptsLrect[i][1] += shift;
-            }
-            Tl = Tl * Tshift;
-        }
-
-        for (int i = 0; i < ptsL.size(); i++)
-            rectErrors(i) = ptsLrect[i][1] - ptsRrect[i][1];
-
-        imLrect = imLrectShifted;
-        imRrect = imRrectShifted;
-
-        imPair->setRectifyingTransformL(Tl);
-        imPair->setRectifyingTransformR(Tr);
-        imPair->setRectifiedImageL(imLrect);
-        imPair->setRectifiedImageR(imRrect);
+        auto cmd1 = new CommandSetProperty(
+            imPair, p3dImagePair_rectifyingTransformLeft, rectif.Tl);
+        auto cmd2 = new CommandSetProperty(
+            imPair, p3dImagePair_rectifyingTransformRight, rectif.Tr);
+        auto cmd3 = new CommandSetPropertyCV(
+            imPair, &ImagePair::setRectifiedImageL,
+            &ImagePair::getRectifiedImageL, rectif.imLrect);
+        auto cmd4 = new CommandSetPropertyCV(
+            imPair, &ImagePair::setRectifiedImageR,
+            &ImagePair::getRectifiedImageR, rectif.imRrect);
 
 #pragma omp critical
         {
             LOG_OK("Pair %i, rectification... done", i);
-            LOG_INFO("- error mean: %.3f", rectErrors.mean());
-            LOG_INFO("- error std: %.3f", std::sqrt((rectErrors.array() - rectErrors.mean()).square().sum() / (rectErrors.size() - 1)));
-            LOG_INFO("- angleL: %.3f deg", angleL * 180.0 / CV_PI);
-            LOG_INFO("- angleR: %.3f deg", angleR * 180.0 / CV_PI);
+            LOG_INFO("- error mean: %.3f", rectif.errorMean);
+            LOG_INFO("- error std: %.3f", rectif.errorStd);
+            groupCmd->add(cmd1);
+            groupCmd->add(cmd2);
+            groupCmd->add(cmd3);
+            groupCmd->add(cmd4);
         }
     }
 
-    LOG_WARN("No Undo functionnality");
+    if (groupCmd->empty())
+        delete groupCmd;
+    else
+        CommandManager::get()->executeCommand(groupCmd);
 }
 
 void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPairsIds)
@@ -809,7 +766,7 @@ void ProjectManager::triangulateDense(ProjectData &data)
 
 void ProjectManager::bundleAdjustment(ProjectData &data)
 {
-    BundleProblem p;
+    BundleData p;
     p.X = data.getPts3DSparse();
     p.W = data.getMeasurementMatrixFull();
 

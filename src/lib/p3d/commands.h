@@ -109,6 +109,12 @@ private:
     entt::meta_data m_data;
 };
 
+/** @brief special set property for cv::Mat objects
+ *
+ * @example
+ * auto cmd = new CommandSetPropertyCV(imPair, &ImagePair::setDisparityMap,
+ *                                   &ImagePair::getDisparityMap, mFiltered);
+ */
 template <typename T, typename Setter, typename Getter>
 class CommandSetPropertyCV : public Command
 {
