@@ -16,32 +16,31 @@ using namespace gl;
 #include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #endif
 
-#include "viewer3d.h"
-
-#include <iostream>
 #include <memory>
+#include <vector>
 
-#include "grid_opengl.h"
-#include "shader_opengl.h"
+#include "point_cloud.h"
 
-class Viewer3DOpenGL : public Viewer3D
+class ShaderOpenGL;
+
+class PointCloudOpenGL : public PointCloud
 {
 public:
-    Viewer3DOpenGL();
+    PointCloudOpenGL() = delete;
+    PointCloudOpenGL(const p3d::Mat3Xf& pcd, const p3d::Mat3Xf& colors = {})
+        : PointCloud()
+    {
+        init(pcd, colors);
+    }
+    virtual ~PointCloudOpenGL()
+    {
+        if (m_Tvbo) glDeleteBuffers(1, &m_Tvbo);
+        if (m_Tvao) glDeleteVertexArrays(1, &m_Tvao);
+    }
 
-    virtual ~Viewer3DOpenGL() override { release(); }
-    void onSizeChanged() override { init(); }
-
-    void release() override;
-    void init() override;
-    void drawImpl(int width, int height) override;
-    void addPointCloud(const std::string& label, const p3d::Mat3Xf& pcd,
-                       const p3d::Mat3Xf& colors = {}) override;
+    void init(const p3d::Mat3Xf& pcd, const p3d::Mat3Xf& colors = {}) override;
+    void draw(std::shared_ptr<ShaderOpenGL> shader = nullptr) override;
 
 private:
-    unsigned int m_fbo{0};
     unsigned int m_Tvbo{0}, m_Tvao{0};
-
-    std::shared_ptr<ShaderOpenGL> m_shader{nullptr};
-    std::unique_ptr<GridOpenGL> m_grid{nullptr};
 };

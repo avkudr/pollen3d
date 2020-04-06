@@ -919,8 +919,10 @@ void Application::_drawData()
 
     if (m_currentTab == Tab_Multiview || m_currentTab == Tab_PointCloud) {
 #ifdef POLLEN3D_DEBUG
-        ImGui::Text("Sparce point cloud");
-        ImGui::Text("Dense point cloud");
+        if (ImGui::TreeNodeEx("Point clouds:",
+                              ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::TreePop();
+        }
 #endif
         return;
     }
@@ -1104,7 +1106,8 @@ void Application::_drawCentral()
 
         if (m_viewer3dNeedsUpdate) {
             m_viewer3D->init();
-            m_viewer3D->setPointCloud(m_projectData.getPts3DDense(),
+            m_viewer3D->deletePointCloudsAll();
+            m_viewer3D->addPointCloud("dense", m_projectData.getPts3DDense(),
                                       m_projectData.getPts3DDenseColors());
             m_viewer3dNeedsUpdate = false;
         }
