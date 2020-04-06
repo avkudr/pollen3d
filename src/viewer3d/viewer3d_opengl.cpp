@@ -105,10 +105,19 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
 
     // ***** draw points
 
-    glBindVertexArray(m_Tvao);
-    glPointSize(std::max(1.0f, m_pointSize));
-    if (m_shader) m_shader->setVec4("color", 0.0f, 0.0f, 0.0f, 0.0f);
-    glDrawArrays(GL_POINTS, 0, m_nbPoints);
+    if (m_nbPoints > 0) {
+        glBindVertexArray(m_Tvao);
+        glPointSize(std::max(1.0f, m_pointSize));
+        if (m_shader) {
+            if (m_pcdTrueColors)
+                m_shader->setVec4("color", 0.0f, 0.0f, 0.0f, 0.0f);
+            else
+                m_shader->setVec4("color", m_pcdColor);
+        }
+        glDrawArrays(GL_POINTS, 0, m_nbPoints);
+        glBindVertexArray(0);
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     GLuint *tId = (GLuint *)m_textureId;
@@ -121,6 +130,14 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
     ImGui::Text("<G> to set the grid %s", m_showGrid ? "off" : "on");
     ImGui::Text("<R> to reset view");
     ImGui::Text("<Alt + Wheel> to change point size");
+
+    ImGui::Checkbox("true colors", &m_pcdTrueColors);
+    if (!m_pcdTrueColors) {
+        ImGui::SameLine();
+        ImGui::ColorEdit4(
+            "point cloud color##pcd_color", m_pcdColor.data(),
+            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+    }
     ImGui::EndGroup();
 
     //    painter.drawText(10,15,"Press M to on/off the mesh");
@@ -145,6 +162,10 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
 
 void Viewer3DOpenGL::setPointCloud(const Mat3Xf &pcd, const Mat3Xf &colors)
 {
+    glDeleteBuffers(1, &m_Tvbo);
+    glDeleteVertexArrays(1, &m_Tvao);
+    m_nbPoints = 0;
+
     if (pcd.cols() == 0) return;
 
     m_nbPoints = pcd.cols();
@@ -153,9 +174,6 @@ void Viewer3DOpenGL::setPointCloud(const Mat3Xf &pcd, const Mat3Xf &colors)
     data.setOnes(6, m_nbPoints);
     data.topRows(3) = pcd;
     if (colors.cols() == m_nbPoints) data.bottomRows(3) = colors;
-
-    glDeleteBuffers(1, &m_Tvbo);
-    glDeleteVertexArrays(1, &m_Tvao);
 
     glGenVertexArrays(1, &m_Tvao);
     glGenBuffers(1, &m_Tvbo);

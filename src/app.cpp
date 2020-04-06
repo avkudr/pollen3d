@@ -149,19 +149,28 @@ void Application::draw(int width, int height)
     ImGui::PopStyleVar();
 
     if (m_dockingNeedsReset) {
+        m_showConsole = true;
+        const int preferredControlsWidth = 450;
+        const float preferredConsoleFrac = 0.35f;
+
         ImGuiID dock_id = ImGui::GetID("ID().c_str()");
 
         ImGui::DockBuilderRemoveNode(dock_id);  // Clear out existing layout
         ImGui::DockBuilderAddNode(dock_id,      // Add empty node
                                   ImGuiDockNodeFlags_NoCloseButton |
-                                      ImGuiDockNodeFlags_NoWindowMenuButton);
+                                      ImGuiDockNodeFlags_NoWindowMenuButton |
+                                      ImGuiDockNodeFlags_DockSpace);
 
         ImGuiID id1, id2, id3, id4, id5, id6, id7, id8;
         ImGui::DockBuilderSetNodePos(dock_id, ImVec2(0, m_heightTabSection));
         ImGui::DockBuilderSetNodeSize(
             dock_id, ImVec2(width, height - m_heightTabSection));
-        ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Right, 0.35f, &id2, &id1);
-        ImGui::DockBuilderSplitNode(id1, ImGuiDir_Left, 0.35f, &id3, &id4);
+
+        ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Right,
+                                    preferredConsoleFrac, &id2, &id1);
+        ImGui::DockBuilderSplitNode(id1, ImGuiDir_Left,
+                                    preferredControlsWidth / float(width), &id3,
+                                    &id4);
         ImGui::DockBuilderSplitNode(id3, ImGuiDir_Down, 0.5f, &id5, &id6);
         ImGui::DockBuilderSplitNode(id5, ImGuiDir_Down, 0.4f, &id7, &id8);
         ImGui::DockBuilderDockWindow("Console", id2);
@@ -248,15 +257,15 @@ void Application::_drawMenuBar(int width)
                      ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            ImGui::MenuItem("Main menu bar");
-            ImGui::MenuItem("Console");
-            ImGui::MenuItem("Log");
-            ImGui::MenuItem("Simple layout");
-            ImGui::MenuItem("Property editor");
-            ImGui::MenuItem("Long text display");
-            ImGui::EndMenu();
-        }
+        //        if (ImGui::BeginMenu("File")) {
+        //            ImGui::MenuItem("Main menu bar");
+        //            ImGui::MenuItem("Console");
+        //            ImGui::MenuItem("Log");
+        //            ImGui::MenuItem("Simple layout");
+        //            ImGui::MenuItem("Property editor");
+        //            ImGui::MenuItem("Long text display");
+        //            ImGui::EndMenu();
+        //        }
         if (ImGui::BeginMenu("Edit")) {
             ImGui::MenuItem("Undo", "Ctrl+Z");
             ImGui::EndMenu();
@@ -1147,7 +1156,7 @@ void Application::_drawCentral()
                                 {imL, imR}, utils::CONCAT_HORIZONTAL);
                     } else if (m_currentSection == Section_DisparityMap) {
                         auto disp = imPair->getDisparityMap();
-                        DenseMatchingUtil::getPlot(disp, matToBind);
+                        DenseMatchingUtil::getDispForPlot(disp, matToBind);
                     }
                 }
             }
@@ -1257,7 +1266,7 @@ void Application::_drawCentral()
                 {Tab_General, Tab_Image}) /* || (display == SHOW_MATCHES)*/) {
             ImGui::SameLine();
             ImGui::ColorEdit4(
-                "MyColor##3", (float *)&color,
+                "color of features##3", (float *)&color,
                 ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
             ImGui::SameLine();
         }

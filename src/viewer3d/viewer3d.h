@@ -142,6 +142,8 @@ protected:
 
     // ***** Visuals
 
+    bool m_pcdTrueColors{true};
+    std::array<float, 4> m_pcdColor{0.9f, 0.9f, 0.9f, 1.0f};
     bool m_showGrid{true};
     bool m_showAxis{true};
 

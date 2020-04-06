@@ -88,7 +88,7 @@ void DenseMatchingUtil::filterDisparityBilateral(
     cv::bilateralFilter(m, disparityFiltered, d, sc, ss);
 }
 
-void DenseMatchingUtil::getPlot(const cv::Mat &disparity, cv::Mat &plot)
+void DenseMatchingUtil::getDispForPlot(const cv::Mat &disparity, cv::Mat &plot)
 {
     plot = cv::Mat();
     if (disparity.type() != CV_32F) {
