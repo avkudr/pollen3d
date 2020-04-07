@@ -582,8 +582,8 @@ void ProjectManager::triangulate(ProjectData &data)
 
     auto nbCams = Ps.size();
     auto nbPts = Wf.cols();
-    Mat4X pts3D;
-    pts3D.setZero(4, nbPts);
+    Mat3Xf pts3D;
+    pts3D.setZero(3, nbPts);
 
     for (auto p = 0; p < nbPts; ++p) {
         std::vector<Vec2> x;
@@ -594,13 +594,16 @@ void ProjectManager::triangulate(ProjectData &data)
                 P.emplace_back(Ps[c]);
             }
         }
-        pts3D.col(p) = utils::triangulate(x, P);
-        pts3D.col(p) /= pts3D(3, p);
+        auto pt = utils::triangulate(x, P);
+        pt /= pt(3);
+        pts3D.col(p) = pt.topRows(3).cast<float>();
     }
 
-    CommandManager::get()->executeCommand(
-        new CommandSetProperty(&data, P3D_ID_TYPE(p3dData_pts3DSparse), pts3D, true));
-    LOG_OK("Triangulated %i points", data.getPts3DSparse().cols());
+    auto pcd = data.getPointCloud("sparse");
+    if (pcd == nullptr) pcd = data.createPointCloud("sparse");
+    CommandManager::get()->executeCommand(new CommandSetProperty(
+        pcd, P3D_ID_TYPE(p3dPointCloud_vertices), pts3D, true));
+    LOG_OK("Triangulated %i points", pts3D.cols());
 }
 
 void ProjectManager::triangulateStereo(ProjectData &data)
@@ -613,8 +616,8 @@ void ProjectManager::triangulateStereo(ProjectData &data)
     auto rho = imPair->getRho();
     if (utils::floatEq(rho, 0.0)) return;
 
-    float cosRho = cos(rho);
-    float sinRho = sin(rho);
+    float cosRho = std::cos(rho);
+    float sinRho = std::sin(rho);
 
     auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
     if (dispValues.type() != CV_32F) {
@@ -659,12 +662,15 @@ void ProjectManager::triangulateStereo(ProjectData &data)
     utils::convert(pts3D, result);
     utils::convert(colors, colorsMat);
 
-    CommandManager::get()->executeCommand(
-        new CommandSetProperty(&data, P3D_ID_TYPE(p3dData_pts3DDense), result, true));
-    CommandManager::get()->executeCommand(
-        new CommandSetProperty(&data, P3D_ID_TYPE(p3dData_pts3DDenseColors), colorsMat, true));
+    auto pcd = data.getPointCloud("dense");
+    if (pcd == nullptr) pcd = data.createPointCloud("dense");
+    CommandManager::get()->executeCommand(new CommandSetProperty(
+        pcd, P3D_ID_TYPE(p3dPointCloud_vertices), result, true));
+    CommandManager::get()->executeCommand(new CommandSetProperty(
+        pcd, P3D_ID_TYPE(p3dPointCloud_colors), colorsMat, true));
 
     LOG_OK("Triangulated (stereo) %i points", pts3D.size());
+    LOG_ERR("DEV: wrong undo command");
 }
 
 void ProjectManager::triangulateDense(ProjectData &data)
@@ -757,16 +763,24 @@ void ProjectManager::triangulateDense(ProjectData &data)
     Mat3Xf result;
     utils::convert(pts3D, result);
 
-    CommandManager::get()->executeCommand(
-        new CommandSetProperty(&data, P3D_ID_TYPE(p3dData_pts3DDense), result, true));
+    //    CommandManager::get()->executeCommand(
+    //        new CommandSetProperty(&data, P3D_ID_TYPE(p3dData_pts3DDense),
+    //        result, true));
 
     LOG_OK("Triangulated %i points", pts3D.size());
 }
 
 void ProjectManager::bundleAdjustment(ProjectData &data)
 {
+    auto pcd = data.getPointCloud("sparse");
+    if (!pcd) return;
+    if (pcd->nbPoints() == 0) {
+        LOG_ERR("Bundle adjust. needs a point cloud");
+        return;
+    }
     BundleData p;
-    p.X = data.getPts3DSparse();
+    p.X.setOnes(4, pcd->nbPoints());
+    p.X.topRows(3) = pcd->getVertices().cast<double>();
     p.W = data.getMeasurementMatrixFull();
 
     if (p.X.cols() != p.W.cols()) {
@@ -805,40 +819,45 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
         ba.run(p, params);
     }
 
-    data.setPts3DSparse(p.X);
+    pcd->setVertices(p.X.topRows(3).cast<float>());
     data.setCamerasIntrinsics(p.cam);
     data.setCamerasExtrinsics(p.R, p.t);
 
     LOG_OK("Bundle adjustement: done");
 }
 
-void ProjectManager::exportPLYSparse(const ProjectData &data,
+void ProjectManager::exportPLYSparse(ProjectData &data,
                                      const std::string &filepath)
 {
-    auto X = data.getPts3DSparse();
-    if (X.cols() == 0) {
+    auto pcd = data.getPointCloud("sparse");
+    if (!pcd) return;
+
+    if (pcd->getVertices().cols() == 0) {
         LOG_ERR("No reconstructed points...");
         return;
     }
 
-    utils::exportToPly(X.topRows(3).cast<float>(), filepath);
+    utils::exportToPly(pcd->getVertices(), filepath);
 
-    LOG_OK("Exported point cloud (sparse): %i points", X.cols());
+    LOG_OK("Exported point cloud (sparse): %i points",
+           pcd->getVertices().cols());
 }
 
-void ProjectManager::exportPLYDense(const ProjectData &data,
+void ProjectManager::exportPLYDense(ProjectData &data,
                                     const std::string &filepath)
 {
-    const Mat3Xf &X = data.getPts3DDense();
-    if (X.cols() == 0) {
+    auto pcd = data.getPointCloud("dense");
+    if (!pcd) return;
+
+    if (pcd->getVertices().cols() == 0) {
         LOG_ERR("No reconstructed points...");
         return;
     }
-    const Mat3Xf &c = data.getPts3DDenseColors();
 
-    utils::exportToPly(X, filepath, c);
+    utils::exportToPly(pcd->getVertices(), filepath);
 
-    LOG_OK("Exported point cloud (dense): %i points", X.cols());
+    LOG_OK("Exported point cloud (dense): %i points",
+           pcd->getVertices().cols());
 }
 
 entt::meta_any ProjectManager::getSetting(const p3dSetting &name)

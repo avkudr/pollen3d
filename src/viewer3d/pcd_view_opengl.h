@@ -19,20 +19,20 @@ using namespace gl;
 #include <memory>
 #include <vector>
 
-#include "point_cloud.h"
+#include "pcd_view.h"
 
 class ShaderOpenGL;
 
-class PointCloudOpenGL : public PointCloud
+class PCDViewOpenGL : public PCDView
 {
 public:
-    PointCloudOpenGL() = delete;
-    PointCloudOpenGL(const p3d::Mat3Xf& pcd, const p3d::Mat3Xf& colors = {})
-        : PointCloud()
+    PCDViewOpenGL() = delete;
+    PCDViewOpenGL(const p3d::Mat3Xf& pcd, const p3d::Mat3Xf& colors = {})
+        : PCDView()
     {
         init(pcd, colors);
     }
-    virtual ~PointCloudOpenGL()
+    virtual ~PCDViewOpenGL()
     {
         if (m_Tvbo) glDeleteBuffers(1, &m_Tvbo);
         if (m_Tvao) glDeleteVertexArrays(1, &m_Tvao);

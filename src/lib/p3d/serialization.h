@@ -94,7 +94,7 @@ static void _readVec(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Type> & o
     if (node[name].empty()) return;
     if (n.type() != cv::FileNode::SEQ)
     {
-        std::cout << "not a sequence";
+        std::cout << "[static void _readVec]: not a sequence" << std::endl;
         return;
     }
 

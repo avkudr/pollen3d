@@ -169,9 +169,9 @@ set(SOURCES_GUI
     ./src/viewer3d/shader_opengl.h
     ./src/viewer3d/grid_opengl.h
     ./src/viewer3d/grid_opengl.cpp
-    ./src/viewer3d/point_cloud.h
-    ./src/viewer3d/point_cloud_opengl.h
-    ./src/viewer3d/point_cloud_opengl.cpp
+    ./src/viewer3d/pcd_view.h
+    ./src/viewer3d/pcd_view_opengl.h
+    ./src/viewer3d/pcd_view_opengl.cpp
 )
 
 set(RES_FILES "")

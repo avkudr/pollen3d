@@ -23,11 +23,16 @@ using namespace gl;
 
 class ShaderOpenGL;
 
-class PointCloud
+/** @brief PCDView, point cloud view, is the class responsible for the rendering
+ * of one point cloud
+ *
+ */
+
+class PCDView
 {
 public:
-    PointCloud() {}
-    virtual ~PointCloud() {}
+    PCDView() {}
+    virtual ~PCDView() {}
 
     virtual void init(const p3d::Mat3Xf& pcd,
                       const p3d::Mat3Xf& colors = {}) = 0;

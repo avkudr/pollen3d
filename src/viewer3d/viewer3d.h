@@ -7,7 +7,7 @@
 #include "p3d/core.h"
 
 #include "eyecamera.h"
-#include "point_cloud.h"
+#include "pcd_view.h"
 
 class Viewer3D {
 public:
@@ -65,7 +65,7 @@ protected:
 
     // ***** point clouds
 
-    std::map<std::string, std::unique_ptr<PointCloud>> m_pcd;
+    std::map<std::string, std::unique_ptr<PCDView>> m_pcd;
     bool m_pcdTrueColors{true};
     float m_pointSize{2.0f};
     std::array<float, 4> m_pcdColor{0.9f, 0.9f, 0.9f, 1.0f};

@@ -1,10 +1,10 @@
-#include "point_cloud_opengl.h"
+#include "pcd_view_opengl.h"
 
 #include <vector>
 
 #include "shader_opengl.h"
 
-void PointCloudOpenGL::init(const p3d::Mat3Xf &pcd, const p3d::Mat3Xf &colors)
+void PCDViewOpenGL::init(const p3d::Mat3Xf &pcd, const p3d::Mat3Xf &colors)
 {
     if (m_Tvbo) glDeleteBuffers(1, &m_Tvbo);
     if (m_Tvao) glDeleteVertexArrays(1, &m_Tvao);
@@ -48,7 +48,7 @@ void PointCloudOpenGL::init(const p3d::Mat3Xf &pcd, const p3d::Mat3Xf &colors)
     glBindVertexArray(0);
 }
 
-void PointCloudOpenGL::draw(std::shared_ptr<ShaderOpenGL> shader)
+void PCDViewOpenGL::draw(std::shared_ptr<ShaderOpenGL> shader)
 {
     if (m_show && m_nbPoints > 0) {
         glBindVertexArray(m_Tvao);

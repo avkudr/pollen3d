@@ -7,24 +7,22 @@
 #include "p3d/core.h"
 #include "p3d/data/image.h"
 #include "p3d/data/image_pair.h"
+#include "p3d/data/point_cloud.h"
 #include "p3d/logger.h"
 #include "p3d/serialization.h"
 
 namespace p3d
 {
 typedef int p3dData;
-enum p3dData_
-{
-    p3dData_projectData      = 2000,
-    p3dData_projectPath      = 2001,
-    p3dData_dummy            = 2002,
-    p3dData_images           = 2003,
-    p3dData_imagePairs       = 2004,
-    p3dData_measMat          = 2005,
-    p3dData_measMatFull      = 2006,
-    p3dData_pts3DSparse      = 2007,
-    p3dData_pts3DDense       = 2008,
-    p3dData_pts3DDenseColors = 2009,
+enum p3dData_ {
+    p3dData_projectData = 2000,
+    p3dData_projectPath = 2001,
+    p3dData_dummy = 2002,
+    p3dData_images = 2003,
+    p3dData_imagePairs = 2004,
+    p3dData_measMat = 2005,
+    p3dData_measMatFull = 2006,
+    p3dData_pointClouds,
 };
 
 class ProjectData : public Serializable<ProjectData>{
@@ -96,12 +94,13 @@ public:
 
     // ***** point cloud
 
-    const Mat4X &getPts3DSparse() const { return m_pts3DSparse; }
-    void setPts3DSparse(const Mat4X &pcd) { m_pts3DSparse = pcd; }
-    const Mat3Xf & getPts3DDense() const { return m_pts3DDense; }
-    void setPts3DDense(const Mat3Xf &pcd) { m_pts3DDense = pcd; }
-    const Mat3Xf & getPts3DDenseColors() const { return m_pts3DDenseColors; }
-    void setPts3DDenseColors(const Mat3Xf &pcd) { m_pts3DDenseColors = pcd; }
+    PointCloud *getPointCloud(const std::string &str);
+    const Mat3Xf &getPointCloudVerts(const std::string &str) const;
+    PointCloud *createPointCloud(const std::string &str);
+
+    const std::vector<PointCloud> &getPointCloudsConst() const;
+    std::vector<PointCloud> &getPointClouds();
+    void setPointClouds(const std::vector<PointCloud> &pointClouds);
 
 private:
     Image *imagePairImage(const std::size_t idx, bool left)
@@ -119,8 +118,6 @@ private:
     Mat m_measurementMatrix{};
     Mat m_measurementMatrixFull{};
 
-    Mat4X m_pts3DSparse{};
-    Mat3Xf m_pts3DDense{};
-    Mat3Xf m_pts3DDenseColors{};
+    std::vector<PointCloud> m_pointClouds;
 };
 }  // namespace p3d

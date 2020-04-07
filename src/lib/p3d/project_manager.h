@@ -49,8 +49,8 @@ public:
     void triangulateStereo(ProjectData & data);
     void triangulateDense(ProjectData & data);
     void bundleAdjustment(ProjectData & data);
-    void exportPLYSparse(const ProjectData &data, const std::string &filepath);
-    void exportPLYDense(const ProjectData &data, const std::string &filepath);
+    void exportPLYSparse(ProjectData &data, const std::string &filepath);
+    void exportPLYDense(ProjectData &data, const std::string &filepath);
 
     // ***** Settings
 

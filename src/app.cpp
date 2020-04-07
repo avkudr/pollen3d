@@ -921,6 +921,31 @@ void Application::_drawData()
 #ifdef POLLEN3D_DEBUG
         if (ImGui::TreeNodeEx("Point clouds:",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
+            auto &pcds = m_projectData.getPointClouds();
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(.0f, .0f, .0f, .0f));
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 0.0f));
+            for (auto &pcd : pcds) {
+                ImGui::Dummy(ImVec2(10, 0));
+
+                auto label = std::string(ICON_FA_EYE) + "##btn_isvisible" +
+                             pcd.getLabel();
+                auto visible = pcd.isVisible();
+                if (!visible) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5);
+                if (ImGui::Button(label.c_str())) {
+                    pcd.setVisible(!visible);
+                    m_viewer3dNeedsUpdate = true;
+                    LOG_DBG("PCD: %s: %i", pcd.getLabel().c_str(),
+                            pcd.isVisible());
+                }
+                if (!visible) ImGui::PopStyleVar();
+
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_TRASH "")) {}
+                ImGui::SameLine();
+                ImGui::Text(pcd.getLabel().c_str());
+            }
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
             ImGui::TreePop();
         }
 #endif
@@ -985,11 +1010,17 @@ void Application::_drawProperties()
         if (P.rows() > 0 && P.cols() > 0)
             drawProperty_matrix(P, "P", "Concatenated camera matrices");
 
-        const auto &Xf = m_projectData.getPts3DSparse();
-        if (Xf.cols() > 0) drawProperty_matrix(Xf, "Xf", "3D points from Wf");
+        if (m_projectData.getPointCloud("sparse")) {
+            const auto &Xf = m_projectData.getPointCloudVerts("sparse");
+            if (Xf.cols() > 0)
+                drawProperty_matrix(Xf, "Xf", "3D points from Wf");
+        }
 
-        const auto &Xd = m_projectData.getPts3DDense();
-        if (Xd.cols() > 0) drawProperty_matrix(Xd, "Xd", "Dense point cloud");
+        if (m_projectData.getPointCloud("dense")) {
+            const auto &Xd = m_projectData.getPointCloudVerts("dense");
+            if (Xd.cols() > 0)
+                drawProperty_matrix(Xd, "Xd", "Dense point cloud");
+        }
 
         return;
     }
@@ -1107,8 +1138,12 @@ void Application::_drawCentral()
         if (m_viewer3dNeedsUpdate) {
             m_viewer3D->init();
             m_viewer3D->deletePointCloudsAll();
-            m_viewer3D->addPointCloud("dense", m_projectData.getPts3DDense(),
-                                      m_projectData.getPts3DDenseColors());
+            auto &pcds = m_projectData.getPointCloudsConst();
+            for (auto &pcd : pcds) {
+                if (!pcd.isVisible()) continue;
+                m_viewer3D->addPointCloud(pcd.getLabel(), pcd.getVertices(),
+                                          pcd.getColors());
+            }
             m_viewer3dNeedsUpdate = false;
         }
 

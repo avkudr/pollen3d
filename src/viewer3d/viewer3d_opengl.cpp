@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-#include "point_cloud_opengl.h"
+#include "pcd_view_opengl.h"
 
 using namespace p3d;
 
@@ -162,5 +162,5 @@ void Viewer3DOpenGL::addPointCloud(const std::string &label, const Mat3Xf &pcd,
                                    const Mat3Xf &colors)
 {
     if (pcd.cols() == 0) return;
-    m_pcd.insert({label, std::make_unique<PointCloudOpenGL>(pcd, colors)});
+    m_pcd.insert({label, std::make_unique<PCDViewOpenGL>(pcd, colors)});
 }

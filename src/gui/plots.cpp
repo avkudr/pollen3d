@@ -33,10 +33,13 @@ void ReprojectionError(const ProjectData& data, bool* open, int width)
             draw_list->AddCircle(center, w * 0.5f * 0.5f / rngPx, color, 32, 1);
             draw_list->AddCircle(center, w * 0.5f * 1.0f / rngPx, color, 32, 1);
 
-            const auto& X = data.getPts3DSparse();
+            const auto& pts3D = data.getPointCloudVerts("sparse");
             const auto& W = data.getMeasurementMatrixFull();
             const auto& P = data.getCameraMatricesMat();
 
+            Mat4X X;
+            X.setOnes(4, pts3D.cols());
+            X.topRows(3) = pts3D.cast<double>();
             Mat error = W - P * X;
 
             int less1px = 0;
