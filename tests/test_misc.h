@@ -6,6 +6,7 @@
 
 #include "p3d/core.h"
 #include "p3d/data/affine_camera.h"
+#include "p3d/data/point_cloud_container.h"
 #include "p3d/data/project_data.h"
 #include "p3d/multiview/bundle_params.h"
 #include "p3d/project_manager.h"
@@ -110,4 +111,77 @@ TEST(MISC, test_rotations)
     //    EXPECT_EQ(table.rows(), 4);
     //    EXPECT_EQ(table.cols(), 6);
     //    EXPECT_EQ(table, tableTrue);
+}
+
+TEST(MISC, test_pointCloudCtnr)
+{
+    PointCloudContainer ctnr;
+
+    EXPECT_EQ(ctnr.contains("1"), false);
+
+    try {
+        ctnr.at("1");
+        FAIL() << "throwException() should throw an error\n";
+    } catch (const std::exception& e) {
+        EXPECT_EQ(1, 1);
+    }
+
+    EXPECT_EQ(ctnr.size(), 0);
+    ctnr["1"].setVertices(Mat3Xf::Random(3, 5));  // inserts a new
+    EXPECT_EQ(ctnr.size(), 1);
+    auto p1 = ctnr["1"];  // gives the existing
+    EXPECT_EQ(ctnr.size(), 1);
+    ctnr.erase("1");
+    EXPECT_EQ(ctnr.size(), 0);
+    ctnr["2"].setVertices(Mat3Xf::Random(3, 5));  // inserts a new
+    ctnr["3"].setVertices(Mat3Xf::Random(3, 6));  // inserts a new
+    ctnr["4"].setVertices(Mat3Xf::Random(3, 8));  // inserts a new
+    EXPECT_EQ(ctnr.size(), 3);
+    auto p2 = ctnr.at("2");
+    EXPECT_EQ(p2.nbPoints(), 5);
+}
+
+TEST(MISC, test_pointCloudCtnrCmds)
+{
+    PointCloudContainer ctnr;
+
+    {
+        auto& pcd = ctnr["random"];
+        int nbPts = 10;
+        Mat3Xf verts = Mat3Xf::Random(3, nbPts);
+        CommandManager::get()->executeCommand(new CommandSetProperty(
+            &pcd, P3D_ID_TYPE(p3dPointCloud_vertices), verts, true));
+
+        EXPECT_EQ(pcd.nbPoints(), nbPts);
+        EXPECT_EQ(ctnr["random"].nbPoints(), nbPts);
+    }
+
+    {
+        auto size = ctnr.size();
+
+        auto label = "hello";
+        Mat3Xf verts2 = Mat3Xf::Random(3, 23);
+        CommandManager::get()->executeCommand(
+            new CommandPointCloudAdd(&ctnr, label, verts2));
+
+        EXPECT_TRUE(ctnr.contains(label));
+        EXPECT_EQ(ctnr[label].getVertices(), verts2);
+
+        CommandManager::get()->undoCommand();
+
+        EXPECT_TRUE(!ctnr.contains(label));
+
+        ctnr[label].setVertices(verts2);
+        size = ctnr.size();
+        CommandManager::get()->executeCommand(
+            new CommandPointCloudDelete(&ctnr, label));
+
+        EXPECT_TRUE(!ctnr.contains(label));
+        EXPECT_EQ(ctnr.size(), size - 1);
+
+        CommandManager::get()->undoCommand();
+
+        EXPECT_TRUE(ctnr.contains(label));
+        EXPECT_EQ(ctnr[label].getVertices(), verts2);
+    }
 }

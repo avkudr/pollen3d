@@ -7,7 +7,7 @@
 #include "p3d/core.h"
 #include "p3d/data/image.h"
 #include "p3d/data/image_pair.h"
-#include "p3d/data/point_cloud.h"
+#include "p3d/data/point_cloud_container.h"
 #include "p3d/logger.h"
 #include "p3d/serialization.h"
 
@@ -22,7 +22,7 @@ enum p3dData_ {
     p3dData_imagePairs = 2004,
     p3dData_measMat = 2005,
     p3dData_measMatFull = 2006,
-    p3dData_pointClouds,
+    p3dData_pointCloudCtnr,
 };
 
 class ProjectData : public Serializable<ProjectData>{
@@ -94,13 +94,9 @@ public:
 
     // ***** point cloud
 
-    PointCloud *getPointCloud(const std::string &str);
-    const Mat3Xf &getPointCloudVerts(const std::string &str) const;
-    PointCloud *createPointCloud(const std::string &str);
-
-    const std::vector<PointCloud> &getPointCloudsConst() const;
-    std::vector<PointCloud> &getPointClouds();
-    void setPointClouds(const std::vector<PointCloud> &pointClouds);
+    PointCloudContainer &pointCloudCtnr() { return m_pointCloudCtnr; }
+    const PointCloudContainer &getPointCloudCtnr() const;
+    void setPointCloudCtnr(const PointCloudContainer &pointCloudCtnr);
 
 private:
     Image *imagePairImage(const std::size_t idx, bool left)
@@ -118,6 +114,6 @@ private:
     Mat m_measurementMatrix{};
     Mat m_measurementMatrixFull{};
 
-    std::vector<PointCloud> m_pointClouds;
+    PointCloudContainer m_pointCloudCtnr{};
 };
 }  // namespace p3d

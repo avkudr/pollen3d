@@ -206,8 +206,10 @@ public:
 
     virtual ~Serializable() {}
 
-    void write(cv::FileStorage& fs) {
+    // virtual bool operator==(const T& i) const = 0;
 
+    void write(cv::FileStorage& fs)
+    {
         // **** first we write all registered properies
 
         std::string nodeName = "class" + std::to_string(entt::resolve<T>().identifier());

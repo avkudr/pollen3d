@@ -49,8 +49,9 @@ public:
     void triangulateStereo(ProjectData & data);
     void triangulateDense(ProjectData & data);
     void bundleAdjustment(ProjectData & data);
-    void exportPLYSparse(ProjectData &data, const std::string &filepath);
-    void exportPLYDense(ProjectData &data, const std::string &filepath);
+    void exportPLYSparse(const ProjectData &data, const std::string &filepath);
+    void exportPLYDense(const ProjectData &data, const std::string &filepath);
+    void deletePointCloud(ProjectData &data, const char *lbl);
 
     // ***** Settings
 

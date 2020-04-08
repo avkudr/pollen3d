@@ -24,9 +24,9 @@ int ProjectData::initMeta()
         std::cout << "Reflecting: ProjectData" << std::endl;
         entt::meta<ProjectData>()
             .type("ProjectData"_hs)
-            .data<&ProjectData::setPointClouds,
-                  &ProjectData::getPointCloudsConst>(
-                P3D_ID_TYPE(p3dData_pointClouds))
+            .data<&ProjectData::setPointCloudCtnr,
+                  &ProjectData::getPointCloudCtnr>(
+                P3D_ID_TYPE(p3dData_pointCloudCtnr))
             .data<&ProjectData::setMeasurementMatrix,
                   &ProjectData::getMeasurementMatrix>(
                 P3D_ID_TYPE(p3dData_measMat))
@@ -291,37 +291,12 @@ Mat ProjectData::getCameraMatricesMat() const
     return Pm;
 }
 
-PointCloud *ProjectData::getPointCloud(const std::string &str)
+const PointCloudContainer &ProjectData::getPointCloudCtnr() const
 {
-    for (auto &pcd : m_pointClouds) {
-        if (str == pcd.getLabel()) return &pcd;
-    }
-    return nullptr;
+    return m_pointCloudCtnr;
 }
 
-const Mat3Xf &ProjectData::getPointCloudVerts(const std::string &str) const
+void ProjectData::setPointCloudCtnr(const PointCloudContainer &pointCloudCtnr)
 {
-    for (auto &pcd : m_pointClouds) {
-        if (pcd.getLabel() == str) return pcd.getVertices();
-    }
-    return {};
-}
-
-PointCloud *ProjectData::createPointCloud(const std::string &str)
-{
-    LOG_WARN("Check for duplicates and resolve otherwise");
-    m_pointClouds.push_back(PointCloud(str, {}));
-    return &m_pointClouds.back();
-}
-
-const std::vector<PointCloud> &ProjectData::getPointCloudsConst() const
-{
-    return m_pointClouds;
-}
-
-std::vector<PointCloud> &ProjectData::getPointClouds() { return m_pointClouds; }
-
-void ProjectData::setPointClouds(const std::vector<PointCloud> &pointClouds)
-{
-    m_pointClouds = pointClouds;
+    m_pointCloudCtnr = pointCloudCtnr;
 }

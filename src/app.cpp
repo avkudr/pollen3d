@@ -921,28 +921,35 @@ void Application::_drawData()
 #ifdef POLLEN3D_DEBUG
         if (ImGui::TreeNodeEx("Point clouds:",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
-            auto &pcds = m_projectData.getPointClouds();
+            auto &pcds = m_projectData.pointCloudCtnr();
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(.0f, .0f, .0f, .0f));
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 0.0f));
             for (auto &pcd : pcds) {
                 ImGui::Dummy(ImVec2(10, 0));
 
-                auto label = std::string(ICON_FA_EYE) + "##btn_isvisible" +
-                             pcd.getLabel();
+                auto lbl = pcd.getLabel();
+                auto nbPts = pcd.nbPoints();
+                auto btnVisible =
+                    std::string(ICON_FA_EYE) + "##btn_isvisible" + lbl;
+                auto btnDelete =
+                    std::string(ICON_FA_TRASH) + "##btn_delete" + lbl;
                 auto visible = pcd.isVisible();
                 if (!visible) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5);
-                if (ImGui::Button(label.c_str())) {
+                if (ImGui::Button(btnVisible.c_str())) {
                     pcd.setVisible(!visible);
                     m_viewer3dNeedsUpdate = true;
-                    LOG_DBG("PCD: %s: %i", pcd.getLabel().c_str(),
-                            pcd.isVisible());
+                    LOG_DBG("PCD: %s: %i", lbl.c_str(), pcd.isVisible());
                 }
                 if (!visible) ImGui::PopStyleVar();
 
                 ImGui::SameLine();
-                if (ImGui::Button(ICON_FA_TRASH "")) {}
+                if (ImGui::Button(btnDelete.c_str())) {
+                    ProjectManager::get()->deletePointCloud(m_projectData,
+                                                            lbl.c_str());
+                    m_viewer3dNeedsUpdate = true;
+                }
                 ImGui::SameLine();
-                ImGui::Text(pcd.getLabel().c_str());
+                ImGui::Text("%s (%i)", lbl.c_str(), nbPts);
             }
             ImGui::PopStyleVar();
             ImGui::PopStyleColor();
@@ -1010,16 +1017,17 @@ void Application::_drawProperties()
         if (P.rows() > 0 && P.cols() > 0)
             drawProperty_matrix(P, "P", "Concatenated camera matrices");
 
-        if (m_projectData.getPointCloud("sparse")) {
-            const auto &Xf = m_projectData.getPointCloudVerts("sparse");
+        auto pcdContainer = m_projectData.getPointCloudCtnr();
+        if (pcdContainer.contains("sparse")) {
+            const auto &Xf = pcdContainer.at("sparse").getVertices();
             if (Xf.cols() > 0)
                 drawProperty_matrix(Xf, "Xf", "3D points from Wf");
         }
 
-        if (m_projectData.getPointCloud("dense")) {
-            const auto &Xd = m_projectData.getPointCloudVerts("dense");
-            if (Xd.cols() > 0)
-                drawProperty_matrix(Xd, "Xd", "Dense point cloud");
+        if (pcdContainer.contains("dense")) {
+            const auto &Xf = pcdContainer.at("dense").getVertices();
+            if (Xf.cols() > 0)
+                drawProperty_matrix(Xf, "Xd", "Dense point cloud");
         }
 
         return;
@@ -1138,11 +1146,13 @@ void Application::_drawCentral()
         if (m_viewer3dNeedsUpdate) {
             m_viewer3D->init();
             m_viewer3D->deletePointCloudsAll();
-            auto &pcds = m_projectData.getPointCloudsConst();
+            auto &pcds = m_projectData.getPointCloudCtnr();
             for (auto &pcd : pcds) {
                 if (!pcd.isVisible()) continue;
                 m_viewer3D->addPointCloud(pcd.getLabel(), pcd.getVertices(),
                                           pcd.getColors());
+                LOG_DBG("Adding point cloud: %s (%i)", pcd.getLabel().c_str(),
+                        pcd.getVertices().cols());
             }
             m_viewer3dNeedsUpdate = false;
         }

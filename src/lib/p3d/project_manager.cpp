@@ -599,11 +599,11 @@ void ProjectManager::triangulate(ProjectData &data)
         pts3D.col(p) = pt.topRows(3).cast<float>();
     }
 
-    auto pcd = data.getPointCloud("sparse");
-    if (pcd == nullptr) pcd = data.createPointCloud("sparse");
-    CommandManager::get()->executeCommand(new CommandSetProperty(
-        pcd, P3D_ID_TYPE(p3dPointCloud_vertices), pts3D, true));
-    LOG_OK("Triangulated %i points", pts3D.cols());
+    CommandManager::get()->executeCommand(
+        new CommandPointCloudAdd(&data.pointCloudCtnr(), "sparse", pts3D));
+
+    LOG_OK("Triangulated %i points",
+           data.pointCloudCtnr()["sparse"].nbPoints());
 }
 
 void ProjectManager::triangulateStereo(ProjectData &data)
@@ -662,15 +662,11 @@ void ProjectManager::triangulateStereo(ProjectData &data)
     utils::convert(pts3D, result);
     utils::convert(colors, colorsMat);
 
-    auto pcd = data.getPointCloud("dense");
-    if (pcd == nullptr) pcd = data.createPointCloud("dense");
-    CommandManager::get()->executeCommand(new CommandSetProperty(
-        pcd, P3D_ID_TYPE(p3dPointCloud_vertices), result, true));
-    CommandManager::get()->executeCommand(new CommandSetProperty(
-        pcd, P3D_ID_TYPE(p3dPointCloud_colors), colorsMat, true));
+    CommandManager::get()->executeCommand(new CommandPointCloudAdd(
+        &data.pointCloudCtnr(), "dense", result, colorsMat));
 
-    LOG_OK("Triangulated (stereo) %i points", pts3D.size());
-    LOG_ERR("DEV: wrong undo command");
+    LOG_OK("Triangulated (stereo) %i points",
+           data.pointCloudCtnr()["dense"].nbPoints());
 }
 
 void ProjectManager::triangulateDense(ProjectData &data)
@@ -772,15 +768,18 @@ void ProjectManager::triangulateDense(ProjectData &data)
 
 void ProjectManager::bundleAdjustment(ProjectData &data)
 {
-    auto pcd = data.getPointCloud("sparse");
-    if (!pcd) return;
-    if (pcd->nbPoints() == 0) {
-        LOG_ERR("Bundle adjust. needs a point cloud");
+    if (!data.pointCloudCtnr().contains("sparse")) {
+        LOG_ERR("Bundle adjust. needs a sparse cloud");
+        return;
+    }
+    auto &pcd = data.pointCloudCtnr().at("sparse");
+    if (pcd.nbPoints() == 0) {
+        LOG_ERR("Sparse point cloud is empty");
         return;
     }
     BundleData p;
-    p.X.setOnes(4, pcd->nbPoints());
-    p.X.topRows(3) = pcd->getVertices().cast<double>();
+    p.X.setOnes(4, pcd.nbPoints());
+    p.X.topRows(3) = pcd.getVertices().cast<double>();
     p.W = data.getMeasurementMatrixFull();
 
     if (p.X.cols() != p.W.cols()) {
@@ -791,7 +790,7 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
     data.getCamerasIntrinsics(&p.cam);
     data.getCamerasExtrinsics(&p.R, &p.t);
 
-    LOG_OK("Bundle adjustement started...");
+    LOG_OK("Bundle adjustement: started...");
     const auto nbCams = p.R.size();
     {
         BundleParams params(nbCams);
@@ -819,45 +818,56 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
         ba.run(p, params);
     }
 
-    pcd->setVertices(p.X.topRows(3).cast<float>());
+    pcd.setVertices(p.X.topRows(3).cast<float>());
     data.setCamerasIntrinsics(p.cam);
     data.setCamerasExtrinsics(p.R, p.t);
 
     LOG_OK("Bundle adjustement: done");
+    LOG_WARN("Bundle adjustement: no undo");
 }
 
-void ProjectManager::exportPLYSparse(ProjectData &data,
+void ProjectManager::exportPLYSparse(const ProjectData &data,
                                      const std::string &filepath)
 {
-    auto pcd = data.getPointCloud("sparse");
-    if (!pcd) return;
-
-    if (pcd->getVertices().cols() == 0) {
-        LOG_ERR("No reconstructed points...");
+    const auto &ctnr = data.getPointCloudCtnr();
+    if (!ctnr.contains("sparse")) {
+        LOG_ERR("No sparse point cloud...");
+        return;
+    }
+    auto pcd = ctnr.at("sparse");
+    if (pcd.getVertices().cols() == 0) {
+        LOG_ERR("Sparse point cloud has no points...");
         return;
     }
 
-    utils::exportToPly(pcd->getVertices(), filepath);
-
+    utils::exportToPly(pcd.getVertices(), filepath);
     LOG_OK("Exported point cloud (sparse): %i points",
-           pcd->getVertices().cols());
+           pcd.getVertices().cols());
 }
 
-void ProjectManager::exportPLYDense(ProjectData &data,
+void ProjectManager::exportPLYDense(const ProjectData &data,
                                     const std::string &filepath)
 {
-    auto pcd = data.getPointCloud("dense");
-    if (!pcd) return;
-
-    if (pcd->getVertices().cols() == 0) {
-        LOG_ERR("No reconstructed points...");
+    const auto &ctnr = data.getPointCloudCtnr();
+    if (!ctnr.contains("dense")) {
+        LOG_ERR("No dense point cloud...");
+        return;
+    }
+    auto pcd = ctnr.at("dense");
+    if (pcd.getVertices().cols() == 0) {
+        LOG_ERR("Dense point cloud has no points...");
         return;
     }
 
-    utils::exportToPly(pcd->getVertices(), filepath);
+    utils::exportToPly(pcd.getVertices(), filepath);
+    LOG_OK("Exported point cloud (dense): %i points", pcd.getVertices().cols());
+}
 
-    LOG_OK("Exported point cloud (dense): %i points",
-           pcd->getVertices().cols());
+void ProjectManager::deletePointCloud(ProjectData &data, const char *lbl)
+{
+    auto ctnr = &data.pointCloudCtnr();
+    CommandManager::get()->executeCommand(
+        new CommandPointCloudDelete(ctnr, lbl));
 }
 
 entt::meta_any ProjectManager::getSetting(const p3dSetting &name)

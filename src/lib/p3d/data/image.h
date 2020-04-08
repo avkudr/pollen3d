@@ -34,7 +34,7 @@ public:
     Image(const std::string &path);
     ~Image() {}
 
-    inline bool operator==(const Image &i) const;
+    bool operator==(const Image &i) const;
 
     // ***** interface
 

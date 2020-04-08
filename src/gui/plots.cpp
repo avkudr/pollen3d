@@ -33,7 +33,12 @@ void ReprojectionError(const ProjectData& data, bool* open, int width)
             draw_list->AddCircle(center, w * 0.5f * 0.5f / rngPx, color, 32, 1);
             draw_list->AddCircle(center, w * 0.5f * 1.0f / rngPx, color, 32, 1);
 
-            const auto& pts3D = data.getPointCloudVerts("sparse");
+            if (!data.getPointCloudCtnr().contains("sparse")) {
+                LOG_ERR(
+                    "Plot of reprojection error needs a sparse point cloud");
+            }
+            auto pcdSparse = data.getPointCloudCtnr().at("sparse");
+            const auto& pts3D = pcdSparse.getVertices();
             const auto& W = data.getMeasurementMatrixFull();
             const auto& P = data.getCameraMatricesMat();
 

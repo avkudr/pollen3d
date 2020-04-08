@@ -50,6 +50,24 @@ entt::meta<A>.
     .data<&A::setF,&A::getF>(hash("F"));
 */
 
+/**
+ * @warning when one of the propeties is an Eigen::Matrix make sure that the
+ * actual type of "const entt::meta_any &v" is the exact type of the property
+ *
+ * Example: there is a property of type Mat3Xf
+ *
+ * GOOD:
+ *     Mat3Xf result = ...;
+ *     CommandSetProperty(&smth,id,result);
+ *
+ * BAD
+ *     Mat3Xf a = ...;
+ *     Mat3Xf b = ...;
+ *     CommandSetProperty(&smth,id,a+b);
+ *
+ * the type of a+b is not Mat3Xf!
+ */
+
 template <typename T>
 class CommandSetProperty : public Command
 {
@@ -80,16 +98,16 @@ public:
         if (!m_instance) return;
         if (!m_data) return;
 
-        if (m_to.type() == m_data.type()) {
-            // next line is here to ensure that the *from* value is taken right before
-            // setting new value. It is important for group command when the previous
-            // state of the property should be taken here and not on the creation of the
-            // command
-            m_from = entt::meta_any{m_data.get(*m_instance)};
+        // if (m_to.type() == m_data.type()) {
+        // next line is here to ensure that the *from* value is taken right
+        // before setting new value. It is important for group command when
+        // the previous state of the property should be taken here and not
+        // on the creation of the command
+        m_from = entt::meta_any{m_data.get(*m_instance)};
 
-            // setting new value
-            m_data.set(*m_instance, m_to);
-        }
+        // setting new value
+        m_data.set(*m_instance, m_to);
+        //}
         LOG_DBG("SetProperty: %i", m_propId);
     }
     void undo()
