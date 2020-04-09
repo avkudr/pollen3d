@@ -318,16 +318,37 @@ void Application::_drawMenuBar(int width)
         };
         if (file != "") _doHeavyTask(f);
     }
+
+    // ----- Close project popup
+
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FOLDER_MINUS " Close", buttonRect)) {
-        LOG_DBG("Close project");
-        ProjectManager::get()->closeProject(&m_projectData);
-        _resetAppState();
+        ImGui::OpenPopup("Close project?");
     }
-    ImGui::SameLine();
+
+    if (ImGui::BeginPopupModal("Close project?", NULL,
+                               ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text(
+            "Are you sure you want to close the project?\n"
+            "All the unsaved data will be lost.\n\n");
+
+        if (ImGui::Button("OK", ImVec2(120, 0))) {
+            LOG_DBG("Close project");
+            ProjectManager::get()->closeProject(&m_projectData);
+            _resetAppState();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 
     // ***** Views
 
+    ImGui::SameLine();
     ImGui::Dummy(ImVec2(20, buttonH));
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_IMAGE "", buttonSquare)) {
@@ -990,11 +1011,34 @@ void Application::_drawData()
                 }
                 if (!visible) ImGui::PopStyleVar();
 
+                char popupLbl[128];
+                ImFormatString(popupLbl, IM_ARRAYSIZE(popupLbl),
+                               "Delete point cloud?##%s", lbl);
+
                 if (ImGuiC::RunButton(window->GetID((void *)((intptr_t)id + 2)),
                                       ImVec2(button1_x, button_y),
                                       P3D_ICON_DELETE)) {
-                    ProjectManager::get()->deletePointCloud(m_projectData, lbl);
-                    m_viewer3dNeedsUpdate = true;
+                    ImGui::OpenPopup(popupLbl);
+                }
+
+                if (ImGui::BeginPopupModal(popupLbl, NULL,
+                                           ImGuiWindowFlags_AlwaysAutoResize)) {
+                    ImGui::Text(
+                        "Are you sure you want to delete the point cloud:");
+                    ImGui::Text("- %s\n\n", lbl);
+
+                    if (ImGui::Button("OK", ImVec2(120, 0))) {
+                        ProjectManager::get()->deletePointCloud(m_projectData,
+                                                                lbl);
+                        m_viewer3dNeedsUpdate = true;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::SetItemDefaultFocus();
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
                 }
             }
             ImGui::PopStyleVar();
