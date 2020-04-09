@@ -109,11 +109,12 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
 
     for (const auto &pcd : m_pcd) {
         if (!pcd.second) continue;
-        pcd.second->setShow(true);
-        pcd.second->setPcdTrueColors(m_pcdTrueColors);
-        pcd.second->setPointSize(m_pointSize);
-        pcd.second->setPcdColor(m_pcdColor);
-        pcd.second->draw(m_shader);
+        if (pcd.second->visible()) {
+            pcd.second->setPcdTrueColors(m_pcdTrueColors);
+            pcd.second->setPointSize(m_pointSize);
+            pcd.second->setPcdColor(m_pcdColor);
+            pcd.second->draw(m_shader);
+        }
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

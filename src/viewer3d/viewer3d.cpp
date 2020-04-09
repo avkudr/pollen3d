@@ -87,3 +87,9 @@ void Viewer3D::rotateWorld(float dx, float dy)
             b.toRotationMatrix() * m_world.block(0, 0, 3, 3);
     }
 }
+
+void Viewer3D::setPointCloudVisible(const std::string& label, bool visible)
+{
+    if (m_pcd.count(label) == 0) return;
+    m_pcd[label]->setVisible(visible);
+}

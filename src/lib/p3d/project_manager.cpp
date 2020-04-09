@@ -325,8 +325,8 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
 #pragma omp critical
         {
             LOG_OK("Pair %i, rectification... done", i);
-            LOG_INFO("- error mean: %.3f", rectif.errorMean);
-            LOG_INFO("- error std: %.3f", rectif.errorStd);
+            LOG_INFO("- error mean: %.3f px", rectif.errorMean);
+            LOG_INFO("- error std: %.3f px", rectif.errorStd);
             groupCmd->add(cmd1);
             groupCmd->add(cmd2);
             groupCmd->add(cmd3);
@@ -606,67 +606,94 @@ void ProjectManager::triangulate(ProjectData &data)
            data.pointCloudCtnr()["sparse"].nbPoints());
 }
 
-void ProjectManager::triangulateStereo(ProjectData &data)
+void ProjectManager::triangulateStereo(ProjectData &data,
+                                       std::vector<int> imPairsIds)
 {
-    auto pairIdx = 0;
-    auto imPair = data.imagePair(pairIdx);
-    if (!imPair) return;
-    if (!imPair->hasDisparityMap()) return;
+    if (data.nbImagePairs() == 0) return;
+    if (imPairsIds.empty())
+        for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
-    auto rho = imPair->getRho();
-    if (utils::floatEq(rho, 0.0)) return;
+    CommandGroup *groupCmd = new CommandGroup();
 
-    float cosRho = std::cos(rho);
-    float sinRho = std::sin(rho);
+#ifdef WITH_OPENMP
+    omp_set_num_threads(
+        std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
+#pragma omp parallel for
+#endif
+    for (int idx = 0; idx < imPairsIds.size(); idx++) {
+        auto pairIdx = imPairsIds[idx];
+        auto imPair = data.imagePair(pairIdx);
+        if (!imPair) continue;
+        if (!imPair->hasDisparityMap()) continue;
 
-    auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
-    if (dispValues.type() != CV_32F) {
-        LOG_ERR("Disparity map type must be CV_32F");
-        return;
-    }
-    dispValues = dispValues / 16.0;
+        auto rho = imPair->getRho();
+        if (utils::floatEq(rho, 0.0)) continue;
 
-    std::vector<Vec3f> pts3D;
-    std::vector<Vec3f> colors;
+        float cosRho = std::cos(rho);
+        float sinRho = std::sin(rho);
 
-    //#ifdef WITH_OPENMP
-    //    omp_set_num_threads(utils::nbAvailableThreads());
-    //    #pragma omp parallel for
-    //#endif
+        auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
+        if (dispValues.type() != CV_32F) {
+            LOG_ERR("Disparity map type must be CV_32F");
+            continue;
+        }
+        dispValues = dispValues / 16.0;
 
-    cv::Mat I = data.imagePair(pairIdx)->getRectifiedImageL();
-    if (I.type() != CV_8UC3) LOG_DBG("Rectified image has wrong type: %i", I.type());
+        std::vector<Vec3f> pts3D;
+        std::vector<Vec3f> colors;
 
-    for (int u = 0; u < dispValues.cols; ++u) {
-        for (int v = 0; v < dispValues.rows; ++v) {
-            const float d = dispValues.at<float>(v, u);
-            if (d * 0.0 != 0.0) continue;  // check for NaN
+        cv::Mat I = data.imagePair(pairIdx)->getRectifiedImageL();
+        if (I.type() != CV_8UC3)
+            LOG_DBG("Rectified image has wrong type: %i", I.type());
 
-            const float q1x = u;
-            const float q1y = v;
-            const float q2x = float(u) + d;
+        for (int u = 0; u < dispValues.cols; ++u) {
+            for (int v = 0; v < dispValues.rows; ++v) {
+                const float d = dispValues.at<float>(v, u);
+                if (d * 0.0 != 0.0) continue;  // check for NaN
 
-            const float q1z = (q1x * cosRho - q2x) / sinRho;
+                const float q1x = u;
+                const float q1y = v;
+                const float q2x = float(u) + d;
 
-            //            #pragma omp critical
-            cv::Vec3b c = I.at<cv::Vec3b>(v, u);
-            if (c != cv::Vec3b(0, 0, 0)) {
-                pts3D.emplace_back(Vec3f(q1x, q1y, q1z));
-                colors.emplace_back(Vec3f(c.val[0] / 255.f, c.val[1] / 255.f, c.val[2] / 255.f));
+                const float q1z = (q1x * cosRho - q2x) / sinRho;
+
+                //            #pragma omp critical
+                cv::Vec3b c = I.at<cv::Vec3b>(v, u);
+                if (c != cv::Vec3b(0, 0, 0)) {
+                    pts3D.emplace_back(Vec3f(q1x, q1y, q1z));
+                    colors.emplace_back(Vec3f(
+                        c.val[0] / 255.f, c.val[1] / 255.f, c.val[2] / 255.f));
+                }
             }
+        }
+
+        Mat3Xf result;
+        Mat3Xf colorsMat;
+        utils::convert(pts3D, result);
+        utils::convert(colors, colorsMat);
+
+        std::string newPcd = "densePair" + std::to_string(pairIdx);
+
+#pragma omp critical
+        {
+            if (data.pointCloudCtnr().contains(newPcd)) {
+                auto &pcd = data.pointCloudCtnr()[newPcd];
+                groupCmd->add(new CommandSetProperty(
+                    &pcd, p3dPointCloud_vertices, result));
+                groupCmd->add(new CommandSetProperty(&pcd, p3dPointCloud_colors,
+                                                     colorsMat));
+            } else {
+                groupCmd->add(new CommandPointCloudAdd(
+                    &data.pointCloudCtnr(), newPcd, result, colorsMat));
+            }
+            LOG_OK("Triangulated (stereo) %i points", result.cols());
         }
     }
 
-    Mat3Xf result;
-    Mat3Xf colorsMat;
-    utils::convert(pts3D, result);
-    utils::convert(colors, colorsMat);
-
-    CommandManager::get()->executeCommand(new CommandPointCloudAdd(
-        &data.pointCloudCtnr(), "dense", result, colorsMat));
-
-    LOG_OK("Triangulated (stereo) %i points",
-           data.pointCloudCtnr()["dense"].nbPoints());
+    if (groupCmd->empty())
+        delete groupCmd;
+    else
+        CommandManager::get()->executeCommand(groupCmd);
 }
 
 void ProjectManager::triangulateDense(ProjectData &data)

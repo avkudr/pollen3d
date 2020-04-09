@@ -50,7 +50,7 @@ void PCDViewOpenGL::init(const p3d::Mat3Xf &pcd, const p3d::Mat3Xf &colors)
 
 void PCDViewOpenGL::draw(std::shared_ptr<ShaderOpenGL> shader)
 {
-    if (m_show && m_nbPoints > 0) {
+    if (m_visible && m_nbPoints > 0) {
         glBindVertexArray(m_Tvao);
         glPointSize(std::max(1.0f, m_pointSize));
         if (shader) {

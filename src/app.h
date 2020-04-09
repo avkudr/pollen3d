@@ -144,6 +144,7 @@ protected:
     int m_textureScale = 1.0f;
     int m_textureNeedsUpdate = false;
     int m_viewer3dNeedsUpdate = false;
+    int m_viewer3dNeedsUpdateVisibility = false;
 
     std::unique_ptr<Viewer3D> m_viewer3D{nullptr};
     std::unique_ptr<WidgetLogger> m_widgetLogger{nullptr};

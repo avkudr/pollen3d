@@ -38,7 +38,8 @@ public:
                       const p3d::Mat3Xf& colors = {}) = 0;
     virtual void draw(std::shared_ptr<ShaderOpenGL> shader = nullptr) = 0;
 
-    void setShow(bool show) { m_show = show; }
+    bool visible() const { return m_visible; }
+    void setVisible(bool visible) { m_visible = visible; }
 
     void setPcdTrueColors(bool pcdTrueColors)
     {
@@ -54,7 +55,7 @@ public:
 
 protected:
     int m_nbPoints{0};
-    bool m_show{true};
+    bool m_visible{true};
     bool m_pcdTrueColors{true};
     float m_pointSize{2.0f};
     std::array<float, 4> m_pcdColor{0.9f, 0.9f, 0.9f, 1.0f};

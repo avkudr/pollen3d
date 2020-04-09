@@ -588,12 +588,13 @@ void Application::_drawTab_Stereo()
 
                 bool run{false}, runAll{false};
                 if (ImGuiC::Collapsing("Epipolar geometry", &run, &runAll)) {
+                    ImGuiC::BeginSubGroup();
                     if (ImGui::Button(P3D_ICON_RUN " Find fundamental matrix"))
                         run = true;
                     ImGui::SameLine();
                     if (ImGui::Button(P3D_ICON_RUNALL " ALL##fundamental"))
                         runAll = true;
-                    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                    ImGuiC::EndSubGroup();
                 }
                 if (disableButtons) ImGuiC::PopDisabled();
 
@@ -619,26 +620,24 @@ void Application::_drawTab_Stereo()
 
                 bool run{false}, runAll{false};
                 if (ImGuiC::Collapsing("Rectification", &run, &runAll)) {
+                    ImGuiC::BeginSubGroup();
                     if (ImGui::Button(P3D_ICON_RUN " Rectify image pair"))
                         run = true;
                     ImGui::SameLine();
                     if (ImGui::Button(P3D_ICON_RUNALL " ALL##rectify"))
                         runAll = true;
-                    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+                    ImGuiC::EndSubGroup();
                 }
                 if (disableButtons) ImGuiC::PopDisabled();
 
-                if (run)
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->rectifyImagePairs(
-                            m_projectData, {m_currentImage});
-                        m_textureNeedsUpdate = true;
-                    });
-                if (runAll)
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->rectifyImagePairs(m_projectData);
-                        m_textureNeedsUpdate = true;
-                    });
+                auto f = [&](const std::vector<int> &imIds) {
+                    ProjectManager::get()->rectifyImagePairs(m_projectData,
+                                                             imIds);
+                    m_textureNeedsUpdate = true;
+                };
+
+                if (run) _doHeavyTask(f, std::vector<int>({m_currentImage}));
+                if (runAll) _doHeavyTask(f, std::vector<int>());
             }
 
             // ***** Dense matching (widget)
@@ -712,9 +711,15 @@ void Application::_drawTab_Multiview()
         if (ImGui::BeginChild("")) {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
-            {  // ***** Measurement matrix
+            bool disable = m_projectData.nbImagePairs() < 2;
+            if (disable) ImGuiC::PushDisabled();
+
+            // ***** Measurement matrix
+            {
                 bool run{false};
                 if (ImGuiC::Collapsing("Measurement matrix", &run)) {
+                    ImGuiC::BeginSubGroup();
+
                     if (ImGui::Button("Get full W")) {
                         auto f = [&]() {
                             ProjectManager::get()->findMeasurementMatrixFull(
@@ -729,6 +734,7 @@ void Application::_drawTab_Multiview()
                         };
                         _doHeavyTask(f);
                     }
+                    ImGuiC::EndSubGroup();
                 }
                 if (run)
                     _doHeavyTask([&]() {
@@ -739,11 +745,16 @@ void Application::_drawTab_Multiview()
                     });
             }
 
+            // ***** Autocalibration
             {
                 bool run{false};
                 if (ImGuiC::Collapsing("Autocalibration", &run)) {
+                    ImGuiC::BeginSubGroup();
+
                     if (ImGui::Button(P3D_ICON_RUN " Autocalibrate"))
                         run = true;
+
+                    ImGuiC::EndSubGroup();
                 }
                 if (run)
                     _doHeavyTask([&]() {
@@ -752,15 +763,31 @@ void Application::_drawTab_Multiview()
                     });
             }
 
+            // ***** Triangulation
             {
                 bool run{false};
                 if (ImGuiC::Collapsing("Triangulation", &run)) {
+                    ImGuiC::BeginSubGroup();
                     if (ImGui::Button(P3D_ICON_RUN " Triangulate (sparse)"))
                         run = true;
+
+                    ImGui::Separator();
+                    static int imPairIdx = 0;
+                    ImGui::SliderInt("pair idx", &imPairIdx, 0,
+                                     m_projectData.nbImagePairs() - 1);
                     if (ImGui::Button("Triangulate dense (stereo)")) {
+                        auto f = [&](int imPairIdx) {
+                            ProjectManager::get()->triangulateStereo(
+                                m_projectData, {imPairIdx});
+                            m_viewer3dNeedsUpdate = true;
+                        };
+                        _doHeavyTask(f, imPairIdx);
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("ALL")) {
                         _doHeavyTask([&]() {
                             ProjectManager::get()->triangulateStereo(
-                                m_projectData);
+                                m_projectData, {});
                             m_viewer3dNeedsUpdate = true;
                         });
                     }
@@ -773,6 +800,7 @@ void Application::_drawTab_Multiview()
                         });
                     }
 #endif
+                    ImGuiC::EndSubGroup();
                 }
                 if (run)
                     _doHeavyTask([&]() {
@@ -781,6 +809,7 @@ void Application::_drawTab_Multiview()
                     });
             }
 
+            // ***** Bundle adjustment
             {
                 bool run{false};
                 if (ImGuiC::Collapsing("Bundle adjustment", &run)) {
@@ -797,7 +826,11 @@ void Application::_drawTab_Multiview()
                     });
             }
 
-            if (ImGui::CollapsingHeader("Analyze", m_collapsingHeaderFlags)) {
+            // ***** Analyze
+
+            if (ImGuiC::Collapsing("Analyze")) {
+                ImGuiC::BeginSubGroup();
+
                 static bool showReprojectionErrorPlot = false;
                 if (ImGui::Button("Plot reprojection error (sparse)"))
                     showReprojectionErrorPlot = true;
@@ -805,7 +838,12 @@ void Application::_drawTab_Multiview()
                 if (showReprojectionErrorPlot)
                     plot::ReprojectionError(m_projectData,
                                             &showReprojectionErrorPlot, 600);
+
+                ImGuiC::EndSubGroup();
             }
+
+            if (disable) ImGuiC::PopDisabled();
+
             ImGui::EndChild();
         }
 
@@ -1007,7 +1045,7 @@ void Application::_drawData()
                                       ImVec2(button2_x, button_y),
                                       P3D_ICON_VISIBLE)) {
                     pcd.setVisible(!visible);
-                    m_viewer3dNeedsUpdate = true;
+                    m_viewer3dNeedsUpdateVisibility = true;
                 }
                 if (!visible) ImGui::PopStyleVar();
 
@@ -1244,6 +1282,16 @@ void Application::_drawCentral()
                         pcd.getVertices().cols());
             }
             m_viewer3dNeedsUpdate = false;
+            m_viewer3dNeedsUpdateVisibility = false;
+        }
+
+        if (m_viewer3dNeedsUpdateVisibility) {
+            const auto &pcds = m_projectData.getPointCloudCtnr();
+            for (const auto &pcd : pcds) {
+                m_viewer3D->setPointCloudVisible(pcd.getLabel(),
+                                                 pcd.isVisible());
+            }
+            m_viewer3dNeedsUpdateVisibility = false;
         }
 
         ImGui::PushFont(m_fontMonoSmall);

@@ -9,6 +9,11 @@ namespace p3d::plot
 {
 void ReprojectionError(const ProjectData& data, bool* open, int width)
 {
+    if (!data.getPointCloudCtnr().contains("sparse")) {
+        LOG_ERR("Plot of reprojection error needs a sparse point cloud");
+        return;
+    }
+
     float w = static_cast<float>(width);
     if (open && *open) ImGui::OpenPopup("Reproj error##plot");
     if (ImGui::BeginPopupModal("Reproj error##plot", open,
@@ -33,10 +38,6 @@ void ReprojectionError(const ProjectData& data, bool* open, int width)
             draw_list->AddCircle(center, w * 0.5f * 0.5f / rngPx, color, 32, 1);
             draw_list->AddCircle(center, w * 0.5f * 1.0f / rngPx, color, 32, 1);
 
-            if (!data.getPointCloudCtnr().contains("sparse")) {
-                LOG_ERR(
-                    "Plot of reprojection error needs a sparse point cloud");
-            }
             auto pcdSparse = data.getPointCloudCtnr().at("sparse");
             const auto& pts3D = pcdSparse.getVertices();
             const auto& W = data.getMeasurementMatrixFull();
