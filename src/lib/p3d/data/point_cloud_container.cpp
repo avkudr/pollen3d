@@ -120,4 +120,16 @@ const std::vector<PointCloud>::const_iterator PointCloudContainer::end() const
     return m_pointClouds.end();
 }
 
+std::vector<std::string> PointCloudContainer::getAllLabels() const
+{
+    std::vector<std::string> out;
+    out.reserve(m_pointClouds.size());
+    auto it = m_pointClouds.begin();
+    while (it != m_pointClouds.end()) {
+        out.push_back(it->getLabel());
+        ++it;
+    }
+    return out;
+}
+
 }  // namespace p3d

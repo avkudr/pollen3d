@@ -62,6 +62,8 @@ public:
     const std::vector<PointCloud>::const_iterator begin() const;
     const std::vector<PointCloud>::const_iterator end() const;
 
+    std::vector<std::string> getAllLabels() const;
+
 private:
     std::vector<PointCloud> m_pointClouds;
 };

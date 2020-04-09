@@ -65,6 +65,7 @@ protected:
     void _drawTab_Image();
     void _drawTab_Stereo();
     void _drawTab_Multiview();
+    void _drawTab_PointCloud();
     void _drawData();
     void _drawProperties();
     void _drawCentral();
@@ -81,10 +82,11 @@ protected:
     template<typename Type>
     void drawProperty_basic(const Type &v, const std::string &name, const char * fmt, const char *icon = nullptr);
 
-    template<typename Func>
-    void _doHeavyTask(Func f){
+    template <typename Func, class... Args>
+    void _doHeavyTask(Func f, Args... args)
+    {
         m_startedHeavyCalculus = true;
-        m_heavyAsyncTask = std::async(std::launch::async,f);
+        m_heavyAsyncTask = std::async(std::launch::async, f, args...);
     }
 
     void _resetAppState() {
@@ -112,6 +114,7 @@ protected:
     }
 
     int m_currentTab = -1;
+    int m_currentTabForce = -1;
     int m_currentImage = -1;
 
     enum Section_{
@@ -151,7 +154,8 @@ protected:
     bool m_initialised = false;
 
     // *** std::async + wait popup for heavy stuff
-    bool m_startedHeavyCalculus= false;
+    bool m_startedHeavyCalculus = false;
+
     std::future<void> m_heavyAsyncTask;
 
     p3d::ProjectData m_projectData;

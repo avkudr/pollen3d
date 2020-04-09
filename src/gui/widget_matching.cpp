@@ -22,11 +22,6 @@ void WidgetMatching::drawImpl(ProjectData& data)
     bool run{false}, runAll{false};
 
     if (ImGuiC::Collapsing("Matching", &run, &runAll)) {
-        ImVec2 p0 = ImGui::GetCursorScreenPos();
-        p0.x += 5;
-        p0.y += 5;
-        ImGui::SetCursorScreenPos(p0);
-
         bool disableButtons = disabled;
         auto imL = data.imagePairL(m_currentItemIdx);
         auto imR = data.imagePairR(m_currentItemIdx);
@@ -35,7 +30,7 @@ void WidgetMatching::drawImpl(ProjectData& data)
 
         if (disableButtons) ImGuiC::PushDisabled();
 
-        ImGui::BeginGroup();
+        ImGuiC::BeginSubGroup();
         const char* matchingAlgos[] = {"FlannBased",
                                        "BruteForce",
                                        "BruteForce-L1",
@@ -68,8 +63,7 @@ void WidgetMatching::drawImpl(ProjectData& data)
         if (ImGui::Button("Match features")) run = true;
         ImGui::SameLine();
         if (ImGui::Button("ALL##matching")) runAll = true;
-        ImGui::Dummy(ImVec2(0.0f, 10.0f));
-        ImGui::EndGroup();
+        ImGuiC::EndSubGroup();
         if (disableButtons) ImGuiC::PopDisabled();
     }
 

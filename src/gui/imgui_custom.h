@@ -15,4 +15,10 @@ void HoveredTooltip(const char* desc);
 
 bool Collapsing(const char* label, bool* btnRun, bool* btnRunAll = nullptr);
 bool RunButton(ImGuiID id, const ImVec2& pos, const char* icon);
+
+void BeginSubGroup();
+void EndSubGroup();
+
+void ButtonTooltip(const char* text);
+
 }  // namespace ImGuiC

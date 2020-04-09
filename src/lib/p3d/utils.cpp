@@ -253,7 +253,7 @@ bool utils::exportToPly(const Mat3Xf &vec_points_white,
             << "end_header" << std::endl;
 
     Mat3Xf col;
-    if (colors.cols() != vec_points_white.cols())
+    if (colors.cols() == vec_points_white.cols())
         col = colors;
     else {
         col.setOnes(3, vec_points_white.cols());

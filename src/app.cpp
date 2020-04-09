@@ -111,13 +111,14 @@ void Application::draw(int width, int height)
                      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                          ImGuiWindowFlags_NoSavedSettings |
                          ImGuiWindowFlags_NoBringToFrontOnFocus)) {
-        ImGui::DockSpace(dock_id);
+        ImGui::DockSpace(dock_id, ImVec2(0, 0),
+                         ImGuiDockNodeFlags_NoCloseButton |
+                             ImGuiDockNodeFlags_NoWindowMenuButton);
         ImGui::End();
     }
 
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
-                             ImGuiWindowFlags_NoCollapse |
-                             ImGuiWindowFlags_NoBringToFrontOnFocus;
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     if (ImGui::Begin("Controls", nullptr, flags)) {
         _drawControls();
@@ -178,29 +179,10 @@ void Application::draw(int width, int height)
         ImGui::DockBuilderDockWindow("Properties", id7);
         ImGui::DockBuilderDockWindow("Controls", id6);
         ImGui::DockBuilderDockWindow("Viewer", id4);
-
-        ImGui::DockBuilderGetNode(id2)->HasCloseButton = false;
-        ImGui::DockBuilderGetNode(id2)->EnableCloseButton = false;
-        ImGui::DockBuilderGetNode(id2)->HasWindowMenuButton = false;
-        ImGui::DockBuilderGetNode(id3)->HasCloseButton = false;
-        ImGui::DockBuilderGetNode(id4)->HasCloseButton = false;
         ImGui::DockBuilderFinish(dock_id);
 
         m_dockingNeedsReset = false;
     }
-
-    //        _renderLeftWidget();
-
-    //        ImGui::NextColumn();
-
-    //        _renderCentralWidget();
-
-    //        ImGui::NextColumn();
-    //       ConsoleLogger::get()->render(1);
-    //        ImGui::NextColumn();
-    //        ImGui::EndColumns();
-    //        ImGui::End();
-    //    }
 
     // **** subroutine for async exection of heavy tasks
     if (m_startedHeavyCalculus) {
@@ -297,22 +279,27 @@ void Application::_drawMenuBar(int width)
 
     if (ImGui::Button(ICON_FA_UPLOAD " Load images", buttonRect)) {
         auto files = loadImagesDialog();
-        auto f = [&, files]() {
-            ProjectManager::get()->loadImages(&m_projectData, files);
-            if (!m_projectData.empty()) m_currentImage = 0;
-            _resetAppState();
-        };
-        _doHeavyTask(f);
+        if (files.empty()) {
+            LOG_ERR("Nothing to load");
+        } else {
+            auto f = [&](const std::vector<std::string> &files) {
+                ProjectManager::get()->loadImages(&m_projectData, files);
+                if (!m_projectData.empty()) m_currentImage = 0;
+                _resetAppState();
+            };
+            _doHeavyTask(f, files);
+        }
+        m_currentTabForce = Tab_Image;
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_SAVE " Save", buttonRect)) {
-        auto f = [&]() {
-            std::string path = m_projectData.getProjectPath();
-            if (path == "") path = saveProjectDialog();
+        std::string path = m_projectData.getProjectPath();
+        if (path == "") path = saveProjectDialog();
+        auto f = [&](const std::string &path) {
             ProjectManager::get()->saveProject(&m_projectData, path);
             _resetAppState();
         };
-        _doHeavyTask(f);
+        _doHeavyTask(f, path);
     }
     ImGui::SameLine();
     if (ImGui::Button("Save as...", buttonRect)) {
@@ -339,30 +326,43 @@ void Application::_drawMenuBar(int width)
     }
     ImGui::SameLine();
 
-    /*
-    if (ImGui::Button(ICON_FA_IMAGE"",buttonSquare)) {
+    // ***** Views
+
+    ImGui::Dummy(ImVec2(20, buttonH));
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_IMAGE "", buttonSquare)) {
         if (m_currentTab != Tab_Image) _resetAppState();
-        m_currentTab = Tab_Image;
+        m_currentTabForce = Tab_Image;
     }
+    ImGuiC::HoveredTooltip("Set current view: image");
+
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_IMAGES"",buttonSquare)) {
         if (m_currentTab != Tab_Stereo) _resetAppState();
-        m_currentTab = Tab_Stereo;
+        m_currentTabForce = Tab_Stereo;
     }
+    ImGuiC::HoveredTooltip("Set current view: image pairs");
     ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_LAYER_GROUP"",buttonSquare)) {
-        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud}))
-    _resetAppState(); m_currentTab = Tab_Multiview;
+
+    if (ImGui::Button(ICON_FA_LAYER_GROUP "", buttonSquare)) {
+        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
+            _resetAppState();
+        m_currentTabForce = Tab_Multiview;
     }
+    ImGuiC::HoveredTooltip("Set current view: multiview");
     ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_CLOUD"",buttonSquare)) {
-        if (!isOneOf(m_currentTab, {Tab_Multiview,Tab_PointCloud}))
-    _resetAppState(); m_currentTab = Tab_PointCloud;
+
+    if (ImGui::Button(ICON_FA_CLOUD "", buttonSquare)) {
+        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
+            _resetAppState();
+        m_currentTabForce = Tab_PointCloud;
     }
-    ImGui::SameLine();
-    */
+    ImGuiC::HoveredTooltip("Set current view: point cloud");
 
 #ifdef POLLEN3D_DEBUG
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(20, buttonH));
+    ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Button, COLOR_GREEN);
     if (ImGui::Button("DBG_LOAD", buttonRect)) {
         std::vector<std::string> imPaths;
@@ -462,45 +462,37 @@ void Application::_drawMenuBar(int width)
 
 void Application::_drawControls()
 {
-    if (!ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None)) return;
+    if (!ImGui::BeginTabBar("##Tabs",
+                            ImGuiTabBarFlags_NoCloseWithMiddleMouseButton))
+        return;
 
     _drawTab_Image();
     _drawTab_Stereo();
     _drawTab_Multiview();
-
-    if (ImGui::BeginTabItem(ICON_FA_CLOUD "")) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-        ImGui::Text("May come soon ;)");
-        ImGui::PopStyleColor();
-        ImGui::EndTabItem();
-        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
-            _resetAppState();
-        m_currentTab = Tab_PointCloud;
-    }
-    ImGui::EndTabBar();
+    _drawTab_PointCloud();
 
     ImGui::SameLine();
     const char *tabName = "";
     switch (m_currentTab) {
-    case Tab_Image:
-        tabName = "image";
-        break;
-    case Tab_Stereo:
-        tabName = "stereo";
-        break;
-    case Tab_Multiview:
-        tabName = "multiview";
-        break;
-    case Tab_PointCloud:
-        tabName = "point cloud";
-        break;
+    case Tab_Image: tabName = "image"; break;
+    case Tab_Stereo: tabName = "stereo"; break;
+    case Tab_Multiview: tabName = "multiview"; break;
+    case Tab_PointCloud: tabName = "point cloud"; break;
     }
     ImGui::Text("%s", tabName);
+
+    ImGui::EndTabBar();
 }
 
 void Application::_drawTab_Image()
 {
-    if (ImGui::BeginTabItem(ICON_FA_IMAGE "")) {
+    ImGuiTabItemFlags flags = ImGuiTabItemFlags_NoCloseButton;
+    if (m_currentTabForce == Tab_Image) {
+        flags = ImGuiTabItemFlags_SetSelected;
+        m_currentTabForce = -1;
+    }
+
+    if (ImGui::BeginTabItem(ICON_FA_IMAGE "", nullptr, flags)) {
         ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
         // ***** Feature extraction (widget)
@@ -532,7 +524,12 @@ void Application::_drawTab_Image()
 
 void Application::_drawTab_Stereo()
 {
-    if (ImGui::BeginTabItem(ICON_FA_IMAGES "")) {
+    ImGuiTabItemFlags flags = ImGuiTabItemFlags_NoCloseButton;
+    if (m_currentTabForce == Tab_Stereo) {
+        flags |= ImGuiTabItemFlags_SetSelected;
+        m_currentTabForce = -1;
+    }
+    if (ImGui::BeginTabItem(ICON_FA_IMAGES "", nullptr, flags)) {
         if (ImGui::BeginChild("")) {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
             int matchingWidgetW = 250;
@@ -684,7 +681,13 @@ void Application::_drawTab_Stereo()
 
 void Application::_drawTab_Multiview()
 {
-    if (ImGui::BeginTabItem(ICON_FA_LAYER_GROUP "")) {
+    ImGuiTabItemFlags flags = ImGuiTabItemFlags_NoCloseButton;
+    if (m_currentTabForce == Tab_Multiview) {
+        flags |= ImGuiTabItemFlags_SetSelected;
+        m_currentTabForce = -1;
+    }
+
+    if (ImGui::BeginTabItem(ICON_FA_LAYER_GROUP "", nullptr, flags)) {
         if (ImGui::BeginChild("")) {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
@@ -760,32 +763,17 @@ void Application::_drawTab_Multiview()
             {
                 bool run{false};
                 if (ImGuiC::Collapsing("Bundle adjustment", &run)) {
+                    ImGuiC::BeginSubGroup();
                     if (ImGui::Button(P3D_ICON_RUN
                                       " Bundle adjustment (sparse)"))
                         run = true;
+                    ImGuiC::EndSubGroup();
                 }
                 if (run)
                     _doHeavyTask([&]() {
                         ProjectManager::get()->bundleAdjustment(m_projectData);
                         m_viewer3dNeedsUpdate = true;
                     });
-            }
-
-            if (ImGui::CollapsingHeader("Export", m_collapsingHeaderFlags)) {
-                if (ImGui::Button("Export PLY (sparse)")) {
-                    std::string filepath = exportPointCloudDialog();
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->exportPLYSparse(m_projectData,
-                                                               filepath);
-                    });
-                }
-                if (ImGui::Button("Export PLY (dense)")) {
-                    std::string filepath = exportPointCloudDialog();
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->exportPLYDense(m_projectData,
-                                                              filepath);
-                    });
-                }
             }
 
             if (ImGui::CollapsingHeader("Analyze", m_collapsingHeaderFlags)) {
@@ -805,6 +793,57 @@ void Application::_drawTab_Multiview()
         if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
             _resetAppState();
         m_currentTab = Tab_Multiview;
+    }
+}
+
+void Application::_drawTab_PointCloud()
+{
+    ImGuiTabItemFlags flags = ImGuiTabItemFlags_NoCloseButton;
+    if (m_currentTabForce == Tab_PointCloud) {
+        flags |= ImGuiTabItemFlags_SetSelected;
+        m_currentTabForce = -1;
+    }
+
+    if (ImGui::BeginTabItem(ICON_FA_CLOUD "", nullptr, flags)) {
+        if (ImGui::BeginChild("")) {
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+            if (ImGui::CollapsingHeader("Export", m_collapsingHeaderFlags)) {
+                std::vector<std::string> list =
+                    m_projectData.getPointCloudCtnr().getAllLabels();
+                std::vector<const char *> listC;
+                for (const auto &l : list) listC.push_back(l.c_str());
+                static int pcdIdx = 0;
+                if (pcdIdx > list.size() - 1) pcdIdx = 0;
+
+                if (list.size() == 0) ImGuiC::PushDisabled();
+
+                ImGuiC::BeginSubGroup();
+                ImGui::Combo("point clouds", &pcdIdx, listC.data(),
+                             listC.size());
+
+                if (ImGui::Button("Export PLY")) {
+                    std::string filepath = exportPointCloudDialog();
+                    std::string label = list[pcdIdx];
+                    LOG_DBG("Exporting pcd: %s", label.c_str());
+
+                    auto f = [&](std::string label, std::string filepath) {
+                        ProjectManager::get()->exportPLY(m_projectData, label,
+                                                         filepath);
+                    };
+
+                    _doHeavyTask(f, label, filepath);
+                }
+                if (list.size() == 0) ImGuiC::PopDisabled();
+
+                ImGuiC::EndSubGroup();
+            }
+            ImGui::EndChild();
+        }
+        ImGui::EndTabItem();
+
+        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
+            _resetAppState();
+        m_currentTab = Tab_PointCloud;
     }
 }
 
@@ -936,24 +975,6 @@ void Application::_drawData()
                 auto lbl = pcd.getLabel().c_str();
                 auto nbPts = pcd.nbPoints();
                 auto visible = pcd.isVisible();
-
-                //                if (!visible)
-                //                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5);
-                //                if (ImGui::Button(btnVisible.c_str())) {
-                //                    pcd.setVisible(!visible);
-                //                    m_viewer3dNeedsUpdate = true;
-                //                    LOG_DBG("PCD: %s: %i", lbl.c_str(),
-                //                    pcd.isVisible());
-                //                }
-                //                if (!visible) ImGui::PopStyleVar();
-
-                //                ImGui::SameLine();
-                //                if (ImGui::Button(btnDelete.c_str())) {
-                //                    ProjectManager::get()->deletePointCloud(m_projectData,
-                //                                                            lbl.c_str());
-                //                    m_viewer3dNeedsUpdate = true;
-                //                }
-                //                ImGui::SameLine();
 
                 ImGui::Text("%s (%i)", lbl, nbPts);
                 float button_y = window->DC.LastItemRect.Min.y + 2;

@@ -826,41 +826,30 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
     LOG_WARN("Bundle adjustement: no undo");
 }
 
-void ProjectManager::exportPLYSparse(const ProjectData &data,
-                                     const std::string &filepath)
+void ProjectManager::exportPLY(const ProjectData &data,
+                               const std::string &label,
+                               const std::string &filepath)
 {
+    LOG_DBG("Exporting pcd: %s", label.c_str());
+
     const auto &ctnr = data.getPointCloudCtnr();
-    if (!ctnr.contains("sparse")) {
-        LOG_ERR("No sparse point cloud...");
+    if (!ctnr.contains(label)) {
+        LOG_ERR("No %s point cloud...", label.c_str());
         return;
     }
-    auto pcd = ctnr.at("sparse");
+    auto pcd = ctnr.at(label);
     if (pcd.getVertices().cols() == 0) {
-        LOG_ERR("Sparse point cloud has no points...");
+        LOG_ERR("Point cloud %s has no points...", label.c_str());
         return;
     }
 
-    utils::exportToPly(pcd.getVertices(), filepath);
-    LOG_OK("Exported point cloud (sparse): %i points",
-           pcd.getVertices().cols());
-}
-
-void ProjectManager::exportPLYDense(const ProjectData &data,
-                                    const std::string &filepath)
-{
-    const auto &ctnr = data.getPointCloudCtnr();
-    if (!ctnr.contains("dense")) {
-        LOG_ERR("No dense point cloud...");
-        return;
+    try {
+        utils::exportToPly(pcd.getVertices(), filepath);
+        LOG_OK("Exported point cloud (%s): %i points", label.c_str(),
+               pcd.getVertices().cols());
+    } catch (...) {
+        LOG_ERR("Point cloud export failed");
     }
-    auto pcd = ctnr.at("dense");
-    if (pcd.getVertices().cols() == 0) {
-        LOG_ERR("Dense point cloud has no points...");
-        return;
-    }
-
-    utils::exportToPly(pcd.getVertices(), filepath);
-    LOG_OK("Exported point cloud (dense): %i points", pcd.getVertices().cols());
 }
 
 void ProjectManager::deletePointCloud(ProjectData &data, const char *lbl)

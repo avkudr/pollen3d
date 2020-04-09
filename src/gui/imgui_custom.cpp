@@ -168,3 +168,18 @@ void ImGuiC::HoveredTooltip(const char *desc)
     }
     ImGui::PopItemFlag();
 }
+
+void ImGuiC::BeginSubGroup()
+{
+    ImVec2 p0 = ImGui::GetCursorScreenPos();
+    p0.x += 10;
+    p0.y += 5;
+    ImGui::SetCursorScreenPos(p0);
+    ImGui::BeginGroup();
+}
+
+void ImGuiC::EndSubGroup()
+{
+    ImGui::Dummy(ImVec2(0.0f, 10.0f));
+    ImGui::EndGroup();
+}
