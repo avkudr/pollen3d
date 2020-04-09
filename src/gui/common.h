@@ -12,6 +12,8 @@
 
 #define P3D_ICON_RUN ICON_FA_CHECK
 #define P3D_ICON_RUNALL ICON_FA_CHECK_DOUBLE
+#define P3D_ICON_DELETE ICON_FA_TRASH_ALT
+#define P3D_ICON_VISIBLE ICON_FA_EYE
 
 static std::vector<std::string> loadImagesDialog()
 {

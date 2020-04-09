@@ -922,37 +922,61 @@ void Application::_drawData()
         if (ImGui::TreeNodeEx("Point clouds:",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
             auto &pcds = m_projectData.pointCloudCtnr();
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(.0f, .0f, .0f, .0f));
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 0.0f));
-            for (auto &pcd : pcds) {
-                ImGui::Dummy(ImVec2(10, 0));
 
-                auto lbl = pcd.getLabel();
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 0.0f));
+            auto w = ImGui::GetWindowWidth();
+            ImGuiContext &g = *GImGui;
+            float button_size = g.FontSize;
+            float button1_x = w - g.Style.FramePadding.x * 2.0f - button_size;
+            float button2_x =
+                w - g.Style.FramePadding.x * 3.0f - 2.0f * button_size;
+            ImGuiWindow *window = ImGui::GetCurrentWindow();
+
+            for (auto &pcd : pcds) {
+                auto lbl = pcd.getLabel().c_str();
                 auto nbPts = pcd.nbPoints();
-                auto btnVisible =
-                    std::string(ICON_FA_EYE) + "##btn_isvisible" + lbl;
-                auto btnDelete =
-                    std::string(ICON_FA_TRASH) + "##btn_delete" + lbl;
                 auto visible = pcd.isVisible();
+
+                //                if (!visible)
+                //                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5);
+                //                if (ImGui::Button(btnVisible.c_str())) {
+                //                    pcd.setVisible(!visible);
+                //                    m_viewer3dNeedsUpdate = true;
+                //                    LOG_DBG("PCD: %s: %i", lbl.c_str(),
+                //                    pcd.isVisible());
+                //                }
+                //                if (!visible) ImGui::PopStyleVar();
+
+                //                ImGui::SameLine();
+                //                if (ImGui::Button(btnDelete.c_str())) {
+                //                    ProjectManager::get()->deletePointCloud(m_projectData,
+                //                                                            lbl.c_str());
+                //                    m_viewer3dNeedsUpdate = true;
+                //                }
+                //                ImGui::SameLine();
+
+                ImGui::Text("%s (%i)", lbl, nbPts);
+                float button_y = window->DC.LastItemRect.Min.y + 2;
+
+                ImGuiID id = window->GetID(lbl);
+
                 if (!visible) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5);
-                if (ImGui::Button(btnVisible.c_str())) {
+                if (ImGuiC::RunButton(window->GetID((void *)((intptr_t)id + 1)),
+                                      ImVec2(button2_x, button_y),
+                                      P3D_ICON_VISIBLE)) {
                     pcd.setVisible(!visible);
                     m_viewer3dNeedsUpdate = true;
-                    LOG_DBG("PCD: %s: %i", lbl.c_str(), pcd.isVisible());
                 }
                 if (!visible) ImGui::PopStyleVar();
 
-                ImGui::SameLine();
-                if (ImGui::Button(btnDelete.c_str())) {
-                    ProjectManager::get()->deletePointCloud(m_projectData,
-                                                            lbl.c_str());
+                if (ImGuiC::RunButton(window->GetID((void *)((intptr_t)id + 2)),
+                                      ImVec2(button1_x, button_y),
+                                      P3D_ICON_DELETE)) {
+                    ProjectManager::get()->deletePointCloud(m_projectData, lbl);
                     m_viewer3dNeedsUpdate = true;
                 }
-                ImGui::SameLine();
-                ImGui::Text("%s (%i)", lbl.c_str(), nbPts);
             }
             ImGui::PopStyleVar();
-            ImGui::PopStyleColor();
             ImGui::TreePop();
         }
 #endif
@@ -1344,6 +1368,7 @@ void Application::_processKeyboardInput()
             m_showConsole = !m_showConsole;
         } else if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
             m_textureNeedsUpdate = true;
+            m_viewer3dNeedsUpdate = true;
             CommandManager::get()->undoCommand();
         } else if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
         }

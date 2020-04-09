@@ -38,20 +38,19 @@ public:
      * equivalent to key. If no such element exists, an exception of type
      * std::out_of_range is thrown.
      */
-    PointCloud& at(const char* lbl);
-    const PointCloud& at(const char* lbl) const;
+    PointCloud& at(const std::string& lbl);
+    const PointCloud& at(const std::string& lbl) const;
 
     /**
      * Returns a reference to the value that is mapped to a key equivalent to
      * key, performing an insertion if such key does not already exist.
      */
-    PointCloud& operator[](const char* lbl) noexcept;
+    PointCloud& operator[](const std::string& lbl) noexcept;
 
-    bool contains(const char* label) const;
+    bool contains(const std::string& lbl) const;
 
-    PointCloud* create(const char* lbl);
+    PointCloud* create(const std::string& lbl);
     void erase(const std::string& lbl);
-    void erase(const char* lbl);
     size_t size() const { return m_pointClouds.size(); }
 
     std::vector<PointCloud> getPointClouds() const;
@@ -70,14 +69,16 @@ private:
 class CommandPointCloudAdd : public Command
 {
 public:
-    CommandPointCloudAdd(PointCloudContainer* ctnr, const char* lbl,
-                         const Mat3Xf& pcd, const Mat3Xf& colors = {})
-        : m_lbl(lbl), m_ctnr(ctnr), m_vertices(pcd), m_colors(colors)
+    CommandPointCloudAdd(PointCloudContainer* ctnr, const std::string& lbl,
+                         const Mat3Xf& verts, const Mat3Xf& colors = {})
+        : m_lbl(lbl), m_ctnr(ctnr)
     {
         m_isValid = true;
         if (lbl == "") m_isValid = false;
-        if (pcd.cols() == 0) m_isValid = false;
+        if (verts.cols() == 0) m_isValid = false;
         if (ctnr == nullptr) m_isValid = false;
+
+        m_pcd = PointCloud(lbl, verts, colors);
     }
     virtual ~CommandPointCloudAdd() {}
     void undo()
@@ -86,21 +87,19 @@ public:
     }
     void execute()
     {
-        m_ctnr->operator[](m_lbl).setVertices(m_vertices);
-        m_ctnr->operator[](m_lbl).setColors(m_colors);
+        if (m_ctnr) m_ctnr->operator[](m_lbl) = m_pcd;
     }
 
 protected:
-    const char* m_lbl;
+    std::string m_lbl;
     PointCloudContainer* m_ctnr;
-    Mat3Xf m_vertices;
-    Mat3Xf m_colors;
+    PointCloud m_pcd;
 };
 
 class CommandPointCloudDelete : public Command
 {
 public:
-    CommandPointCloudDelete(PointCloudContainer* ctnr, const char* lbl)
+    CommandPointCloudDelete(PointCloudContainer* ctnr, const std::string& lbl)
         : m_lbl(lbl), m_ctnr(ctnr)
     {
         m_isValid = true;
@@ -109,15 +108,13 @@ public:
         if (!ctnr->contains(lbl)) m_isValid = false;
         if (m_isValid) {
             m_lbl = lbl;
-            m_vertices = ctnr->at(lbl).getVertices();
-            m_colors = ctnr->at(lbl).getColors();
+            m_pcd = ctnr->at(lbl);
         }
     }
     virtual ~CommandPointCloudDelete() {}
     void undo()
     {
-        m_ctnr->operator[](m_lbl).setVertices(m_vertices);
-        m_ctnr->operator[](m_lbl).setColors(m_colors);
+        if (m_ctnr) m_ctnr->operator[](m_lbl) = m_pcd;
     }
     void execute()
     {
@@ -125,10 +122,9 @@ public:
     }
 
 protected:
-    const char* m_lbl;
+    std::string m_lbl;
     PointCloudContainer* m_ctnr;
-    Mat3Xf m_vertices;
-    Mat3Xf m_colors;
+    PointCloud m_pcd;
 };
 
 }  // namespace p3d

@@ -55,8 +55,8 @@ public:
     cv::Mat dispMap;
 
     int dispMethod{DenseMatchingMethod_SGBM};
-    int dispLowerBound{-1};
-    int dispUpperBound{2};
+    int dispLowerBound{-3};
+    int dispUpperBound{4};
     int dispBlockSize{9};
 
     int dispFilterNewValue{0};

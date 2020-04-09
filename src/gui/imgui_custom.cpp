@@ -137,11 +137,12 @@ bool ImGuiC::RunButton(ImGuiID id, const ImVec2 &pos,
     auto radius = ImMax(2.0f, g.FontSize * 0.5f + 1.0f);
     if (hovered) {
         window->DrawList->AddCircleFilled(center, radius, col, 12);
-        if (icon == P3D_ICON_RUN)
+        if (icon == P3D_ICON_RUN) {
             ImGui::SetTooltip(
                 "Run the task for current item (image, pair, etc.)");
-        else
+        } else if (icon == P3D_ICON_RUNALL) {
             ImGui::SetTooltip("Run the task for all items (images, pairs)");
+        }
     }
 
     float fontScale = 0.8;

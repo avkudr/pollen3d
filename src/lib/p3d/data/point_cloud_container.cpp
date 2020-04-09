@@ -29,7 +29,7 @@ int PointCloudContainer::initMeta()
 bool PointCloudContainer::operator==(const PointCloudContainer &i) const
 {
     for (auto &pcd : m_pointClouds) {
-        const char *lbl = pcd.getLabel().c_str();
+        const std::string &lbl = pcd.getLabel().c_str();
         if (!i.contains(lbl)) return false;
 
         if (!(i.at(lbl) == pcd)) return false;
@@ -37,7 +37,7 @@ bool PointCloudContainer::operator==(const PointCloudContainer &i) const
     return true;
 }
 
-PointCloud &PointCloudContainer::at(const char *lbl)
+PointCloud &PointCloudContainer::at(const std::string &lbl)
 {
     for (auto &pcd : m_pointClouds)
         if (pcd.getLabel() == lbl) return pcd;
@@ -45,7 +45,7 @@ PointCloud &PointCloudContainer::at(const char *lbl)
     throw std::out_of_range("PointCloudContainer: out of range");
 }
 
-const PointCloud &PointCloudContainer::at(const char *lbl) const
+const PointCloud &PointCloudContainer::at(const std::string &lbl) const
 {
     for (auto &pcd : m_pointClouds)
         if (pcd.getLabel() == lbl) return pcd;
@@ -53,7 +53,7 @@ const PointCloud &PointCloudContainer::at(const char *lbl) const
     throw std::out_of_range("PointCloudContainer: out of range");
 }
 
-PointCloud &PointCloudContainer::operator[](const char *lbl) noexcept
+PointCloud &PointCloudContainer::operator[](const std::string &lbl) noexcept
 {
     for (auto &pcd : m_pointClouds)
         if (pcd.getLabel() == lbl) return pcd;
@@ -62,24 +62,22 @@ PointCloud &PointCloudContainer::operator[](const char *lbl) noexcept
     return m_pointClouds.back();
 }
 
-bool PointCloudContainer::contains(const char *label) const
+bool PointCloudContainer::contains(const std::string &lbl) const
 {
     for (auto &pcd : m_pointClouds)
-        if (pcd.getLabel() == label) return true;
+        if (pcd.getLabel() == lbl) return true;
 
     return false;
 }
 
-PointCloud *PointCloudContainer::create(const char *lbl)
+PointCloud *PointCloudContainer::create(const std::string &lbl)
 {
     LOG_WARN("Check for duplicates and resolve otherwise");
     m_pointClouds.push_back(PointCloud(lbl, {}));
     return &m_pointClouds.back();
 }
 
-void PointCloudContainer::erase(const std::string &lbl) { erase(lbl.c_str()); }
-
-void PointCloudContainer::erase(const char *lbl)
+void PointCloudContainer::erase(const std::string &lbl)
 {
     auto it = m_pointClouds.begin();
     while (it != m_pointClouds.end()) {
