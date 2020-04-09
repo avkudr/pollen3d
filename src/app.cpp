@@ -1096,6 +1096,8 @@ void Application::_drawProperties()
         if (!im) return;
 
         drawProperty_basic(im->getPath().c_str(), "path", "%s");
+        drawProperty_basic(im->width(), "width", "%i");
+        drawProperty_basic(im->height(), "height", "%i");
         drawProperty_basic(im->getNbFeatures(), "features", "%i");
         if (!im->getTranslation().isApprox(Vec2(0, 0))) {
             drawProperty_matrix(im->getCamera().getK(), "K",
