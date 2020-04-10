@@ -62,6 +62,8 @@ public:
 
     // ***** Misc
 
+    void setImagePairProperty(ProjectData &data, const P3D_ID_TYPE &propId,
+                              const entt::meta_any &value, std::vector<int> imPairsIds = {});
     void copyImagePairProperty(ProjectData &data, const P3D_ID_TYPE &propId,
                                int from, const std::vector<int> &to = {});
 

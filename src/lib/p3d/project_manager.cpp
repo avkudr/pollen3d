@@ -899,6 +899,29 @@ void ProjectManager::setSetting(const p3dSetting &id, const entt::meta_any &valu
         new CommandSetProperty(&m_settings, P3D_ID_TYPE(id), value));
 }
 
+void ProjectManager::setImagePairProperty(ProjectData &data, const P3D_ID_TYPE &propId,
+                                          const entt::meta_any &value, std::vector<int> imPairsIds)
+{
+    if (data.nbImagePairs() == 0) return;
+    if (imPairsIds.empty())
+        for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
+
+    CommandGroup *group = new CommandGroup();
+
+    for (int idx = 0; idx < imPairsIds.size(); idx++) {
+        auto i = imPairsIds[idx];
+        auto imPair = data.imagePair(i);
+        if (!imPair) continue;
+
+        group->add(new CommandSetProperty(imPair, propId, value));
+    }
+
+    if (group->empty())
+        delete group;
+    else
+        CommandManager::get()->executeCommand(group);
+}
+
 void ProjectManager::copyImagePairProperty(ProjectData &projectData,
                                            const P3D_ID_TYPE &propId, int from,
                                            const std::vector<int> &to)
@@ -939,5 +962,5 @@ void ProjectManager::copyImagePairProperty(ProjectData &projectData,
                          std::to_string(from) + ") to " +
                          utils::to_string(toVec);
 
-    LOG_OK("%s", output.c_str());
+    LOG_DBG("%s", output.c_str());
 }

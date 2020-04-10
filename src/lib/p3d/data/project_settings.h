@@ -13,6 +13,8 @@ enum p3dSetting_ {
     p3dSetting_featuresDescSize = 1101,
     p3dSetting_featuresDescChannels = 1102,
     p3dSetting_featuresThreshold = 1103,
+
+    p3dSetting_shaderMatchingPars = 1200,
 };
 
 struct ProjectSettings : Serializable<ProjectSettings>{
@@ -27,5 +29,7 @@ struct ProjectSettings : Serializable<ProjectSettings>{
     int featuresDescSize{0};
     int featuresDescChannels{3};
     float featuresThreshold{0.001f};
+
+    bool sharedMatchingPars{true};
 };
 }  // namespace p3d

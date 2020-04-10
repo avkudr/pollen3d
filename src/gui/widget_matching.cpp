@@ -30,6 +30,11 @@ void WidgetMatching::drawImpl(ProjectData& data)
 
         if (disableButtons) ImGuiC::PushDisabled();
 
+        // **** parameters
+
+        bool needsUpdate = false;
+        auto matchingPars = imPair ? imPair->getMatchingPars() : MatchingPars();
+
         ImGuiC::BeginSubGroup();
         const char* matchingAlgos[] = {"FlannBased",
                                        "BruteForce",
@@ -37,29 +42,45 @@ void WidgetMatching::drawImpl(ProjectData& data)
                                        "BruteForce-Hamming",
                                        "BruteForce-HammmingLUT",
                                        "BruteForce-SL2"};
-        auto matcherCurAlg = imPair ? imPair->getMatchingPars().method : 2;
+        auto matcherCurAlg = matchingPars.method;
 
-        if (ImGui::Combo("matcher", &matcherCurAlg, matchingAlgos,
-                         IM_ARRAYSIZE(matchingAlgos))) {
-            ProjectManager::get()->setProperty(
-                imPair->matchingPars(), p3dMatching_method, matcherCurAlg);
+        if (ImGui::Combo("matcher", &matcherCurAlg, matchingAlgos, IM_ARRAYSIZE(matchingAlgos))) {
+            matchingPars.method = matcherCurAlg;
+            needsUpdate = true;
         }
 
-        auto matcherFilterCoef = imPair ? imPair->getMatchingPars().filterCoeff : 0.3f;
+        auto matcherFilterCoef = matchingPars.filterCoeff;
 
         float min = 0.1f;
         float max = 1.0f;
         ImGui::InputFloat("filter coef", &matcherFilterCoef, min, max, "%.2f");
         matcherFilterCoef = std::max(min, std::min(matcherFilterCoef, max));
         if (ImGui::IsItemEdited()) {
-            ProjectManager::get()->setProperty(imPair->matchingPars(), p3dMatching_filterCoeff,
-                                               matcherFilterCoef);
+            matchingPars.filterCoeff = matcherFilterCoef;
+            needsUpdate = true;
         }
 
-        if (ImGui::Button("copy settings to all")) {
-            ProjectManager::get()->copyImagePairProperty(
-                data, p3dImagePair_matchingPars, m_currentItemIdx);
+        bool globalSetting =
+            ProjectManager::get()->getSetting(p3dSetting_shaderMatchingPars).cast<bool>();
+        if (ImGui::Checkbox("shared parameters##matching", &globalSetting)) {
+            if (globalSetting == true) {
+                ProjectManager::get()->copyImagePairProperty(data, p3dImagePair_matchingPars,
+                                                             m_currentItemIdx);
+                CommandManager::get()->mergeNextCommand();
+            }
+            ProjectManager::get()->setSetting(p3dSetting_shaderMatchingPars, globalSetting);
         }
+
+        if (needsUpdate) {
+            std::vector<int> pairsToUpdate = {};
+            if (!globalSetting) pairsToUpdate = {m_currentItemIdx};
+            ProjectManager::get()->setImagePairProperty(data, p3dImagePair_matchingPars,
+                                                        matchingPars, pairsToUpdate);
+        }
+
+        // **** tasks
+
+        ImGui::Separator();
         if (ImGui::Button(P3D_ICON_RUN " Match features")) run = true;
         ImGui::SameLine();
         if (ImGui::Button(P3D_ICON_RUNALL " ALL##matching")) runAll = true;
