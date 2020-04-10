@@ -15,6 +15,9 @@
 
 using namespace p3d;
 
+#define __ID_PROP_INT 110521
+#define __ID_PROP_EIGEN 110581
+
 class A
 {
 public:
@@ -24,8 +27,8 @@ public:
         if (firstCall) {
             entt::meta<A>()
                 .type(P3D_ID_TYPE(110520))
-                .data<&A::setValue, &A::getValue>(P3D_ID_TYPE(110521))
-                .data<&A::setEigenMat, &A::getEigenMat>(P3D_ID_TYPE(110581));
+                .data<&A::setValue, &A::getValue>(P3D_ID_TYPE(__ID_PROP_INT))
+                .data<&A::setEigenMat, &A::getEigenMat>(P3D_ID_TYPE(__ID_PROP_EIGEN));
 
             firstCall = false;
         }
@@ -386,7 +389,7 @@ TEST(COMMANDS, command_setProperty)
     A a;
     a.setValue(15);
     EXPECT_EQ(a.getValue(), 15);
-    CommandManager::get()->executeCommand(new CommandSetProperty(&a, 110521, 254));
+    CommandManager::get()->executeCommand(new CommandSetProperty(&a, __ID_PROP_INT, 254));
     EXPECT_EQ(a.getValue(), 254);
     CommandManager::get()->undoCommand();
     EXPECT_EQ(a.getValue(), 15);
@@ -402,7 +405,7 @@ TEST(COMMANDS, command_setPropertyEigenDyn)
     A a;
     a.setEigenMat(m);
     EXPECT_EQ(a.getEigenMat(), m);
-    CommandManager::get()->executeCommand(new CommandSetProperty(&a, 110581, m1));
+    CommandManager::get()->executeCommand(new CommandSetProperty(&a, __ID_PROP_EIGEN, m1));
     EXPECT_EQ(a.getEigenMat(), m1);
     CommandManager::get()->undoCommand();
     EXPECT_EQ(a.getEigenMat(), m);
@@ -414,10 +417,10 @@ TEST(COMMANDS, command_setPropertyGroup)
     a.setValue(15);
     EXPECT_EQ(a.getValue(), 15);
     CommandGroup *grp = new CommandGroup();
-    grp->add(new CommandSetProperty(&a, 110521, 20));
-    grp->add(new CommandSetProperty(&a, 110521, 21));
-    grp->add(new CommandSetProperty(&a, 110521, 22));
-    grp->add(new CommandSetProperty(&a, 110521, 23));
+    grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 20));
+    grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 21));
+    grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 22));
+    grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 23));
     CommandManager::get()->executeCommand(grp);
     EXPECT_EQ(a.getValue(), 23);
     CommandManager::get()->undoCommand();
@@ -438,6 +441,24 @@ TEST(COMMANDS, command_setPropertyCV)
     EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(), C));
     CommandManager::get()->undoCommand();
     EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(), B));
+}
+
+TEST(COMMANDS, command_mergeNextCmd)
+{
+    A a;
+    a.setValue(15);
+    a.setEigenMat(Mat(Mat3::Identity()));
+
+    CommandManager::get()->executeCommand(new CommandSetProperty(&a, __ID_PROP_INT, 254));
+    CommandManager::get()->mergeNextCommand();
+    CommandManager::get()->executeCommand(
+        new CommandSetProperty(&a, __ID_PROP_EIGEN, Mat(Mat4::Zero())));
+
+    EXPECT_EQ(a.getValue(), 254);
+    EXPECT_EQ(a.getEigenMat(), Mat(Mat4::Zero()));
+    CommandManager::get()->undoCommand();
+    EXPECT_EQ(a.getValue(), 15);
+    EXPECT_EQ(a.getEigenMat(), Mat(Mat3::Identity()));
 }
 
 TEST(META, meta_setSettings)

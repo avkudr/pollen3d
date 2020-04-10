@@ -114,6 +114,7 @@ public:
     {
         if (!m_instance) return;
         if (!m_data) return;
+        LOG_DBG("Undo SetProperty: %i (%p)", m_propId, m_instance);
         m_data.set(*m_instance, m_from);
     }
 
@@ -219,7 +220,16 @@ public:
     {
         if (cmd->isValid()) {
             cmd->execute();
-            m_commandStack.push_back(cmd);
+
+            if (m_mergeNextCommand) {
+                CommandGroup *newGroup = new CommandGroup();
+                newGroup->add(m_commandStack.back());
+                newGroup->add(cmd);
+                m_commandStack.pop_back();
+                m_commandStack.push_back(newGroup);
+                m_mergeNextCommand = false;
+            } else
+                m_commandStack.push_back(cmd);
         }
     }
     void undoCommand()
@@ -235,6 +245,8 @@ public:
         }
     }
 
+    void mergeNextCommand() { m_mergeNextCommand = true; }
+
 private:
     CommandManager() {}
     ~CommandManager()
@@ -244,6 +256,8 @@ private:
 
     static CommandManager *m_instance;
     std::vector<Command *> m_commandStack;
+
+    bool m_mergeNextCommand{false};
 };
 
 }  // namespace p3d
