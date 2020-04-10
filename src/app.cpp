@@ -801,8 +801,14 @@ void Application::_drawTab_Multiview()
 #ifdef POLLEN3D_DEBUG
                     if (ImGui::Button("Triangulate dense (multi-view)")) {
                         _doHeavyTask([&]() {
-                            ProjectManager::get()->triangulateDense(
-                                m_projectData);
+                            ProjectManager::get()->triangulateDense(m_projectData);
+                            m_viewer3dNeedsUpdate = true;
+                        });
+                    }
+
+                    if (ImGui::Button("Triangulate dense (dev)")) {
+                        _doHeavyTask([&]() {
+                            ProjectManager::get()->triangulateDenseDev(m_projectData);
                             m_viewer3dNeedsUpdate = true;
                         });
                     }

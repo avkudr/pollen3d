@@ -659,26 +659,29 @@ void ProjectManager::triangulateStereo(ProjectData &data,
         std::vector<Vec3f> colors;
 
         cv::Mat I = data.imagePair(pairIdx)->getRectifiedImageL();
-        if (I.type() != CV_8UC3)
-            LOG_DBG("Rectified image has wrong type: %i", I.type());
+        Mat3 Tl = data.imagePair(pairIdx)->getRectifyingTransformL().inverse();
+        Mat34 P = data.getCameraMatrices()[imPair->imL()];
+
+        if (I.type() != CV_8UC3) LOG_DBG("Rectified image has wrong type: %i", I.type());
 
         for (int u = 0; u < dispValues.cols; ++u) {
             for (int v = 0; v < dispValues.rows; ++v) {
                 const float d = dispValues.at<float>(v, u);
                 if (d * 0.0 != 0.0) continue;  // check for NaN
 
-                const float q1x = u;
-                const float q1y = v;
-                const float q2x = float(u) + d;
+                Vec3 unrectified = Tl * Vec3(u, v, 1.0);
+                const float q1x = static_cast<float>(unrectified(0));
+                const float q1y = static_cast<float>(unrectified(1));
+                const float q2x = q1x + d;
 
-                const float q1z = (q1x * cosRho - q2x) / sinRho;
+                const float q1z = -(q1x * cosRho - q2x) / sinRho;
 
                 //            #pragma omp critical
                 cv::Vec3b c = I.at<cv::Vec3b>(v, u);
                 if (c != cv::Vec3b(0, 0, 0)) {
-                    pts3D.emplace_back(Vec3f(q1x, q1y, q1z));
-                    colors.emplace_back(Vec3f(
-                        c.val[0] / 255.f, c.val[1] / 255.f, c.val[2] / 255.f));
+                    pts3D.emplace_back(Vec3f(q1x - P(0, 3), q1y - P(1, 3), q1z));
+                    colors.emplace_back(
+                        Vec3f(c.val[0] / 255.f, c.val[1] / 255.f, c.val[2] / 255.f));
                 }
             }
         }

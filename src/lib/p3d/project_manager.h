@@ -46,8 +46,9 @@ public:
     void findMeasurementMatrix(ProjectData & data);
     void autocalibrate(ProjectData & data);
     void triangulate(ProjectData & data);
-    void triangulateStereo(ProjectData &data, std::vector<int> imPairsIds = {});
-    void triangulateDense(ProjectData & data);
+    void triangulateDenseStereo(ProjectData &data, std::vector<int> imPairsIds = {});
+    void triangulateDenseMultiview(ProjectData &data);
+    void triangulateDenseDev(ProjectData &data);
     void bundleAdjustment(ProjectData & data);
     void exportPLY(const ProjectData &data, const std::string &label,
                    const std::string &filepath);

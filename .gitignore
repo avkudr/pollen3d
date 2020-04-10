@@ -5,4 +5,6 @@ build*/
 3rdparty/glfw**/*.svg
 *.txt.user*
 .vscode
+.vs
 *.DS_Store
+*.autosave
