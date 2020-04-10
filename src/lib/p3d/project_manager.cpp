@@ -151,9 +151,9 @@ void ProjectManager::extractFeatures(ProjectData &data, std::vector<int> imIds)
     }
 }
 
-void ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsIds)
+bool ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsIds)
 {
-    if (data.nbImagePairs() == 0) return;
+    if (data.nbImagePairs() == 0) return false;
     if (imPairsIds.empty())
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
@@ -194,26 +194,29 @@ void ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsId
             continue;
         }
 
-        auto cmd1 =
-            new CommandSetProperty(imPair, p3dImagePair_matches, matchesPair);
+        auto cmd = new CommandSetProperty(imPair, p3dImagePair_matches, matchesPair);
 
 #pragma omp critical
         {
-            groupCmd->add(cmd1);
-            LOG_OK("Pair %i, matched %i features", imPairsIds[i],
-                   matchesPair.size());
+            groupCmd->add(cmd);
+            LOG_OK("Pair %i, matched %i features", imPairsIds[i], matchesPair.size());
+            if (!cmd->isValid())
+                LOG_WARN("Pair %i, matches didn't change", imPairsIds[i]);
         }
     }
 
-    if (groupCmd->empty())
+    if (groupCmd->empty()) {
         delete groupCmd;
-    else
+        return false;
+    } else
         CommandManager::get()->executeCommand(groupCmd);
+
+    return true;
 }
 
-void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> imPairsIds)
+bool ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> imPairsIds)
 {
-    if (data.nbImagePairs() == 0) return;
+    if (data.nbImagePairs() == 0) return false;
     if (imPairsIds.empty())
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
@@ -245,23 +248,30 @@ void ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
             groupCmd->add(cmd1);
             groupCmd->add(cmd2);
             groupCmd->add(cmd3);
-            LOG_OK("Pair %i, estimated F (ceres)", i);
+
+            if (cmd1->isValid())
+                LOG_OK("Pair %i, estimated F (ceres)", i);
+            else
+                LOG_WARN("Pair %i, F didn't change", imPairsIds[i]);
         }
     }
 
-    if (groupCmd->empty())
+    if (groupCmd->empty()) {
         delete groupCmd;
-    else
+        return false;
+    } else
         CommandManager::get()->executeCommand(groupCmd);
+
+    return true;
 }
 
-void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPairsIds)
+bool ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPairsIds)
 {
     LOG_INFO("ProjectManager::rectifyImagePairs");
 
     if (data.nbImagePairs() == 0) {
         LOG_ERR("No image pair to rectify");
-        return;
+        return false;
     }
 
     if (imPairsIds.empty())
@@ -334,15 +344,18 @@ void ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
         }
     }
 
-    if (groupCmd->empty())
+    if (groupCmd->empty()) {
         delete groupCmd;
-    else
+        return false;
+    } else
         CommandManager::get()->executeCommand(groupCmd);
+
+    return true;
 }
 
-void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPairsIds)
+bool ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPairsIds)
 {
-    if (data.nbImagePairs() == 0) return;
+    if (data.nbImagePairs() == 0) return false;
     if (imPairsIds.empty())
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
@@ -382,10 +395,13 @@ void ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPair
         }
     }
 
-    if (groupCmd->empty())
+    if (groupCmd->empty()) {
         delete groupCmd;
-    else
+        return false;
+    } else
         CommandManager::get()->executeCommand(groupCmd);
+
+    return true;
 }
 
 void ProjectManager::filterDisparityBilateral(ProjectData &data, std::vector<int> imPairsIds)
@@ -566,7 +582,7 @@ void ProjectManager::autocalibrate(ProjectData &data)
 
 void ProjectManager::triangulate(ProjectData &data)
 {
-    LOG_DBG("MAKE BUTTON DISABLED");
+    LOG_DBG("MAKE BUTTON DISABLED IF NO CALIB + NO FULL W");
 
     auto Wf = data.getMeasurementMatrixFull();
     if (Wf.rows() == 0 || Wf.cols() == 0) {
@@ -900,7 +916,8 @@ void ProjectManager::setSetting(const p3dSetting &id, const entt::meta_any &valu
 }
 
 void ProjectManager::setImagePairProperty(ProjectData &data, const P3D_ID_TYPE &propId,
-                                          const entt::meta_any &value, std::vector<int> imPairsIds)
+                                          const entt::meta_any &value,
+                                          std::vector<int> imPairsIds)
 {
     if (data.nbImagePairs() == 0) return;
     if (imPairsIds.empty())

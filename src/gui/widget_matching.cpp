@@ -14,8 +14,12 @@ void WidgetMatching::drawImpl(ProjectData& data)
     bool disabled = false;
     auto imPair = data.imagePair(m_currentItemIdx);
     if (imPair == nullptr) disabled = true;
-    //    else if (!imPair->has())
-    //        disabled = true;
+    if (!disabled) {
+        const auto& iL = data.getImage(imPair->imL());
+        const auto& iR = data.getImage(imPair->imR());
+        disabled |= (iL.getNbFeatures() == 0);
+        disabled |= (iR.getNbFeatures() == 0);
+    }
 
     if (disabled) ImGuiC::PushDisabled();
 

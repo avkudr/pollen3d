@@ -117,8 +117,10 @@ protected:
     int m_currentTabForce = -1;
     int m_currentImage = -1;
 
-    enum Section_{
+    enum Section_ {
         Section_Default = 0,
+        Section_Matches = Section_Default,
+        Section_Epilines,
         Section_Rectified,
         Section_DisparityMap,
     };

@@ -54,10 +54,15 @@ public:
         return &m_images[idx];
     }
 
-    ImagePair * imagePair(const std::size_t idx) {
+    const Image &getImage(const std::size_t idx) const { return m_images[idx]; }
+
+    ImagePair *imagePair(const std::size_t idx)
+    {
         if (idx >= m_imagesPairs.size()) return nullptr;
         return &m_imagesPairs[idx];
     }
+
+    const ImagePair &getImagePair(const std::size_t idx) const { return m_imagesPairs[idx]; }
 
     // ***** image pair (simplified accessors)
 
@@ -66,18 +71,18 @@ public:
 
     void getPairwiseMatches(const std::size_t idx, std::vector<Vec2> &ptsL,
                             std::vector<Vec2> &ptsR);
-    void getEpipolarErrorsResidual(const std::size_t idx, Vec & errorsSquared);
+    void getEpipolarErrorsResidual(const std::size_t idx, Vec &errorsSquared);
     void getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances);
 
     // ***** measurement matrix
 
     const Mat &getMeasurementMatrix() const { return m_measurementMatrix; }
-    void setMeasurementMatrix(const Mat & W) { m_measurementMatrix = W; }
-    const Mat & getMeasurementMatrixFull() const { return m_measurementMatrixFull; } // [3*nbImages,nbPts]
-    void setMeasurementMatrixFull(const Mat &Wf)
+    void setMeasurementMatrix(const Mat &W) { m_measurementMatrix = W; }
+    const Mat &getMeasurementMatrixFull() const
     {
-        m_measurementMatrixFull = Wf;
-    }
+        return m_measurementMatrixFull;
+    }  // [3*nbImages,nbPts]
+    void setMeasurementMatrixFull(const Mat &Wf) { m_measurementMatrixFull = Wf; }
 
     // ***** cameras (intrinsic, extrinsic)
 
@@ -85,8 +90,7 @@ public:
     void setCamerasIntrinsics(std::vector<Vec3> &cam);
 
     void getCamerasRotations(std::vector<Mat3> *R) const;
-    void getCamerasExtrinsics(std::vector<Vec3> *Rvec,
-                              std::vector<Vec2> *t) const;
+    void getCamerasExtrinsics(std::vector<Vec3> *Rvec, std::vector<Vec2> *t) const;
     void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t);
 
     std::vector<Mat34> getCameraMatrices() const;

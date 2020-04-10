@@ -53,14 +53,13 @@ public:
 }  // namespace p3d
 
 #define LOG_IMPL(type, color, ...)            \
-    {                                         \
+    do {                                      \
         if (p3d::_logger) {                   \
             p3d::_logger->setType(type);      \
             p3d::_logger->setColor(color);    \
             p3d::_logger->print(__VA_ARGS__); \
         }                                     \
-    }                                         \
-    fflush(stdout)
+    } while (0)
 
 #define P3D_INIT_STD_LOGGER() _logger = new p3d::StdLoger();
 

@@ -450,7 +450,7 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
     if (m_projectData.nbImages() < 2) ImGuiC::PushDisabled();
     if (ImGui::Button(ICON_FA_ROCKET " One click!", buttonRect)) {
-        LOG_DBG("3D reconstruction");
+        LOG_OK("3D reconstruction in one click...");
         auto f = [&]() {
             ProjectManager::get()->extractFeatures(m_projectData);
             ProjectManager::get()->matchFeatures(m_projectData);
@@ -467,7 +467,7 @@ void Application::_drawMenuBar(int width)
             ProjectManager::get()->findDisparityMap(m_projectData);
             ProjectManager::get()->filterDisparityBilateral(m_projectData);
 
-            ProjectManager::get()->triangulateStereo(m_projectData);
+            ProjectManager::get()->triangulateStereo(m_projectData, {0});
 
             _resetAppState();
         };
@@ -564,19 +564,19 @@ void Application::_drawTab_Stereo()
             if (m_widgetMatching) {
                 m_widgetMatching->draw(m_projectData, m_currentImage);
 
-                if (m_widgetMatching->isRequested("run")) {
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->matchFeatures(m_projectData,
-                                                             {m_currentImage});
+                auto f = [&](const std::vector<int> &imIds) {
+                    bool success =
+                        ProjectManager::get()->matchFeatures(m_projectData, imIds);
+                    if (success) {
+                        m_currentSection = Section_Matches;
                         m_textureNeedsUpdate = true;
-                    });
-                }
-                if (m_widgetMatching->isRequested("run_all")) {
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->matchFeatures(m_projectData);
-                        m_textureNeedsUpdate = true;
-                    });
-                }
+                    }
+                };
+
+                if (m_widgetMatching->isRequested("run"))
+                    _doHeavyTask(f, std::vector<int>({m_currentImage}));
+                if (m_widgetMatching->isRequested("run_all"))
+                    _doHeavyTask(f, std::vector<int>());
             }
 
             // ***** Epipolar geometry
@@ -598,24 +598,27 @@ void Application::_drawTab_Stereo()
                 }
                 if (disableButtons) ImGuiC::PopDisabled();
 
-                if (run)
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->findFundamentalMatrix(
-                            m_projectData, {m_currentImage});
+                auto f = [&](const std::vector<int> &imIds) {
+                    bool success = ProjectManager::get()->findFundamentalMatrix(
+                        m_projectData, imIds);
+                    if (success) {
+                        m_currentSection = Section_Epilines;
                         m_textureNeedsUpdate = true;
-                    });
-                if (runAll)
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->findFundamentalMatrix(
-                            m_projectData);
-                        m_textureNeedsUpdate = true;
-                    });
+                    }
+                };
+
+                if (run) _doHeavyTask(f, std::vector<int>({m_currentImage}));
+                if (runAll) _doHeavyTask(f, std::vector<int>());
             }
 
             // ***** Rectification
 
             {
                 bool disableButtons = disabled;
+                if (!disableButtons) {
+                    disableButtons |= utils::floatEq(imPair->getTheta1(), 0.0);
+                    disableButtons |= utils::floatEq(imPair->getTheta2(), 0.0);
+                }
                 if (disableButtons) ImGuiC::PushDisabled();
 
                 bool run{false}, runAll{false};
@@ -631,9 +634,12 @@ void Application::_drawTab_Stereo()
                 if (disableButtons) ImGuiC::PopDisabled();
 
                 auto f = [&](const std::vector<int> &imIds) {
-                    ProjectManager::get()->rectifyImagePairs(m_projectData,
-                                                             imIds);
-                    m_textureNeedsUpdate = true;
+                    bool success =
+                        ProjectManager::get()->rectifyImagePairs(m_projectData, imIds);
+                    if (success) {
+                        m_currentSection = Section_Rectified;
+                        m_textureNeedsUpdate = true;
+                    }
                 };
 
                 if (run) _doHeavyTask(f, std::vector<int>({m_currentImage}));
@@ -645,19 +651,20 @@ void Application::_drawTab_Stereo()
             if (m_widgetDenseMatching) {
                 m_widgetDenseMatching->draw(m_projectData, m_currentImage);
 
-                if (m_widgetDenseMatching->isRequested("run")) {
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->findDisparityMap(
-                            m_projectData, {m_currentImage});
+                auto fDisp = [&](const std::vector<int> &imIds) {
+                    bool success =
+                        ProjectManager::get()->findDisparityMap(m_projectData, imIds);
+                    if (success) {
+                        m_currentSection = Section_DisparityMap;
                         m_textureNeedsUpdate = true;
-                    });
-                }
-                if (m_widgetDenseMatching->isRequested("run_all")) {
-                    _doHeavyTask([&]() {
-                        ProjectManager::get()->findDisparityMap(m_projectData);
-                        m_textureNeedsUpdate = true;
-                    });
-                }
+                    }
+                };
+
+                const auto &run = m_widgetDenseMatching->isRequested("run");
+                const auto &runall = m_widgetDenseMatching->isRequested("run_all");
+                if (run) _doHeavyTask(fDisp, std::vector<int>({m_currentImage}));
+                if (runall) _doHeavyTask(fDisp, std::vector<int>());
+
                 if (m_widgetDenseMatching->isRequested("run_bilateral")) {
                     _doHeavyTask([&]() {
                         ProjectManager::get()->filterDisparityBilateral(
@@ -951,9 +958,9 @@ void Application::_drawData()
                     ICON_FA_IMAGES " " + imL->name() + " <> " + imR->name();
                 if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
                     if (m_currentImage != n ||
-                        m_currentSection != Section_Default) {
+                        !isOneOf(m_currentSection, {Section_Matches, Section_Epilines})) {
                         m_currentImage = n;
-                        m_currentSection = Section_Default;
+                        m_currentSection = Section_Matches;
                         m_textureNeedsUpdate = true;
                         LOG_DBG("Selection changed: %i", n);
                         LOG_DBG(" - section: %i", m_currentSection);
@@ -1303,10 +1310,6 @@ void Application::_drawCentral()
     }
 
     if (isOneOf(m_currentTab, {Tab_General, Tab_Image, Tab_Stereo})) {
-        const int SHOW_MATCHES = 0;
-        const int SHOW_EPILINES = 1;
-        static int display = SHOW_MATCHES;
-
         static bool showFeatures = true;
         static bool showAnimated = false;
         int controlBottomBarHeight = 35;
@@ -1325,7 +1328,7 @@ void Application::_drawCentral()
             } else if (m_currentTab == Tab_Stereo) {
                 auto imPair = m_projectData.imagePair(m_currentImage);
                 if (imPair && imPair->isValid()) {
-                    if (m_currentSection == Section_Default) {
+                    if (isOneOf(m_currentSection, {Section_Matches, Section_Epilines})) {
                         auto imIdxL = imPair->imL();
                         auto imIdxR = imPair->imR();
                         auto imL = m_projectData.image(imIdxL);
@@ -1391,13 +1394,12 @@ void Application::_drawCentral()
                     _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH), color,
                                   featuresSize);
             } else if (m_currentTab == Tab_Stereo) {
-                if (m_currentSection == Section_Default) {
-                    if (display == SHOW_MATCHES)
-                        _showMatches(ImVec2(posX, posY), ImVec2(newW, newH),
-                                     color, lineWidth, skipEvery);
-                    else if (display == SHOW_EPILINES)
-                        _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH),
-                                      color, lineWidth, skipEvery);
+                if (m_currentSection == Section_Matches) {
+                    _showMatches(ImVec2(posX, posY), ImVec2(newW, newH), color, lineWidth,
+                                 skipEvery);
+                } else if (m_currentSection == Section_Epilines) {
+                    _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH), color,
+                                  lineWidth, skipEvery);
                 } else if (m_currentSection == Section_Rectified) {
                     // just draw a horizontal line to judge the quality of
                     // rectification
@@ -1432,12 +1434,18 @@ void Application::_drawCentral()
             ImGui::SliderFloat("##feature-size", &featuresSize, 1.0f, 15.0f,
                                "feat_size:%.1f");
         } else if (m_currentTab == Tab_Stereo) {
-            if (m_currentSection == Section_Default) {
+            if (isOneOf(m_currentSection, {Section_Matches, Section_Epilines})) {
+                const int SHOW_MATCHES = 0;
+                const int SHOW_EPILINES = 1;
+                int display = m_currentSection == Section_Matches ? 0 : 1;
+
                 ImGui::Text("--");
                 ImGui::SameLine();
                 ImGui::RadioButton("matches", &display, 0);
                 ImGui::SameLine();
                 ImGui::RadioButton("epilines", &display, 1);
+
+                m_currentSection = display == 0 ? Section_Matches : Section_Epilines;
             }
             ImGui::SameLine();
             const char *sliderText =

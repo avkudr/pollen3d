@@ -33,10 +33,10 @@ public:
 
     // ***** Pairs
 
-    void matchFeatures(ProjectData & data, std::vector<int> imPairsIds = {});
-    void findFundamentalMatrix(ProjectData & data, std::vector<int> imPairsIds = {});
-    void rectifyImagePairs(ProjectData & data, std::vector<int> imPairsIds = {});
-    void findDisparityMap(ProjectData & data, std::vector<int> imPairsIds = {});
+    bool matchFeatures(ProjectData &data, std::vector<int> imPairsIds = {});
+    bool findFundamentalMatrix(ProjectData &data, std::vector<int> imPairsIds = {});
+    bool rectifyImagePairs(ProjectData &data, std::vector<int> imPairsIds = {});
+    bool findDisparityMap(ProjectData &data, std::vector<int> imPairsIds = {});
     void filterDisparityBilateral(ProjectData & data, std::vector<int> imPairsIds = {});
     void filterDisparitySpeckles(ProjectData & data, std::vector<int> imPairsIds = {});
 
@@ -63,7 +63,8 @@ public:
     // ***** Misc
 
     void setImagePairProperty(ProjectData &data, const P3D_ID_TYPE &propId,
-                              const entt::meta_any &value, std::vector<int> imPairsIds = {});
+                              const entt::meta_any &value,
+                              std::vector<int> imPairsIds = {});
     void copyImagePairProperty(ProjectData &data, const P3D_ID_TYPE &propId,
                                int from, const std::vector<int> &to = {});
 
