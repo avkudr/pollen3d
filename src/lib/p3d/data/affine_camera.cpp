@@ -41,14 +41,6 @@ AffineCamera::~AffineCamera()
 
 }
 
-bool AffineCamera::operator==(const AffineCamera &i) const{
-    if (!utils::floatEq(getAlpha() ,i.getAlpha() )) return false;
-    if (!utils::floatEq(getSkew()  ,i.getSkew()  )) return false;
-    if (!utils::floatEq(getFocal() ,i.getFocal() )) return false;
-    return true;
-}
-
-
 void AffineCamera::updateA(){
     m_A << m_focal * m_alpha,  m_skew,
             0, m_focal;

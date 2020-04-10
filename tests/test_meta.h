@@ -82,6 +82,8 @@ public:
     {
     }
 
+    bool operator==(const ClassA &i) const { return false; }
+
     float float1 = 0.5;
     float float2 = 0.5;
     int integer = 24;
@@ -496,4 +498,16 @@ TEST(META, meta_setValueClassAttribute)
     d.value = data.get(b);
 
     EXPECT_EQ(d.value, b.value);
+}
+
+TEST(META, meta_compare)
+{
+    MatchingPars p1;
+    MatchingPars p2;
+
+    EXPECT_TRUE(p1 == p2);
+
+    p2.filterCoeff *= 2;
+
+    EXPECT_FALSE(p1 == p2);
 }

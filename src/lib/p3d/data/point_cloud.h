@@ -24,7 +24,7 @@ public:
     PointCloud(const std::string& label, const Mat3Xf& pcd,
                const Mat3Xf& colors = {});
 
-    bool operator==(const PointCloud& i) const;
+    bool operator==(const PointCloud& i) const override;
 
     std::string getLabel() const;
     void setLabel(const std::string& label);

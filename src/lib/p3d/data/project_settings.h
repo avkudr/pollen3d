@@ -19,14 +19,11 @@ struct ProjectSettings : Serializable<ProjectSettings>{
 
     static int initMeta();
 
-    ProjectSettings() {
+    ProjectSettings() {}
 
-    }
+    ~ProjectSettings() {}
 
-    ~ProjectSettings() {
-
-    }
-    int featuresDescType{5}; // cv::AKAZE::DESCRIPTOR_MLDB
+    int featuresDescType{5};  // cv::AKAZE::DESCRIPTOR_MLDB
     int featuresDescSize{0};
     int featuresDescChannels{3};
     float featuresThreshold{0.001f};

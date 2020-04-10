@@ -206,7 +206,18 @@ public:
 
     virtual ~Serializable() {}
 
-    // virtual bool operator==(const T& i) const = 0;
+    virtual bool operator==(const T& i) const
+    {
+        T* lhs = dynamic_cast<T*>(const_cast<Serializable<T>*>(this));
+        T* rhs = const_cast<T*>(&i);
+        bool res = true;
+        entt::resolve<T>().data([&](entt::meta_data data) {
+            if (data.get(*lhs) != data.get(*rhs)) res = false;
+        });
+        return res && equalsAdditional();
+    }
+
+    virtual bool equalsAdditional() const { return true; }
 
     void write(cv::FileStorage& fs)
     {

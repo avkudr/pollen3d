@@ -34,8 +34,6 @@ public:
     Image(const std::string &path);
     ~Image() {}
 
-    bool operator==(const Image &i) const;
-
     // ***** interface
 
     const cv::Mat &cvMat() const { return _imageCV; }

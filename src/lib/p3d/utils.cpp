@@ -356,3 +356,13 @@ void utils::wrapHalfPI(double &angleRad)
     while (angleRad < -M_PI/2) angleRad += M_PI;
     while (angleRad >  M_PI/2) angleRad -= M_PI;
 }
+
+std::string utils::to_string(const std::vector<int> &vec)
+{
+    std::string s = "";
+    for (const auto &v : vec) {
+        if (s != "") s += ",";
+        s += std::to_string(v);
+    }
+    return "{" + s + "}";
+}

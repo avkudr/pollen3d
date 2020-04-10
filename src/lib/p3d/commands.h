@@ -108,7 +108,7 @@ public:
         // setting new value
         m_data.set(*m_instance, m_to);
         //}
-        LOG_DBG("SetProperty: %i", m_propId);
+        LOG_DBG("SetProperty: %i (%p)", m_propId, m_instance);
     }
     void undo()
     {

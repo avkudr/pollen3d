@@ -2,6 +2,7 @@
 
 #include "p3d/core.h"
 #include "p3d/serialization.h"
+#include "p3d/utils.h"
 
 namespace p3d
 {
@@ -29,7 +30,7 @@ public:
     int iPtR{0};
     float distance = 0;
 
-    inline bool operator==(const Match& a) const
+    bool operator==(const Match& a) const override
     {
         return iPtL == a.iPtL && iPtR == a.iPtR;
     }

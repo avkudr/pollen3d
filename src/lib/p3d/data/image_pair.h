@@ -47,8 +47,6 @@ public:
     ImagePair(int imL = -1, int imR = -1);
     ~ImagePair() override;
 
-    bool operator==(const ImagePair& i) const;
-
     int imL() { return _imL; }
     int imR() { return _imR; }
     void setLeftImage(int imL) { _imL = imL; }

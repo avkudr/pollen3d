@@ -45,24 +45,24 @@ void WidgetMatching::drawImpl(ProjectData& data)
                 imPair->matchingPars(), p3dMatching_method, matcherCurAlg);
         }
 
-        {
-            auto matcherFilterCoef =
-                imPair ? imPair->getMatchingPars().filterCoeff : 0.3f;
+        auto matcherFilterCoef = imPair ? imPair->getMatchingPars().filterCoeff : 0.3f;
 
-            float min = 0.1f;
-            float max = 1.0f;
-            ImGui::InputFloat("filter coef", &matcherFilterCoef, min, max,
-                              "%.2f");
-            matcherFilterCoef = std::max(min, std::min(matcherFilterCoef, max));
-            if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(imPair->matchingPars(),
-                                                   p3dMatching_filterCoeff,
-                                                   matcherFilterCoef);
+        float min = 0.1f;
+        float max = 1.0f;
+        ImGui::InputFloat("filter coef", &matcherFilterCoef, min, max, "%.2f");
+        matcherFilterCoef = std::max(min, std::min(matcherFilterCoef, max));
+        if (ImGui::IsItemEdited()) {
+            ProjectManager::get()->setProperty(imPair->matchingPars(), p3dMatching_filterCoeff,
+                                               matcherFilterCoef);
         }
 
-        if (ImGui::Button("Match features")) run = true;
+        if (ImGui::Button("copy settings to all")) {
+            ProjectManager::get()->copyImagePairProperty(
+                data, p3dImagePair_matchingPars, m_currentItemIdx);
+        }
+        if (ImGui::Button(P3D_ICON_RUN " Match features")) run = true;
         ImGui::SameLine();
-        if (ImGui::Button("ALL##matching")) runAll = true;
+        if (ImGui::Button(P3D_ICON_RUNALL " ALL##matching")) runAll = true;
         ImGuiC::EndSubGroup();
         if (disableButtons) ImGuiC::PopDisabled();
     }

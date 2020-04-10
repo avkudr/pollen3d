@@ -895,5 +895,49 @@ entt::meta_any ProjectManager::getSetting(const p3dSetting &name)
 
 void ProjectManager::setSetting(const p3dSetting &id, const entt::meta_any &value)
 {
-    CommandManager::get()->executeCommand(new CommandSetProperty(&m_settings, P3D_ID_TYPE(id), value));
+    CommandManager::get()->executeCommand(
+        new CommandSetProperty(&m_settings, P3D_ID_TYPE(id), value));
+}
+
+void ProjectManager::copyImagePairProperty(ProjectData &projectData,
+                                           const P3D_ID_TYPE &propId, int from,
+                                           const std::vector<int> &to)
+{
+    auto imFrom = projectData.imagePair(from);
+    if (imFrom == nullptr) return;
+
+    auto data = entt::resolve<ImagePair>().data(propId);
+    if (!data) {
+        LOG_ERR("Can't copy setting that doesn't exist");
+        return;
+    }
+
+    auto setting = data.get(*imFrom);
+
+    auto toVec = to;
+    if (toVec.empty()) {
+        for (int i = 0; i < projectData.nbImagePairs(); ++i) {
+            if (i != from) toVec.push_back(i);
+        }
+    }
+
+    CommandGroup *groupCmd = new CommandGroup();
+
+    for (const auto &idx : toVec) {
+        auto imPair = projectData.imagePair(idx);
+        if (imPair == nullptr) continue;
+
+        groupCmd->add(new CommandSetProperty(imPair, propId, setting));
+    }
+
+    if (groupCmd->empty())
+        delete groupCmd;
+    else
+        CommandManager::get()->executeCommand(groupCmd);
+
+    std::string output = "Copied settings from image pair (" +
+                         std::to_string(from) + ") to " +
+                         utils::to_string(toVec);
+
+    LOG_OK("%s", output.c_str());
 }

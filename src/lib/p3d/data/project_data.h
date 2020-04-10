@@ -34,7 +34,7 @@ public:
 
     ProjectData();
 
-    const std::vector<Image> & getImageList() const { return m_images; }
+    const std::vector<Image> &getImageList() const { return m_images; }
     void setImageList(const std::vector<Image> & imList);
     const std::vector<ImagePair> & getImagePairs() const { return m_imagesPairs; }
     void setImagePairs(const std::vector<ImagePair> &imPairs);

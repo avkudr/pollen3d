@@ -54,6 +54,8 @@ void convert(const std::vector<Vec3> & src, Mat3Xf & dst);
 void convert(const std::vector<Vec3> & src, Mat4X & dst);
 void convert(const std::vector<Vec4> & src, Mat4X & dst);
 
+std::string to_string(const std::vector<int> &v);
+
 template<typename T, int SizeX, int SizeY>
 Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> concatenateMat(const std::vector<Eigen::Matrix<T,SizeX,SizeY>> & matArray, int method = CONCAT_VERTICAL)
 {

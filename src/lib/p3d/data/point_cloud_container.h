@@ -31,7 +31,7 @@ public:
 
     PointCloudContainer() {}
 
-    bool operator==(const PointCloudContainer& i) const;
+    bool operator==(const PointCloudContainer& i) const override;
 
     /**
      * Returns a reference to the mapped value of the element with key

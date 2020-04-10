@@ -21,8 +21,6 @@ public:
     AffineCamera(const Mat2 & A);
     ~AffineCamera() override;
 
-    bool operator==(const AffineCamera& i) const;
-
     // **** intrinsic parameters
 
     void setFocal(double f) { m_focal = f; updateA(); }

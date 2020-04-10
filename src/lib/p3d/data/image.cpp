@@ -45,15 +45,6 @@ Image::Image(const std::string & path)
     }
 }
 
-bool Image::operator==(const Image &i) const
-{
-    if (_path != i._path) return false;
-    if (!(getCamera() == i.getCamera())) return false;
-    if (!utils::floatEq(m_t[0], i.getTranslation()[0])) return false;
-    if (!utils::floatEq(m_t[1], i.getTranslation()[1])) return false;
-    return true;
-}
-
 void Image::setKeyPoints(std::vector<cv::KeyPoint> kpts){
     _kpts.clear();
     _kpts = kpts;

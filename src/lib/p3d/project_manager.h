@@ -58,7 +58,12 @@ public:
     const ProjectSettings & settings() const { return m_settings; }
     entt::meta_any getSetting(const p3dSetting & name);
     void setSetting(const p3dSetting & name, const entt::meta_any &value);
-    void setSettings(const ProjectSettings & settings){ m_settings = settings; }
+    void setSettings(const ProjectSettings &settings) { m_settings = settings; }
+
+    // ***** Misc
+
+    void copyImagePairProperty(ProjectData &data, const P3D_ID_TYPE &propId,
+                               int from, const std::vector<int> &to = {});
 
     // ***** Data properties
 

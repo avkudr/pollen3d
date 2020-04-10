@@ -59,14 +59,6 @@ ImagePair::~ImagePair()
 
 }
 
-bool ImagePair::operator==(const ImagePair &i) const{
-    if (m_matches.size() != i.m_matches.size()) return false;
-    if (!utils::floatEq(getTheta1(),i.getTheta1())) return false;
-    if (!utils::floatEq(getRho()   ,i.getRho()   )) return false;
-    if (!utils::floatEq(getTheta2(),i.getTheta2())) return false;
-    return true;
-}
-
 void ImagePair::getMatchesAsMap(std::map<int, int> &map) const
 {
     map.clear();
