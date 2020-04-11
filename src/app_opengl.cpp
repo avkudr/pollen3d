@@ -28,7 +28,7 @@ void ApplicationOpenGL::init()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     const char* version = "#version 410";
 #else
-    const char* version = "";
+    const char* version = NULL;
 #endif
 
     glfwSetErrorCallback(error_callback);
