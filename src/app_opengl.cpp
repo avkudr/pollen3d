@@ -7,8 +7,6 @@
 
 #include "p3d/logger.h"
 
-#define P3D_GLSL_VERSION "#version 410"
-
 using namespace p3d;
 
 void error_callback([[maybe_unused]] int error, const char* description)
@@ -71,7 +69,7 @@ void ApplicationOpenGL::init()
     initImGui();
 
     ImGui_ImplGlfw_InitForOpenGL(m_window, true);
-    ImGui_ImplOpenGL3_Init(P3D_GLSL_VERSION);
+    ImGui_ImplOpenGL3_Init();
 
     m_textureId = new GLuint(0);
     m_viewer3D = std::make_unique<Viewer3DOpenGL>();

@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include "p3d/logger.h"
+
 #include "pcd_view_opengl.h"
 
 using namespace p3d;
@@ -9,9 +11,52 @@ using namespace p3d;
 Viewer3DOpenGL::Viewer3DOpenGL() : Viewer3D()
 {
     m_textureId = new GLuint(0);
-    auto vertShader = "./assets/4.1.shader.vs";
-    auto fragShader = "./assets/4.1.shader.fs";
-    m_shader = std::make_shared<ShaderOpenGL>(vertShader, fragShader);
+
+#ifdef __APPLE__
+    std::string version = "410";
+#else
+    GLint major, minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    std::string version = std::to_string(major * 100 + minor * 10);
+#endif
+
+    LOG_INFO("glsl version: %s", version.c_str());
+
+    std::string vertexShader =
+        "#version " + version +
+        "\n"
+        "layout (location = 0) in vec3 vertexPosition;\n"
+        "layout (location = 1) in vec3 vertexColor;\n"
+        "uniform vec4 color;\n"
+        "uniform mat4 camera;\n"
+        "uniform mat4 world;\n"
+        "uniform mat4 proj;\n"
+        "out vec4 ourColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    if (color.w == 0.0) {\n"
+        "        ourColor = vec4(vertexColor, 1.0);\n"
+        "    } else {\n"
+        "        ourColor = color;\n"
+        "    }\n"
+        "    gl_Position = proj * camera * world * "
+        "                  "
+        "vec4(vertexPosition.x,vertexPosition.y,-vertexPosition.z,1.0);\n"
+        "}\n";
+
+    std::string fragmentShader = "#version " + version +
+                                 "\n"
+                                 "out vec4 FragColor;\n        "
+                                 "in vec4 ourColor;\n          "
+                                 " \n                          "
+                                 "void main()\n                "
+                                 "{\n                          "
+                                 "    FragColor = ourColor;\n  "
+                                 "}\n";
+
+    m_shader = std::make_shared<ShaderOpenGL>(vertexShader, fragmentShader);
     m_grid = std::make_unique<GridOpenGL>(100);
 }
 
