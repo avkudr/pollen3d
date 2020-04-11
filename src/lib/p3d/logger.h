@@ -31,7 +31,7 @@ protected:
     unsigned int m_color{COLOR_OK};  // 32-bit unsigned integer - grey
 };
 
-extern Logger* _logger;
+extern std::shared_ptr<Logger> _logger;
 
 class StdLogger : public Logger
 {
@@ -50,6 +50,7 @@ public:
     }
 };
 
+static void initStdLoger() { _logger = std::make_shared<StdLogger>(); }
 }  // namespace p3d
 
 #define LOG_IMPL(type, color, ...)            \
@@ -60,8 +61,6 @@ public:
             p3d::_logger->print(__VA_ARGS__); \
         }                                     \
     } while (0)
-
-#define P3D_INIT_STD_LOGGER() _logger = new p3d::StdLoger();
 
 #define LOG_OK(...) LOG_IMPL("[ OK ] ", COLOR_OK, __VA_ARGS__)
 #define LOG_INFO(...) LOG_IMPL("[INFO] ", COLOR_INFO, __VA_ARGS__)

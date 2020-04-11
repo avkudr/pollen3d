@@ -148,8 +148,8 @@ protected:
     int m_viewer3dNeedsUpdate = false;
     int m_viewer3dNeedsUpdateVisibility = false;
 
+    std::shared_ptr<WidgetLogger> m_widgetLogger{nullptr};
     std::unique_ptr<Viewer3D> m_viewer3D{nullptr};
-    std::unique_ptr<WidgetLogger> m_widgetLogger{nullptr};
     std::unique_ptr<Widget> m_widgetFeat{nullptr};
     std::unique_ptr<Widget> m_widgetMatching{nullptr};
     std::unique_ptr<Widget> m_widgetDenseMatching{nullptr};

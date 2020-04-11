@@ -622,8 +622,8 @@ void ProjectManager::triangulate(ProjectData &data)
            data.pointCloudCtnr()["sparse"].nbPoints());
 }
 
-void ProjectManager::triangulateStereo(ProjectData &data,
-                                       std::vector<int> imPairsIds)
+void ProjectManager::triangulateDenseStereo(ProjectData &data,
+                                            std::vector<int> imPairsIds)
 {
     if (data.nbImagePairs() == 0) return;
     if (imPairsIds.empty())
@@ -715,7 +715,7 @@ void ProjectManager::triangulateStereo(ProjectData &data,
         CommandManager::get()->executeCommand(groupCmd);
 }
 
-void ProjectManager::triangulateDense(ProjectData &data)
+void ProjectManager::triangulateDenseDev(ProjectData &data)
 {
     //LOG_ERR("Not implemented yet");
     //return;

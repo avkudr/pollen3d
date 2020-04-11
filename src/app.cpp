@@ -26,8 +26,8 @@ using namespace p3d;
 
 Application::Application()
 {
-    m_widgetLogger = std::make_unique<WidgetLogger>();
-    p3d::_logger = m_widgetLogger.get();
+    m_widgetLogger = std::make_shared<WidgetLogger>();
+    p3d::_logger = m_widgetLogger;
 
     m_widgetFeat = std::make_unique<WidgetFeatureExtract>();
     m_widgetMatching = std::make_unique<WidgetMatching>();
@@ -467,7 +467,7 @@ void Application::_drawMenuBar(int width)
             ProjectManager::get()->findDisparityMap(m_projectData);
             ProjectManager::get()->filterDisparityBilateral(m_projectData);
 
-            ProjectManager::get()->triangulateStereo(m_projectData, {0});
+            ProjectManager::get()->triangulateDenseStereo(m_projectData, {0});
 
             _resetAppState();
         };
@@ -784,8 +784,8 @@ void Application::_drawTab_Multiview()
                                      m_projectData.nbImagePairs() - 1);
                     if (ImGui::Button("Triangulate dense (stereo)")) {
                         auto f = [&](int imPairIdx) {
-                            ProjectManager::get()->triangulateStereo(
-                                m_projectData, {imPairIdx});
+                            ProjectManager::get()->triangulateDenseStereo(m_projectData,
+                                                                          {imPairIdx});
                             m_viewer3dNeedsUpdate = true;
                         };
                         _doHeavyTask(f, imPairIdx);
@@ -793,15 +793,15 @@ void Application::_drawTab_Multiview()
                     ImGui::SameLine();
                     if (ImGui::Button("ALL")) {
                         _doHeavyTask([&]() {
-                            ProjectManager::get()->triangulateStereo(
-                                m_projectData, {});
+                            ProjectManager::get()->triangulateDenseStereo(m_projectData,
+                                                                          {});
                             m_viewer3dNeedsUpdate = true;
                         });
                     }
 #ifdef POLLEN3D_DEBUG
                     if (ImGui::Button("Triangulate dense (multi-view)")) {
                         _doHeavyTask([&]() {
-                            ProjectManager::get()->triangulateDense(m_projectData);
+                            ProjectManager::get()->triangulateDenseDev(m_projectData);
                             m_viewer3dNeedsUpdate = true;
                         });
                     }

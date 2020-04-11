@@ -2,5 +2,5 @@
 
 namespace p3d
 {
-Logger *_logger = nullptr;
+std::shared_ptr<Logger> _logger = nullptr;
 }
