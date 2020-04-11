@@ -10,7 +10,8 @@ gtest/1.8.1@bincrafters/stable
 
 [options]
 gtest:build_gmock=False
-opencv:jasper=False
+gtest:shared=True
+opencv:shared=True
 
 [generators]
 cmake_find_package
