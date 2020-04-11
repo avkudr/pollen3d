@@ -175,6 +175,13 @@ set(SOURCES_GUI
 )
 
 set(RES_FILES "")
+if (WIN32)
+    set(RES_FILES
+        ${RES_FILES}
+        ./src/pollen3d.ico
+    )
+endif (WIN32)
+
 if(POLLEN3D_OPENGL)
     message("OpenGL - FOUND")
     set(SOURCES_GUI
@@ -222,7 +229,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Compiling in Release")
 endif()
 
-add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES})
+add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES} ./src/pollen3d.rc)
 target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR}/bin)

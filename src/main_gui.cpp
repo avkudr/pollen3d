@@ -9,6 +9,7 @@
 
 #ifdef _WIN32
 #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+#define IDI_ICON_1 102
 #endif
 
 int main()
@@ -20,7 +21,7 @@ int main()
 #endif
 
 #ifdef POLLEN3D_OPENGL
-    Application * app = new ApplicationOpenGL();
+    Application* app = new ApplicationOpenGL();
 #endif
 
     app->init();

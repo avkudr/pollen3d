@@ -1,6 +1,6 @@
 @echo off
 
-echo Starting pollen3d build
+echo Pollen3D build: start
 cd %~dp0
 if exist build_release\NUL rd /s /q build_release
 mkdir build_release
@@ -13,5 +13,7 @@ ren bin pollen3d
 7z a -tzip pollen3d.zip -r pollen3d
 move pollen3d.zip ..
 
-rd /s /q build_release
 cd ..
+rd /s /q build_release
+echo Pollen3D build: done
+
