@@ -580,7 +580,7 @@ void ProjectManager::autocalibrate(ProjectData &data)
               << rot.format(CleanFmt) << std::endl;
 }
 
-void ProjectManager::triangulate(ProjectData &data)
+void ProjectManager::triangulateSparse(ProjectData &data)
 {
     LOG_DBG("MAKE BUTTON DISABLED IF NO CALIB + NO FULL W");
 

@@ -105,8 +105,9 @@ protected:
         Tab_COUNT
     };
 
-    template<typename T>
-    inline bool isOneOf(const T & v, const std::vector<T> vec) {
+    template <typename T>
+    inline bool isOneOf(const T &v, const std::vector<T> &vec)
+    {
         for (size_t i = 0; i < vec.size(); ++i) {
             if (vec[i] == v) return true;
         }

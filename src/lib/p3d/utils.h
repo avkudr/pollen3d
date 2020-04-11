@@ -123,6 +123,24 @@ void EulerZYZtfromRinv(const Mat3 &R, double &t1, double &rho, double &t2);
 
 void wrapHalfPI(double & angleRad);
 
+template <typename T, int SizeX, int SizeY>
+Eigen::Matrix<T, SizeX, SizeY> inverseTransform(
+    const Eigen::Matrix<T, SizeX, SizeY> &transform)
+{
+    // SizeX == SizeY;
+    // transform.bottomRight(1, 1) == 1.0;
+    Eigen::Matrix<T, SizeX - 1, SizeY - 1> R =
+        transform.topLeftCorner(SizeX - 1, SizeY - 1);
+    Eigen::Matrix<T, SizeX - 1, 1> t = transform.col(SizeY - 1).topRows(SizeX - 1);
+
+    Eigen::Matrix<T, SizeX, SizeY> out;
+    out.setIdentity(SizeX, SizeY);
+
+    out.topLeftCorner(SizeX - 1, SizeY - 1) = R.transpose();
+    out.rightCols(1).topRows(SizeX - 1) = -R.transpose() * t;
+    return out;
+}
+
 // **** Math
 
 Mat3 skewSym(const Vec3 & a);

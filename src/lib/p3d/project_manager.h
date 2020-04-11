@@ -45,7 +45,7 @@ public:
     void findMeasurementMatrixFull(ProjectData & data);
     void findMeasurementMatrix(ProjectData & data);
     void autocalibrate(ProjectData & data);
-    void triangulate(ProjectData & data);
+    void triangulateSparse(ProjectData &data);
     void triangulateDenseStereo(ProjectData &data, std::vector<int> imPairsIds = {});
     void triangulateDenseMultiview(ProjectData &data);
     void triangulateDenseDev(ProjectData &data);

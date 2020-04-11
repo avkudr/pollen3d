@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include "p3d/logger.h"
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -169,6 +171,8 @@ std::pair<Vec2, Vec2> utils::lineIntersectBox(const Vec3 &line, double w, double
 
 void utils::matchesMapsToTable(std::vector<std::map<int,int>> matchesMaps, Mati &table)
 {
+    LOG_DBG("TO DO: Move to MatchingUtil!");
+
     auto nbPairs = matchesMaps.size();
     auto nbIm = nbPairs + 1;
 

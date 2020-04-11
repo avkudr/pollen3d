@@ -460,7 +460,7 @@ void Application::_drawMenuBar(int width)
             ProjectManager::get()->findMeasurementMatrix(m_projectData);
             ProjectManager::get()->autocalibrate(m_projectData);
 
-            ProjectManager::get()->triangulate(m_projectData);
+            ProjectManager::get()->triangulateSparse(m_projectData);
             ProjectManager::get()->bundleAdjustment(m_projectData);
 
             ProjectManager::get()->rectifyImagePairs(m_projectData);
@@ -817,7 +817,7 @@ void Application::_drawTab_Multiview()
                 }
                 if (run)
                     _doHeavyTask([&]() {
-                        ProjectManager::get()->triangulate(m_projectData);
+                        ProjectManager::get()->triangulateSparse(m_projectData);
                         m_viewer3dNeedsUpdate = true;
                     });
             }
@@ -1029,7 +1029,6 @@ void Application::_drawData()
     }
 
     if (m_currentTab == Tab_Multiview || m_currentTab == Tab_PointCloud) {
-#ifdef POLLEN3D_DEBUG
         if (ImGui::TreeNodeEx("Point clouds:",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
             auto &pcds = m_projectData.pointCloudCtnr();
@@ -1095,7 +1094,6 @@ void Application::_drawData()
             ImGui::PopStyleVar();
             ImGui::TreePop();
         }
-#endif
         return;
     }
 }
