@@ -24,12 +24,7 @@ void WidgetDenseMatching::drawImpl(ProjectData& data)
         runFilterSpeckles{false}, runFilterSpecklesAll{false};
 
     if (ImGuiC::Collapsing("Dense matching", &run, &runAll)) {
-        ImVec2 p0 = ImGui::GetCursorScreenPos();
-        p0.x += 5;
-        p0.y += 5;
-        ImGui::SetCursorScreenPos(p0);
-
-        ImGui::BeginGroup();
+        ImGuiC::BeginSubGroup();
 
         const char* denseMatchingAlgos[] = {"SGBM", "HH", "SGBM_3WAY"};
         auto matcherCurAlg =
@@ -128,8 +123,9 @@ void WidgetDenseMatching::drawImpl(ProjectData& data)
         if (ImGui::Button("Filter##bilateral")) runBilateral = true;
         ImGui::SameLine();
         if (ImGui::Button("ALL##bilateral")) runBilateralAll = true;
-        ImGui::Separator();
 
+#ifdef POLLEN3D_DEBUG
+        ImGui::Separator();
         ImGui::Text("Speckles filter: ");
         {
             auto dispFilterNewValue =
@@ -161,10 +157,10 @@ void WidgetDenseMatching::drawImpl(ProjectData& data)
         if (ImGui::Button("Filter##speckles")) runFilterSpeckles = true;
         ImGui::SameLine();
         if (ImGui::Button("ALL##speckles")) runFilterSpecklesAll = true;
+#endif
 
         if (disableButtons) ImGuiC::PopDisabled();
-        ImGui::Dummy(ImVec2(0.0f, 10.0f));
-        ImGui::EndGroup();
+        ImGuiC::EndSubGroup();
     }
 
     if (disabled) ImGuiC::PopDisabled();

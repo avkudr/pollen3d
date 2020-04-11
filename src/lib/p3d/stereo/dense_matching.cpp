@@ -49,18 +49,18 @@ void DenseMatchingUtil::findDisparity(const cv::Mat &imLeftR,
     const auto &upperBound = 16 * denseMatching.dispUpperBound;
     const auto &blockSize = denseMatching.dispBlockSize;
 
-    cv::Ptr<cv::StereoSGBM> sgbm =
-        cv::StereoSGBM::create(lowerBound,
-                               upperBound,  // number of disparities
-                               blockSize);
-
-    sgbm->setMode(denseMatching.dispMethod);
-
-    int cn = imLeftR.channels();
-    sgbm->setP1(8 * cn * blockSize * blockSize);
-    sgbm->setP2(32 * cn * blockSize * blockSize);
-
     try {
+        cv::Ptr<cv::StereoSGBM> sgbm =
+            cv::StereoSGBM::create(lowerBound,
+                                   upperBound,  // number of disparities
+                                   blockSize);
+
+        sgbm->setMode(denseMatching.dispMethod);
+
+        int cn = imLeftR.channels();
+        sgbm->setP1(8 * cn * blockSize * blockSize);
+        sgbm->setP2(32 * cn * blockSize * blockSize);
+
         cv::Mat disparityMap;
         sgbm->compute(imLeftR, imRightR, disparityMap);
 
@@ -85,7 +85,11 @@ void DenseMatchingUtil::filterDisparityBilateral(
     auto ss = denseMatching.bilateralSigmaSpace;
 
     disparityFiltered = cv::Mat();
-    cv::bilateralFilter(m, disparityFiltered, d, sc, ss);
+    try {
+        cv::bilateralFilter(m, disparityFiltered, d, sc, ss);
+    } catch (...) {
+        disparityFiltered = cv::Mat();
+    }
 }
 
 void DenseMatchingUtil::getDispForPlot(const cv::Mat &disparity, cv::Mat &plot)

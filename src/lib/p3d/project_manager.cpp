@@ -133,22 +133,31 @@ void ProjectManager::extractFeatures(ProjectData &data, std::vector<int> imIds)
         std::vector<cv::KeyPoint> kpts;
         cv::Mat desc;
 
-        cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create(
-            getSetting(p3dSetting_featuresDescType).cast<int>(),
-            getSetting(p3dSetting_featuresDescSize).cast<int>(),
-            getSetting(p3dSetting_featuresDescChannels).cast<int>(),
-            getSetting(p3dSetting_featuresThreshold).cast<float>());
-        akaze->detectAndCompute(im->cvMat(), cv::noArray(), kpts, desc);
-        akaze.release();
+        try {
+            cv::Ptr<cv::AKAZE> akaze =
+                cv::AKAZE::create(getSetting(p3dSetting_featuresDescType).cast<int>(),
+                                  getSetting(p3dSetting_featuresDescSize).cast<int>(),
+                                  getSetting(p3dSetting_featuresDescChannels).cast<int>(),
+                                  getSetting(p3dSetting_featuresThreshold).cast<float>());
+            akaze->detectAndCompute(im->cvMat(), cv::noArray(), kpts, desc);
+            akaze.release();
 
-        im->setKeyPoints(kpts);
-        im->setDescriptors(desc);
+            im->setKeyPoints(kpts);
+            im->setDescriptors(desc);
 
-        LOG_OK("%s: extracted %i features", im->name().c_str(), int(kpts.size()));
+            LOG_OK("%s: extracted %i features", im->name().c_str(), int(kpts.size()));
 
-        kpts.clear();
-        desc.release();
+            kpts.clear();
+            desc.release();
+        } catch (...) {
+#pragma omp critical
+            {
+                LOG_ERR("Image %i, feature extraction failed", i);
+            }
+        }
     }
+
+    LOG_DBG("No undo functionnality");
 }
 
 bool ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsIds)
