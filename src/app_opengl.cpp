@@ -26,6 +26,9 @@ void ApplicationOpenGL::init()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    const char* version = "#version 410";
+#else
+    const char* version = "";
 #endif
 
     glfwSetErrorCallback(error_callback);
@@ -69,7 +72,7 @@ void ApplicationOpenGL::init()
     initImGui();
 
     ImGui_ImplGlfw_InitForOpenGL(m_window, true);
-    ImGui_ImplOpenGL3_Init();
+    ImGui_ImplOpenGL3_Init(version);
 
     m_textureId = new GLuint(0);
     m_viewer3D = std::make_unique<Viewer3DOpenGL>();
