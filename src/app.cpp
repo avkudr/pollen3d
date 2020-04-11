@@ -279,9 +279,7 @@ void Application::_drawMenuBar(int width)
 
     if (ImGui::Button(ICON_FA_UPLOAD " Load images", buttonRect)) {
         auto files = loadImagesDialog();
-        if (files.empty()) {
-            LOG_ERR("Nothing to load");
-        } else {
+        if (!files.empty()) {
             auto f = [&](const std::vector<std::string> &files) {
                 ProjectManager::get()->loadImages(&m_projectData, files);
                 if (!m_projectData.empty()) m_currentImage = 0;
@@ -295,28 +293,33 @@ void Application::_drawMenuBar(int width)
     if (ImGui::Button(ICON_FA_SAVE " Save", buttonRect)) {
         std::string path = m_projectData.getProjectPath();
         if (path == "") path = saveProjectDialog();
-        auto f = [&](const std::string &path) {
-            ProjectManager::get()->saveProject(&m_projectData, path);
-            _resetAppState();
-        };
-        _doHeavyTask(f, path);
+        if (path != "") {
+            auto f = [&](const std::string &path) {
+                ProjectManager::get()->saveProject(&m_projectData, path);
+                _resetAppState();
+            };
+            _doHeavyTask(f, path);
+        }
     }
     ImGui::SameLine();
     if (ImGui::Button("Save as...", buttonRect)) {
         auto file = saveProjectDialog();
-        ProjectManager::get()->saveProject(&m_projectData, file);
-        _resetAppState();
+        if (file != "") {
+            ProjectManager::get()->saveProject(&m_projectData, file);
+            _resetAppState();
+        }
     }
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FOLDER_OPEN " Open", buttonRect)) {
         auto file = openProjectDialog();
-        LOG_DBG("Open project: %s", file.c_str());
-
-        auto f = [&, file]() {
-            ProjectManager::get()->openProject(&m_projectData, file);
-            _resetAppState();
-        };
-        if (file != "") _doHeavyTask(f);
+        if (file != "") {
+            LOG_DBG("Open project: %s", file.c_str());
+            auto f = [&, file]() {
+                ProjectManager::get()->openProject(&m_projectData, file);
+                _resetAppState();
+            };
+            _doHeavyTask(f);
+        }
     }
 
     // ----- Close project popup
@@ -903,15 +906,17 @@ void Application::_drawTab_PointCloud()
 
                 if (ImGui::Button("Export PLY")) {
                     std::string filepath = exportPointCloudDialog();
-                    std::string label = list[pcdIdx];
-                    LOG_DBG("Exporting pcd: %s", label.c_str());
+                    if (filepath != "") {
+                        std::string label = list[pcdIdx];
+                        LOG_DBG("Exporting pcd: %s", label.c_str());
 
-                    auto f = [&](std::string label, std::string filepath) {
-                        ProjectManager::get()->exportPLY(m_projectData, label,
-                                                         filepath);
-                    };
+                        auto f = [&](std::string label, std::string filepath) {
+                            ProjectManager::get()->exportPLY(m_projectData, label,
+                                                             filepath);
+                        };
 
-                    _doHeavyTask(f, label, filepath);
+                        _doHeavyTask(f, label, filepath);
+                    }
                 }
                 if (list.size() == 0) ImGuiC::PopDisabled();
 
@@ -1495,12 +1500,12 @@ void Application::_processKeyboardInput()
     ImGuiIO &io = ImGui::GetIO();
     if (io.KeyCtrl) {
         if (ImGui::IsKeyPressed('s') || ImGui::IsKeyPressed('S')) {
-            auto f = [&]() {
-                std::string path = m_projectData.getProjectPath();
-                if (path == "") path = saveProjectDialog();
-                ProjectManager::get()->saveProject(&m_projectData, path);
-            };
-            _doHeavyTask(f);
+            std::string path = m_projectData.getProjectPath();
+            if (path == "") path = saveProjectDialog();
+            if (path != "") {
+                _doHeavyTask(
+                    [&]() { ProjectManager::get()->saveProject(&m_projectData, path); });
+            }
         } else if (ImGui::IsKeyPressed('t') || ImGui::IsKeyPressed('T')) {
             m_showConsole = !m_showConsole;
         } else if (ImGui::IsKeyPressed(ImGuiKey_Z)) {

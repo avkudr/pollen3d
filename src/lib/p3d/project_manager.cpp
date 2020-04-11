@@ -876,7 +876,10 @@ void ProjectManager::exportPLY(const ProjectData &data,
                                const std::string &label,
                                const std::string &filepath)
 {
-    LOG_DBG("Exporting pcd: %s", label.c_str());
+    if (filepath == "") {
+        LOG_ERR("Can't export to an empty file");
+        return;
+    }
 
     const auto &ctnr = data.getPointCloudCtnr();
     if (!ctnr.contains(label)) {
@@ -889,6 +892,7 @@ void ProjectManager::exportPLY(const ProjectData &data,
         return;
     }
 
+    LOG_DBG("Exporting pcd: %s", label.c_str());
     try {
         utils::exportToPly(pcd.getVertices(), filepath);
         LOG_OK("Exported point cloud (%s): %i points", label.c_str(),
