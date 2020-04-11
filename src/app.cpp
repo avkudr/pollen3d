@@ -1051,7 +1051,9 @@ void Application::_drawData()
             ImGuiWindow *window = ImGui::GetCurrentWindow();
 
             for (auto &pcd : pcds) {
-                auto lbl = pcd.getLabel().c_str();
+                std::string lblstr = pcd.getLabel();
+                const char *lbl = lblstr.c_str();
+
                 auto nbPts = pcd.nbPoints();
                 auto visible = pcd.isVisible();
 
