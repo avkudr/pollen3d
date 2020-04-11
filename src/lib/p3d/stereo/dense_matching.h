@@ -16,19 +16,19 @@ enum p3dDense_ {
     p3dDense_DispUpperBound,
     p3dDense_DispBlockSize,
 
-    p3dDense_DispFilterNewValue,  // The disparity value used to paint-off the
-                                  // speckles
+    p3dDense_DispFilterNewValue,        // The disparity value used to paint-off the
+                                        // speckles
     p3dDense_DispFilterMaxSpeckleSize,  // The maximum speckle size to consider
                                         // it a speckle. Larger blobs are not
                                         // affected by the algorithm
     p3dDense_DispFilterMaxDiff,         // Maximum difference between neighbor
-                                 // disparity pixels to put them into the same
-                                 // blob. Note that since StereoBM,
+                                        // disparity pixels to put them into the same
+                                        // blob. Note that since StereoBM,
     // StereoSGBM and may be other algorithms return a fixed-point disparity
     // map, where disparity values are multiplied by 16, this scale factor
     // should be taken into account when specifying this parameter value.
 
-    p3dDense_BilateralD,  // The disparity value used to paint-off the speckles
+    p3dDense_BilateralD,           // The disparity value used to paint-off the speckles
     p3dDense_BilateralSigmaColor,  // The maximum speckle size to consider it a
                                    // speckle. Larger blobs are not affected by
                                    // the algorithm
@@ -55,8 +55,8 @@ public:
     cv::Mat dispMap;
 
     int dispMethod{DenseMatchingMethod_SGBM};
-    int dispLowerBound{-3};
-    int dispUpperBound{4};
+    int dispLowerBound{-1};
+    int dispUpperBound{2};
     int dispBlockSize{9};
 
     int dispFilterNewValue{0};
@@ -81,4 +81,3 @@ struct DenseMatchingUtil {
 };
 
 }  // namespace p3d
-

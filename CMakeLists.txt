@@ -226,3 +226,4 @@ add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${R
 target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_datasets/brassica DESTINATION ${CMAKE_BINARY_DIR}/bin)

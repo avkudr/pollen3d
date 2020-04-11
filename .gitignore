@@ -8,3 +8,4 @@ build*/
 .vs
 *.DS_Store
 *.autosave
+*.zip

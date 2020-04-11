@@ -358,7 +358,7 @@ void Application::_drawMenuBar(int width)
     ImGuiC::HoveredTooltip("Set current view: image");
 
     ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_IMAGES"",buttonSquare)) {
+    if (ImGui::Button(ICON_FA_IMAGES "", buttonSquare)) {
         if (m_currentTab != Tab_Stereo) _resetAppState();
         m_currentTabForce = Tab_Stereo;
     }
@@ -495,10 +495,18 @@ void Application::_drawControls()
     ImGui::SameLine();
     const char *tabName = "";
     switch (m_currentTab) {
-    case Tab_Image: tabName = "image"; break;
-    case Tab_Stereo: tabName = "stereo"; break;
-    case Tab_Multiview: tabName = "multiview"; break;
-    case Tab_PointCloud: tabName = "point cloud"; break;
+    case Tab_Image:
+        tabName = "image";
+        break;
+    case Tab_Stereo:
+        tabName = "stereo";
+        break;
+    case Tab_Multiview:
+        tabName = "multiview";
+        break;
+    case Tab_PointCloud:
+        tabName = "point cloud";
+        break;
     }
     ImGui::Text("%s", tabName);
 
