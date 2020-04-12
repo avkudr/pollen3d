@@ -234,3 +234,56 @@ target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/_datasets/brassica DESTINATION ${CMAKE_BINARY_DIR}/bin)
+
+execute_process(COMMAND ln -s /usr/local/bin/pollen3d_dir/pollen3d pollen3d)
+
+install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pollen3d DESTINATION /usr/local/bin/pollen3d_dir)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION /usr/local/bin/pollen3d_dir)
+install(FILES ${CMAKE_BINARY_DIR}/pollen3d DESTINATION /usr/local/bin/)
+
+# ***********************************************************************
+# generate DEB package
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+
+    string(TIMESTAMP DATETIME_NOW %Y%m%d%H%M UTC)
+
+    if(NOT DEFINED ARCH)
+
+        execute_process(
+            COMMAND "/usr/bin/dpkg" "--print-architecture"
+            RESULT_VARIABLE RESULT
+            OUTPUT_VARIABLE ARCH
+        )
+
+        string(STRIP "${ARCH}" ARCH)
+
+    endif()
+
+    if("${ARCH}" STREQUAL "")
+        set(ARCH "amd64")
+    endif()
+
+    set(VERSION_MAJOR "0")
+    set(VERSION_MINOR "9")
+    set(VERSION_PATCH "${DATETIME_NOW}")
+
+    set(CPACK_GENERATOR "DEB")
+    SET(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
+    SET(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
+    SET(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${ARCH})
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+    SET(CPACK_PACKAGE_VENDOR "AVK")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "3D recostruction in Scanning Electron Microscope (SEM)")
+    set(CPACK_PACKAGE_DESCRIPTION "3D recostruction in Scanning Electron Microscope (SEM)")
+    set(CPACK_PACKAGE_CONTACT "Andrey Kudryavtsev, andrey.kudryavtsev at gmail.com")
+
+    set(PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}")
+
+    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+
+    include(CPack)
+
+endif()
+
