@@ -383,7 +383,7 @@ std::string utils::to_string(const std::vector<int> &vec)
 
 std::string utils::getExecPath()
 {
-#ifdef defined __linux__
+#ifdef __linux__
     char buff[PATH_MAX];
     ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff) - 1);
     if (len != -1) {
