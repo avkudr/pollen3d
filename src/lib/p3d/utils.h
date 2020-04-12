@@ -1,6 +1,15 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#ifdef _WIN32
+
+#elif defined TARGET_OS_MAC
+
+#elif defined __linux__
+#include <linux/limits.h>
+#include <unistd.h>
+#endif
+
 #include <opencv2/core.hpp>
 
 #include <vector>
@@ -13,8 +22,8 @@
 
 namespace p3d
 {
-namespace utils{
-
+namespace utils
+{
 void saveFileToMatlab(std::string fileName, cv::Mat a, std::string varName);
 
 template<typename T>
@@ -148,7 +157,8 @@ double nullspace(const Eigen::Ref<const Mat> & A, Vec * nullsp);
 
 Vec4 triangulate(const std::vector<Vec2> &x, const std::vector<Mat34> &Ps);
 
-}
+std::string getExecPath();
+}  // namespace utils
 }  // namespace p3d
 
 #endif // UTILS_H

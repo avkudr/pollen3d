@@ -370,3 +370,22 @@ std::string utils::to_string(const std::vector<int> &vec)
     }
     return "{" + s + "}";
 }
+
+std::string utils::getExecPath()
+{
+#ifdef _WIN32
+
+#elif defined TARGET_OS_MAC
+
+#elif defined __linux__
+    char buff[PATH_MAX];
+    ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff) - 1);
+    if (len != -1) {
+        buff[len] = '\0';
+        auto file = std::string(buff);
+        auto found = file.find_last_of("/\\");
+        return file.substr(0, found);
+    }
+#endif
+    return "";
+}

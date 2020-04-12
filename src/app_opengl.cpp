@@ -48,7 +48,7 @@ void ApplicationOpenGL::init()
     };
 
     GLFWimage images[1];
-    loadIcon(&images[0], "./assets/pollen3d_icon64.png");
+    loadIcon(&images[0], m_execPath + "/assets/pollen3d_icon64.png");
     glfwSetWindowIcon(m_window, 1, images);
 
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)

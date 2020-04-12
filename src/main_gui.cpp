@@ -3,8 +3,6 @@
 
 #ifdef POLLEN3D_OPENGL
 #include "app_opengl.h"
-#else
-
 #endif
 
 #ifdef _WIN32
@@ -12,13 +10,10 @@
 #define IDI_ICON_1 102
 #endif
 
-int main()
+int main(int argc, char* argv[])
 {
-#ifndef POLLEN3D_DEBUG
-    // no output in standard console
-    std::cout.setstate(std::ios_base::failbit);
-    std::cerr.setstate(std::ios_base::failbit);
-#endif
+    (void)argc;
+    (void)argv;
 
 #ifdef POLLEN3D_OPENGL
     Application* app = new ApplicationOpenGL();

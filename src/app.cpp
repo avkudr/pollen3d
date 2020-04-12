@@ -7,6 +7,7 @@
 
 #include "p3d/commands.h"
 #include "p3d/project_manager.h"
+#include "p3d/utils.h"
 
 #include "gui/common.h"
 #include "gui/imgui_custom.h"
@@ -33,6 +34,8 @@ Application::Application()
     m_widgetMatching = std::make_unique<WidgetMatching>();
     m_widgetDenseMatching = std::make_unique<WidgetDenseMatching>();
     LOG_OK("Welcome to Pollen3D!");
+
+    m_execPath = utils::getExecPath();
 }
 
 void Application::initImGui()
@@ -47,7 +50,7 @@ void Application::initImGui()
     std::string font = "SourceSansPro-Regular.ttf";
     std::string fontMono = "UbuntuMono-R.ttf";
 
-    std::string pathToFonts = "./assets/fonts/";
+    std::string pathToFonts = m_execPath + "/assets/fonts/";
     io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + font).c_str(),
                                  18.0f);
 

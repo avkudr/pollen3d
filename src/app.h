@@ -57,7 +57,6 @@ public:
     void setTextureId(void * textureId) { m_textureId = textureId; }
 
 protected:
-
     virtual void setWindowTitleImpl(std::string str) = 0;
 
     void _drawMenuBar(int width);
@@ -156,6 +155,7 @@ protected:
     std::unique_ptr<Widget> m_widgetDenseMatching{nullptr};
 
     bool m_initialised = false;
+    std::string m_execPath = "";
 
     // *** std::async + wait popup for heavy stuff
     bool m_startedHeavyCalculus = false;
