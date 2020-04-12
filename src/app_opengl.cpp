@@ -21,14 +21,14 @@ void ApplicationOpenGL::init()
 
     if (!glfwInit()) throw "Failed to initialize OpenGL loader!";
 
+    const char* version = NULL;
+
 #ifdef __APPLE__
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    const char* version = "#version 410";
-#else
-    const char* version = NULL;
+    version = "#version 410";
 #endif
 
     glfwSetErrorCallback(error_callback);
@@ -67,6 +67,11 @@ void ApplicationOpenGL::init()
 
     if (err) throw "Failed to initialize OpenGL loader!";
 
+    GLint major, minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    LOG_INFO("OpenGL version: %i.%i", major, minor);
+
     // Setup Dear ImGui context
 
     initImGui();
@@ -75,7 +80,7 @@ void ApplicationOpenGL::init()
     ImGui_ImplOpenGL3_Init(version);
 
     m_textureId = new GLuint(0);
-    m_viewer3D = std::make_unique<Viewer3DOpenGL>();
+    m_viewer3D = std::make_unique<Viewer3DOpenGL>(version);
     m_viewer3D->init();
 }
 

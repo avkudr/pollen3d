@@ -8,24 +8,61 @@
 
 using namespace p3d;
 
-Viewer3DOpenGL::Viewer3DOpenGL() : Viewer3D()
+Viewer3DOpenGL::Viewer3DOpenGL(const char *version) : Viewer3D()
 {
     m_textureId = new GLuint(0);
 
 #ifdef __APPLE__
-    std::string version = "410";
+    int glsl_version = 410;
+    version = "#version 410";
 #else
-    GLint major, minor;
-    glGetIntegerv(GL_MAJOR_VERSION, &major);
-    glGetIntegerv(GL_MINOR_VERSION, &minor);
-    std::string version = std::to_string(major * 100 + minor * 10);
+    if (version == NULL) version = "#version 130";
 #endif
+    int glsl_version = 130;
+    sscanf(version, "%*[^0123456789]%d", &glsl_version);
+    LOG_INFO("glsl: #version %i", glsl_version);
 
-    LOG_INFO("glsl version: %s", version.c_str());
-
-    std::string vertexShader =
-        "#version " + version +
+    std::string vertexShader120 =
+        "attribute vec3 vertexPosition;\n"
+        "attribute vec3 vertexColor;\n"
+        "uniform vec4 color;\n"
+        "uniform mat4 camera;\n"
+        "uniform mat4 world;\n"
+        "uniform mat4 proj;\n"
+        "varying vec4 ourColor;\n"
         "\n"
+        "void main()\n"
+        "{\n"
+        "    if (color.w == 0.0) {\n"
+        "        ourColor = vec4(vertexColor, 1.0);\n"
+        "    } else {\n"
+        "        ourColor = color;\n"
+        "    }\n"
+        "    gl_Position = proj * camera * world * "
+        "vec4(vertexPosition.x,vertexPosition.y,-vertexPosition.z,1.0);\n"
+        "}\n";
+
+    std::string vertexShader130 =
+        "in vec3 vertexPosition;\n"
+        "in vec3 vertexColor;\n"
+        "uniform vec4 color;\n"
+        "uniform mat4 camera;\n"
+        "uniform mat4 world;\n"
+        "uniform mat4 proj;\n"
+        "out vec4 ourColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "    if (color.w == 0.0) {\n"
+        "        ourColor = vec4(vertexColor, 1.0);\n"
+        "    } else {\n"
+        "        ourColor = color;\n"
+        "    }\n"
+        "    gl_Position = proj * camera * world * "
+        "vec4(vertexPosition.x,vertexPosition.y,-vertexPosition.z,1.0);\n"
+        "}\n";
+
+    std::string vertexShader410 =
         "layout (location = 0) in vec3 vertexPosition;\n"
         "layout (location = 1) in vec3 vertexColor;\n"
         "uniform vec4 color;\n"
@@ -42,19 +79,48 @@ Viewer3DOpenGL::Viewer3DOpenGL() : Viewer3D()
         "        ourColor = color;\n"
         "    }\n"
         "    gl_Position = proj * camera * world * "
-        "                  "
         "vec4(vertexPosition.x,vertexPosition.y,-vertexPosition.z,1.0);\n"
         "}\n";
 
-    std::string fragmentShader = "#version " + version +
-                                 "\n"
-                                 "out vec4 FragColor;\n        "
-                                 "in vec4 ourColor;\n          "
-                                 " \n                          "
-                                 "void main()\n                "
-                                 "{\n                          "
-                                 "    FragColor = ourColor;\n  "
-                                 "}\n";
+    std::string fragmentShader120 =
+        "varying vec4 ourColor;\n       "
+        " \n                            "
+        "void main()\n                  "
+        "{\n                            "
+        "    gl_FragColor = ourColor;\n "
+        "}\n";
+
+    std::string fragmentShader130 =
+        "out vec4 FragColor;\n        "
+        "in vec4 ourColor;\n          "
+        " \n                          "
+        "void main()\n                "
+        "{\n                          "
+        "    FragColor = ourColor;\n  "
+        "}\n";
+
+    std::string fragmentShader410 =
+        "out vec4 FragColor;\n        "
+        "in vec4 ourColor;\n          "
+        " \n                          "
+        "void main()\n                "
+        "{\n                          "
+        "    FragColor = ourColor;\n  "
+        "}\n";
+
+    std::string vertexShader = std::string(version) + "\n";
+    std::string fragmentShader = std::string(version) + "\n";
+
+    if (glsl_version < 130) {
+        vertexShader += vertexShader120;
+        fragmentShader += fragmentShader120;
+    } else if (glsl_version >= 410) {
+        vertexShader += vertexShader410;
+        fragmentShader += fragmentShader410;
+    } else {
+        vertexShader += vertexShader130;
+        fragmentShader += fragmentShader130;
+    }
 
     m_shader = std::make_shared<ShaderOpenGL>(vertexShader, fragmentShader);
     m_grid = std::make_unique<GridOpenGL>(100);

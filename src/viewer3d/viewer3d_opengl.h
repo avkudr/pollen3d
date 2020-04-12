@@ -27,7 +27,7 @@ using namespace gl;
 class Viewer3DOpenGL : public Viewer3D
 {
 public:
-    Viewer3DOpenGL();
+    Viewer3DOpenGL(const char* version = NULL);
 
     virtual ~Viewer3DOpenGL() override { release(); }
     void onSizeChanged() override { init(); }
