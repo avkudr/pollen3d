@@ -1,12 +1,21 @@
 #include "utils.h"
 
-#include "p3d/logger.h"
+#ifdef _WIN32
+#include <windows.h>
+#elif defined TARGET_OS_MAC
+
+#elif defined __linux__
+#include <linux/limits.h>
+#include <unistd.h>
+#endif
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 #include <Eigen/Eigen>
+
+#include "p3d/logger.h"
 
 using namespace p3d;
 
@@ -374,11 +383,7 @@ std::string utils::to_string(const std::vector<int> &vec)
 
 std::string utils::getExecPath()
 {
-#ifdef _WIN32
-
-#elif defined __APPLE__
-
-#elif defined __linux__
+#ifdef defined __linux__
     char buff[PATH_MAX];
     ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff) - 1);
     if (len != -1) {
