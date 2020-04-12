@@ -4,9 +4,9 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Setup testing
 enable_testing()
-find_package(GTest REQUIRED)
+find_package(gtest REQUIRED)
 
-if (GTest_FOUND)
+if (gtest_FOUND)
     message("GoogleTest - FOUND")
 endif()
 
