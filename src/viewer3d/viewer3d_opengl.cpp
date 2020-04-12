@@ -16,9 +16,10 @@ Viewer3DOpenGL::Viewer3DOpenGL(const char *version) : Viewer3D()
     int glsl_version = 410;
     version = "#version 410";
 #else
+    int glsl_version = 130;
     if (version == NULL) version = "#version 130";
 #endif
-    int glsl_version = 130;
+
     sscanf(version, "%*[^0123456789]%d", &glsl_version);
     LOG_INFO("glsl: #version %i", glsl_version);
 
