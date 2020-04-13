@@ -2,30 +2,54 @@ cmake_minimum_required(VERSION 2.6)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# Setup testing
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CONAN_SYSTEM_INCLUDES ON)
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+    file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.14/conan.cmake"
+            "${CMAKE_BINARY_DIR}/conan.cmake")
+endif()
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+
+conan_cmake_run(
+CONANFILE conanfile.txt
+BASIC_SETUP
+BUILD missing)
+
+conan_check()
+
+set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+
+include_directories(../../3rdparty/entt/src/entt/)
+
+# ----- Add testing -------------------------------------------
+
 enable_testing()
 find_package(gtest REQUIRED)
-
 if (gtest_FOUND)
     message("GoogleTest - FOUND")
 endif()
-
 include_directories(${GTEST_INCLUDE_DIR})
 
-# Add test cpp file
+# ----- Sources -----------------------------------------------
+
 add_executable(pollen3d_tests
-    ./tests/test_paths.h
-    ./tests/test_meta.h
-    ./tests/test_misc.h
-    ./tests/test_fundmat.h
-    ./tests/test_diamond.h
-    ./tests/main_tests.cpp
+    ./test_paths.h
+    ./test_meta.h
+    ./test_misc.h
+    ./test_fundmat.h
+    ./test_diamond.h
+    ./main_tests.cpp
     ${SOURCES}
 )
 
-# Link test executable against gtest & gtest_main
-target_link_libraries(pollen3d_tests ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
-target_link_libraries(pollen3d_tests ${TARGET_LIBS})
+
+include_directories(${CMAKE_SOURCE_DIR}/../pollen3d_library/src)
+link_directories(${CMAKE_SOURCE_DIR}/../pollen3d_library/build/lib/)
+target_link_libraries(pollen3d_tests p3d ${CONAN_LIBS})
 
 add_test(
     NAME pollen3d_tests
