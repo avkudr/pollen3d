@@ -16,7 +16,7 @@ using namespace p3d;
 
 TEST(MISC, test_matchesToTable)
 {
-    std::vector<std::map<int,int>> matchesMaps;
+    std::vector<std::map<int, int>> matchesMaps;
     matchesMaps.resize(3);
     matchesMaps[0] = {{0,1},{1,2},{2,4},{3,5}};
     matchesMaps[1] = {{1,2},{2,6},{3,3},{5,5}};

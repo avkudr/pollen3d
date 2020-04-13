@@ -1,8 +1,27 @@
 cmake_minimum_required(VERSION 3.1)
 project( pollen3d_library )
 
+# Download automatically, you can also just copy the conan.cmake file
+if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
+   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+                  "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
+endif()
+
+include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
+
+conan_check()
+conan_add_remote(NAME bincrafters INDEX 1
+            URL https://api.bintray.com/conan/bincrafters/public-conan)
+
+conan_cmake_run(
+    CONANFILE conanfile.txt
+    BUILD missing
+    BASIC_SETUP)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_compile_options(-std=c++17)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -10,7 +29,7 @@ endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "compiling in debug")
-    set(CMAKE_DEBUG_POSTFIX _d)
+    set(CMAKE_DEBUG_POSTFIX -debug)
     add_compile_definitions(POLLEN3D_DEBUG)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "compiling in release")
@@ -21,7 +40,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 option(USE_OPENMP "Use OpenMP" ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_MODULE_PATH})
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
@@ -73,7 +92,7 @@ endif()
 
 include_directories(./src/)
 
-add_library(pollen3d_library STATIC
+set(SOURCES
     ./src/p3d/commands.cpp
     ./src/p3d/commands.h
     ./src/p3d/core.cpp
@@ -118,8 +137,16 @@ add_library(pollen3d_library STATIC
     ./src/p3d/stereo/rectification.h
 )
 
-set_target_properties(pollen3d_library PROPERTIES OUTPUT_NAME p3d)
+add_library(pollen3d_lib_static STATIC ${SOURCES})
+add_library(pollen3d_lib_shared SHARED ${SOURCES})
 
+link_directories(${CONAN_LIB_DIRS})
+
+target_link_libraries(pollen3d_lib_static ${CONAN_LIBS})
+target_link_libraries(pollen3d_lib_shared ${CONAN_LIBS})
+
+#set_target_properties(pollen3d_lib_static PROPERTIES OUTPUT_NAME p3d)
+#set_target_properties(pollen3d_lib_shared PROPERTIES OUTPUT_NAME p3d)
 
 # target_compile_features(p3d PUBLIC cxx_std_17)
 # target_include_directories(p3d PUBLIC

@@ -2,6 +2,8 @@
 
 #include <Eigen/Eigen>
 
+#include "ceres/ceres.h"
+
 #include "p3d/logger.h"
 
 using namespace p3d;
@@ -89,8 +91,6 @@ Mat3 FundMatUtil::findAffineGS(const std::vector<Vec2> &ptsX, const std::vector<
     //if (F(2,2) < 0) F *= -1;
     return F;
 }
-
-#include "ceres/ceres.h"
 
 using ceres::AutoDiffCostFunction;
 using ceres::CostFunction;

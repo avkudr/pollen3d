@@ -4,6 +4,11 @@ nlopt/2.6.1
 ceres-solver/1.14.0
 opencv/3.4.5@conan/stable
 
+[options]
+ceres-solver:use_gflags=False
+ceres-solver:use_glog=False
+ceres-solver:use_CXX11=True
+opencv:jasper=False
+
 [generators]
 cmake_find_package
-
