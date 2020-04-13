@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project( p3d )
+project( pollen3d_library )
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,6 +8,13 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "compiling in debug")
+    set(CMAKE_DEBUG_POSTFIX _d)
+    add_compile_definitions(POLLEN3D_DEBUG)
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "compiling in release")
+endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -15,6 +22,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 option(USE_OPENMP "Use OpenMP" ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
 
 include_directories(../../3rdparty/entt/src/entt/)
 
@@ -28,19 +38,42 @@ else()
     message(FATAL_ERROR "Eigen3: not found")
 endif()
 
+# ----- Add OpenCV --------------------------------------------
+
+find_package(opencv REQUIRED QUIET)
+if (opencv_FOUND)
+    message("OpenCV: found")
+    include_directories(${opencv_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "OpenCV: not found")
+endif()
+
 # ----- Add NLopt --------------------------------------------
 
-# find_package(NLopt REQUIRED QUIET)
-# if (NLOPT_FOUND)
-#     message("nlopt: found")
-#     include_directories(${NLopt_INCLUDE_DIR})
-# else()
-#     message(FATAL_ERROR "nlopt: not found")
-# endif()
+find_package(NLopt REQUIRED QUIET)
+if (NLopt_FOUND)
+    message("nlopt: found")
+    include_directories(${NLopt_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "nlopt: not found")
+endif()
+
+# ----- Add ceres --------------------------------------------
+
+find_package(ceres-solver REQUIRED QUIET)
+if (ceres-solver_FOUND)
+    message("ceres-solver: found")
+    include_directories(${ceres-solver_INCLUDE_DIR})
+    include_directories(${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog)
+else()
+    message(FATAL_ERROR "ceres-solver: not found")
+endif()
 
 # ----- Sources ----------------------------------------------
 
-add_library(p3d STATIC
+include_directories(./src/)
+
+add_library(pollen3d_library STATIC
     ./src/p3d/commands.cpp
     ./src/p3d/commands.h
     ./src/p3d/core.cpp
@@ -84,6 +117,9 @@ add_library(p3d STATIC
     ./src/p3d/stereo/rectification.cpp
     ./src/p3d/stereo/rectification.h
 )
+
+set_target_properties(pollen3d_library PROPERTIES OUTPUT_NAME p3d)
+
 
 # target_compile_features(p3d PUBLIC cxx_std_17)
 # target_include_directories(p3d PUBLIC

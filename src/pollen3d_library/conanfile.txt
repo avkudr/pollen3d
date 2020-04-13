@@ -1,6 +1,9 @@
+[requires]
+eigen/3.3.7@conan/stable
+nlopt/2.6.1
+ceres-solver/1.14.0
+opencv/3.4.5@conan/stable
+
 [generators]
 cmake_find_package
 
-[build_requires]
-eigen/3.3.7@conan/stable
-nlopt/2.6.1
