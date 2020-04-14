@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <future>
 
-#include "../../assets/fonts/IconsFontAwesome5.h"
+#include "../assets/fonts/IconsFontAwesome5.h"
 
 #include "p3d/commands.h"
 #include "p3d/project_manager.h"

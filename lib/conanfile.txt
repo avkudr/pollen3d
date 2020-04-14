@@ -1,12 +1,12 @@
 [requires]
 eigen/3.3.7@conan/stable
+glog/0.4.0@bincrafters/stable
+gflags/2.2.2@bincrafters/stable
 nlopt/2.6.1
 ceres-solver/1.14.0
 opencv/3.4.5@conan/stable
 
 [options]
-ceres-solver:use_gflags=False
-ceres-solver:use_glog=False
 opencv:jasper=False
 
 [generators]

@@ -35,7 +35,21 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
     )
 
-include_directories(../../3rdparty/entt/src/entt/)
+# ----- Sources -----------------------------------------------
+
+add_executable(pollen3d_tests
+    ./test_paths.h
+    ./test_meta.h
+    ./test_misc.h
+    ./test_fundmat.h
+    ./test_diamond.h
+    ./main_tests.cpp
+    ${SOURCES}
+)
+
+# ----- entt --------------------------------------------------
+
+target_include_directories(pollen3d_tests PUBLIC ./../3rdparty/entt/src/entt/)
 
 # ----- OpenMP
 
@@ -57,7 +71,7 @@ endif()
 find_package(Eigen3 REQUIRED QUIET)
 if (Eigen3_FOUND)
     message("Eigen3: found")
-    include_directories(${Eigen3_INCLUDE_DIR})
+    target_include_directories(pollen3d_tests PUBLIC ${Eigen3_INCLUDE_DIR})
 else()
     message(FATAL_ERROR "Eigen3: not found")
 endif()
@@ -67,7 +81,7 @@ endif()
 find_package(opencv REQUIRED QUIET)
 if (opencv_FOUND)
     message("OpenCV: found")
-    include_directories(${opencv_INCLUDE_DIR})
+    target_include_directories(pollen3d_tests PUBLIC ${opencv_INCLUDE_DIR})
 else()
     message(FATAL_ERROR "OpenCV: not found")
 endif()
@@ -78,31 +92,24 @@ enable_testing()
 find_package(gtest REQUIRED)
 if (gtest_FOUND)
     message("google-test: found")
-    include_directories(${gtest_INCLUDE_DIR})
+    target_include_directories(pollen3d_tests PUBLIC ${gtest_INCLUDE_DIR})
 else()
     message(FATAL_ERROR "google-test: not found")
 endif()
 
-# ----- Sources -----------------------------------------------
-
-add_executable(pollen3d_tests
-    ./test_paths.h
-    ./test_meta.h
-    ./test_misc.h
-    ./test_fundmat.h
-    ./test_diamond.h
-    ./main_tests.cpp
-    ${SOURCES}
-)
+# -------------------------------------------------------------
+# ----- Link --------------------------------------------------
+# -------------------------------------------------------------
 
 set(TARGET_LIBS ${CONAN_LIBS})
-link_directories(${CONAN_LIB_DIRS})
+target_link_directories(pollen3d_tests PUBLIC ${CONAN_LIB_DIRS})
 if(OpenMP_CXX_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} OpenMP::OpenMP_CXX)
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/../pollen3d_library/src)
-link_directories(${CMAKE_SOURCE_DIR}/../pollen3d_library/build/lib)
+target_include_directories(pollen3d_tests PUBLIC ${CMAKE_SOURCE_DIR}/../lib/src)
+target_link_directories(pollen3d_tests PUBLIC ${CMAKE_SOURCE_DIR}/../build/lib/)
+target_link_directories(pollen3d_tests PUBLIC ${CMAKE_SOURCE_DIR}/../lib/build/lib)
 target_link_libraries(pollen3d_tests pollen3d_lib_shared ${TARGET_LIBS})
 
 add_test(

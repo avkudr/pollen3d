@@ -42,51 +42,8 @@ option(USE_OPENMP "Use OpenMP" ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_MODULE_PATH})
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/lib)
-
-include_directories(../../3rdparty/entt/src/entt/)
-
-# ----- Add Eigen --------------------------------------------
-
-find_package(Eigen3 REQUIRED QUIET)
-if (Eigen3_FOUND)
-    message("Eigen3: found")
-    include_directories(${Eigen3_INCLUDE_DIR})
-else()
-    message(FATAL_ERROR "Eigen3: not found")
-endif()
-
-# ----- Add OpenCV --------------------------------------------
-
-find_package(opencv REQUIRED QUIET)
-if (opencv_FOUND)
-    message("OpenCV: found")
-    include_directories(${opencv_INCLUDE_DIR})
-else()
-    message(FATAL_ERROR "OpenCV: not found")
-endif()
-
-# ----- Add NLopt --------------------------------------------
-
-find_package(NLopt REQUIRED QUIET)
-if (NLopt_FOUND)
-    message("nlopt: found")
-    include_directories(${NLopt_INCLUDE_DIR})
-else()
-    message(FATAL_ERROR "nlopt: not found")
-endif()
-
-# ----- Add ceres --------------------------------------------
-
-find_package(ceres-solver REQUIRED QUIET)
-if (ceres-solver_FOUND)
-    message("ceres-solver: found")
-    include_directories(${ceres-solver_INCLUDE_DIR})
-    include_directories(${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog)
-else()
-    message(FATAL_ERROR "ceres-solver: not found")
-endif()
+# s111et(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/)
+# s111et(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/)
 
 # ----- Sources ----------------------------------------------
 
@@ -97,15 +54,12 @@ set(SOURCES
     ./src/p3d/commands.h
     ./src/p3d/core.cpp
     ./src/p3d/core.h
-    ./src/p3d/data
     ./src/p3d/logger.cpp
     ./src/p3d/logger.h
-    ./src/p3d/multiview
     ./src/p3d/project_manager.cpp
     ./src/p3d/project_manager.h
     ./src/p3d/serialization.cpp
     ./src/p3d/serialization.h
-    ./src/p3d/stereo
     ./src/p3d/utils.cpp
     ./src/p3d/utils.h
     ./src/p3d/data/affine_camera.cpp
@@ -140,13 +94,88 @@ set(SOURCES
 add_library(pollen3d_lib_static STATIC ${SOURCES})
 add_library(pollen3d_lib_shared SHARED ${SOURCES})
 
-link_directories(${CONAN_LIB_DIRS})
+# ----- Add entt ---------------------------------------------
+
+target_include_directories(pollen3d_lib_shared PUBLIC ./../3rdparty/entt/src/entt/)
+target_include_directories(pollen3d_lib_static PUBLIC ./../3rdparty/entt/src/entt/)
+
+# ----- Add Eigen --------------------------------------------
+
+find_package(Eigen3 REQUIRED QUIET)
+if (Eigen3_FOUND)
+    message("Eigen3: found")
+    target_include_directories(pollen3d_lib_shared PUBLIC ${Eigen3_INCLUDE_DIR})
+    target_include_directories(pollen3d_lib_static PUBLIC ${Eigen3_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "Eigen3: not found")
+endif()
+
+# ----- Add OpenCV --------------------------------------------
+
+find_package(opencv REQUIRED QUIET)
+if (opencv_FOUND)
+    message("OpenCV: found")
+    target_include_directories(pollen3d_lib_shared PUBLIC ${opencv_INCLUDE_DIR})
+    target_include_directories(pollen3d_lib_static PUBLIC ${opencv_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "OpenCV: not found")
+endif()
+
+# ----- Add NLopt --------------------------------------------
+
+find_package(NLopt REQUIRED QUIET)
+if (NLopt_FOUND)
+    message("nlopt: found")
+    target_include_directories(pollen3d_lib_shared PRIVATE ${NLopt_INCLUDE_DIR})
+    target_include_directories(pollen3d_lib_static PRIVATE ${NLopt_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "nlopt: not found")
+endif()
+
+# ----- Add glog --------------------------------------------
+
+find_package(glog REQUIRED QUIET)
+if (glog_FOUND)
+    message("glog: found")
+    target_include_directories(pollen3d_lib_shared PRIVATE ${glog_INCLUDE_DIR})
+    target_include_directories(pollen3d_lib_static PRIVATE ${glog_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "glog: not found")
+endif()
+
+# ----- Add gflags --------------------------------------------
+
+find_package(gflags REQUIRED QUIET)
+if (gflags_FOUND)
+    message("gflags: found")
+    target_include_directories(pollen3d_lib_shared PRIVATE ${gflags_INCLUDE_DIR})
+    target_include_directories(pollen3d_lib_static PRIVATE ${gflags_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "gflags: not found")
+endif()
+
+
+# ----- Add ceres --------------------------------------------
+
+find_package(ceres-solver REQUIRED QUIET)
+if (ceres-solver_FOUND)
+    message("ceres-solver: found")
+    target_include_directories(pollen3d_lib_shared PRIVATE ${ceres-solver_INCLUDE_DIR})
+    target_include_directories(pollen3d_lib_static PRIVATE ${ceres-solver_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "ceres-solver: not found")
+endif()
+
+# target_56454646link_directories(pollen3d_lib_static PUBLIC ${CONAN_LIB_DIRS})
+# target_56454646link_directories(pollen3d_lib_shared PUBLIC ${CONAN_LIB_DIRS})
 
 target_link_libraries(pollen3d_lib_static
     PUBLIC
         ${opencv_LIBS}
     PRIVATE
         ${NLopt_LIBS}
+        ${glog_LIBS}
+        ${gflags_LIBS}
         ${ceres-solver_LIBS}
     )
 target_link_libraries(pollen3d_lib_shared
@@ -154,39 +183,7 @@ target_link_libraries(pollen3d_lib_shared
         ${opencv_LIBS}
     PRIVATE
         ${NLopt_LIBS}
+        ${glog_LIBS}
+        ${gflags_LIBS}
         ${ceres-solver_LIBS}
         )
-
-#set_target_properties(pollen3d_lib_static PROPERTIES OUTPUT_NAME p3d)
-#set_target_properties(pollen3d_lib_shared PROPERTIES OUTPUT_NAME p3d)
-
-# target_compile_features(p3d PUBLIC cxx_std_17)
-# target_include_directories(p3d PUBLIC
-#     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-#     $<INSTALL_INTERFACE:include>
-# )
-# add_library(pollen3d::lib ALIAS p3d)
-
-# install(TARGETS p3d EXPORT p3d
-#         LIBRARY DESTINATION lib
-#         ARCHIVE DESTINATION lib
-#         RUNTIME DESTINATION bin
-#         INCLUDES DESTINATION include)
-
-# install(EXPORT p3d
-#         DESTINATION lib/cmake/p3d
-#         FILE p3dTargets.cmake
-#         NAMESPACE pollen3d::)
-
-# install(DIRECTORY src/p3d
-#         DESTINATION include
-#         FILES_MATCHING PATTERN "*.h*"
-#         )
-
-# include(CMakePackageConfigHelpers)
-# write_basic_package_version_file(p3dConfigVersion.cmake
-#     VERSION 0.9.0
-#     COMPATIBILITY SameMajorVersion
-# )
-# install(FILES p3dConfig.cmake ${CMAKE_CURRENT_BINARY_DIR}/p3dConfigVersion.cmake
-# DESTINATION lib/cmake/p3d)

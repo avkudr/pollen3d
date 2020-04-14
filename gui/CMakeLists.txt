@@ -39,12 +39,11 @@ endif()
 
 option(USE_OPENMP "Use OpenMP" ON)
 
-include_directories(../../3rdparty/entt/src/entt/)
-set(ASSETS_FONTS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/fonts CACHE STRING "Path to the folder with fonts")
+set(ASSETS_FONTS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/fonts CACHE STRING "Path to the folder with fonts")
 
 # ----- Looking for modules
 
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/cmake/)
+set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/cmake/)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_MODULE_PATH})
 
 set(SOURCES_GUI "")
@@ -101,10 +100,10 @@ endif()
 # ----- Add file dialogs --------------------------------------------
 
 set(FILE_DIALOG_SOURCES
-    ./../../3rdparty/tinyfiledialogs/tinyfiledialogs.h
-    ./../../3rdparty/tinyfiledialogs/tinyfiledialogs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/tinyfiledialogs/tinyfiledialogs.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/tinyfiledialogs/tinyfiledialogs.c
 )
-include_directories(./../../3rdparty/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/)
 
 set_source_files_properties(
     ${FILE_DIALOG_SOURCES}
@@ -113,8 +112,6 @@ set_source_files_properties(
 )
 
 set(SOURCES_GUI ${SOURCES_GUI} ${FILE_DIALOG_SOURCES})
-
-include_directories(./3rdparty/)
 
 # ----- pollen3d ---------------------------------------------
 
@@ -181,8 +178,7 @@ else()
 
 endif()
 
-include_directories(./3rdparty/entt/src/entt/)
-include_directories(./src/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/entt/src/entt/)
 
 set(TARGET_LIBS ${TARGET_LIBS} ${ImGui_LIBS} ${CONAN_LIBS})
 if(Eigen_FOUND)
@@ -202,12 +198,20 @@ endif()
 add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES} ./src/pollen3d.rc)
 target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
-include_directories(${CMAKE_SOURCE_DIR}/../pollen3d_library/src)
-link_directories(${CMAKE_SOURCE_DIR}/../pollen3d_library/build/lib)
-target_link_libraries(${PROJECT_NAME} pollen3d_lib_shared)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/../lib/src)
+target_link_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/../build/lib/)
+target_link_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/../lib/build/lib)
+target_link_libraries(${PROJECT_NAME} pollen3d_lib_shared ${TARGET_LIBS})
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../../assets DESTINATION ${CMAKE_BINARY_DIR}/bin)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../../_datasets/brassica DESTINATION ${CMAKE_BINARY_DIR}/bin)
+set_target_properties( ${PROJECT_NAME}
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin
+)
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../_datasets/brassica DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 execute_process(COMMAND ln -s /usr/local/bin/pollen3d_dir/pollen3d pollen3d)
 install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pollen3d DESTINATION /usr/local/bin/pollen3d_dir)
