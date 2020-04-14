@@ -12,9 +12,9 @@
 #include "p3d/data/project_settings.h"
 #include "p3d/logger.h"
 
-#include "gui/widget.h"
-#include "gui/widget_console.h"
 #include "viewer3d/viewer3d.h"
+#include "widgets/widget.h"
+#include "widgets/widget_console.h"
 
 class Application
 {
@@ -27,16 +27,18 @@ public:
 
     virtual void init() = 0;
 
-    void setWindowTitle(std::string str){
+    void setWindowTitle(std::string str)
+    {
         if (str == "") str = "*";
         std::string title = "Pollen3D: " + str;
         setWindowTitleImpl(title);
     }
 
-    void run(){
-        while(isRunning()){
+    void run()
+    {
+        while (isRunning()) {
             preLoop();
-            draw(m_width,m_height);
+            draw(m_width, m_height);
             postLoop();
         }
         m_viewer3D.reset();
@@ -47,14 +49,14 @@ public:
     virtual void postLoop() = 0;
 
     bool isTextureReady() const { return m_textureId && m_textureWidth > 0 && m_textureHeight > 0; }
-    virtual void textureBind(const cv::Mat & im) = 0;
-    virtual void textureDisplay(const ImVec2 & size, ImVec2 uv0 = ImVec2(0,0), ImVec2 uv1 = ImVec2(1,1)) = 0;
+    virtual void textureBind(const cv::Mat &im) = 0;
+    virtual void textureDisplay(const ImVec2 &size, ImVec2 uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1)) = 0;
 
     void initImGui();
     void applyStyle();
     void draw(int width, int height);
 
-    void setTextureId(void * textureId) { m_textureId = textureId; }
+    void setTextureId(void *textureId) { m_textureId = textureId; }
 
 protected:
     virtual void setWindowTitleImpl(std::string str) = 0;
@@ -71,15 +73,15 @@ protected:
     void _processKeyboardInput();
 
     void _showFeatures(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float featuresSize = 2.0f);
-    void _showMatches(const ImVec2 & pos, const ImVec2 & size, const ImVec4 & col, float lineWidth = 1.0f, int skipEvery = 1);
-    void _showEpilines(const ImVec2 & pos, const ImVec2 & size, const ImVec4 & col, float lineWidth = 1.0f, int skipEvery = 1);
+    void _showMatches(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth = 1.0f, int skipEvery = 1);
+    void _showEpilines(const ImVec2 &pos, const ImVec2 &size, const ImVec4 &col, float lineWidth = 1.0f, int skipEvery = 1);
 
     template <typename Scalar, int SizeX, int SizeY>
     void drawProperty_matrix(const Eigen::Matrix<Scalar, SizeX, SizeY> &v, const std::string &name,
                              const std::string &longName = "");
 
-    template<typename Type>
-    void drawProperty_basic(const Type &v, const std::string &name, const char * fmt, const char *icon = nullptr);
+    template <typename Type>
+    void drawProperty_basic(const Type &v, const std::string &name, const char *fmt, const char *icon = nullptr);
 
     template <typename Func, class... Args>
     void _doHeavyTask(Func f, Args... args)
@@ -88,19 +90,20 @@ protected:
         m_heavyAsyncTask = std::async(std::launch::async, f, args...);
     }
 
-    void _resetAppState() {
+    void _resetAppState()
+    {
         setWindowTitle(m_projectData.getProjectPath());
         m_currentSection = Section_Default;
         m_viewer3dNeedsUpdate = true;
         m_textureNeedsUpdate = true;
     }
 
-    enum Tab{
+    enum Tab {
         Tab_General = 0,
-        Tab_Image      ,
-        Tab_Stereo     ,
-        Tab_Multiview  ,
-        Tab_PointCloud ,
+        Tab_Image,
+        Tab_Stereo,
+        Tab_Multiview,
+        Tab_PointCloud,
         Tab_COUNT
     };
 
@@ -136,12 +139,12 @@ protected:
     ImGuiTreeNodeFlags m_collapsingHeaderFlags = ImGuiTreeNodeFlags_None;
     bool m_dockingNeedsReset = true;
 
-    ImFont * m_fontMonoSmall = nullptr;
-    ImFont * m_fontMono = nullptr;
+    ImFont *m_fontMonoSmall = nullptr;
+    ImFont *m_fontMono = nullptr;
 
-    void * m_textureId = nullptr;
+    void *m_textureId = nullptr;
 
-    int m_textureWidth  = 0;
+    int m_textureWidth = 0;
     int m_textureHeight = 0;
     int m_textureScale = 1.0f;
     int m_textureNeedsUpdate = false;

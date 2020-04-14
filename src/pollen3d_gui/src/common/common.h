@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "../assets/fonts/IconsFontAwesome5.h"
+#include "../../assets/fonts/IconsFontAwesome5.h"
 
 #include "tinyfiledialogs/tinyfiledialogs.h"
 

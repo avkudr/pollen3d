@@ -1,5 +1,5 @@
 #include "app.h"
-#include "gui/widget_console.h"
+#include "widgets/widget_console.h"
 
 #ifdef POLLEN3D_OPENGL
 #include "app_opengl.h"

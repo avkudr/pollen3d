@@ -4,19 +4,13 @@ glad/0.1.29@bincrafters/stable
 glfw/3.2.1@bincrafters/stable
 eigen/3.3.7@conan/stable
 opencv/3.4.5@conan/stable
-nlopt/2.6.1
-ceres-solver/1.14.0
-gtest/1.8.1@bincrafters/stable
 
 [options]
-gtest:build_gmock=False
-gtest:shared=True
 opencv:jasper=False
 opencv:shared=False
 
 [generators]
 cmake_find_package
-cmake
 
 [imports]
 bin, *.dll -> ./bin 

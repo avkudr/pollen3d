@@ -3,20 +3,20 @@
 #include <filesystem>
 #include <future>
 
-#include "../assets/fonts/IconsFontAwesome5.h"
+#include "../../assets/fonts/IconsFontAwesome5.h"
 
 #include "p3d/commands.h"
 #include "p3d/project_manager.h"
 #include "p3d/utils.h"
 
-#include "gui/common.h"
-#include "gui/imgui_custom.h"
-#include "gui/palette.h"
-#include "gui/plots.h"
+#include "common/common.h"
+#include "common/imgui_custom.h"
+#include "common/palette.h"
 
-#include "gui/widget_dense_matching.h"
-#include "gui/widget_feature_extract.h"
-#include "gui/widget_matching.h"
+#include "widgets/plots.h"
+#include "widgets/widget_dense_matching.h"
+#include "widgets/widget_feature_extract.h"
+#include "widgets/widget_matching.h"
 
 #define COLOR_GREEN \
     ImVec4 { 0.0f, 0.7f, 0.3f, 1.0f }

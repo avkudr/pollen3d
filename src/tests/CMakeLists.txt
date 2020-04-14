@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 project(tests)
 
+set(CMAKE_CXX_STANDARD 17)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
    file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
@@ -19,19 +24,16 @@ conan_cmake_run(
     BUILD missing
     BASIC_SETUP)
 
-set(CMAKE_CXX_STANDARD 17)
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
-
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 add_compile_options(-std=c++17)
 
 option(USE_OPENMP "Use OpenMP" ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH 
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_MODULE_PATH}
+    )
 
 include_directories(../../3rdparty/entt/src/entt/)
 
@@ -69,27 +71,6 @@ if (opencv_FOUND)
 else()
     message(FATAL_ERROR "OpenCV: not found")
 endif()
-
-# ----- Add NLopt --------------------------------------------
-
-#find_package(NLopt REQUIRED QUIET)
-#if (NLopt_FOUND)
-#    message("nlopt: found")
-#    include_directories(${NLopt_INCLUDE_DIR})
-#else()
-#    message(FATAL_ERROR "nlopt: not found")
-#endif()
-
-# ----- Add ceres --------------------------------------------
-
-#find_package(ceres-solver REQUIRED QUIET)
-#if (ceres-solver_FOUND)
-#    message("ceres-solver: found")
-#    include_directories(${ceres-solver_INCLUDE_DIR})
-#    include_directories(${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog)
-#else()
-#    message(FATAL_ERROR "ceres-solver: not found")
-#endif()
 
 # ----- Add testing -------------------------------------------
 

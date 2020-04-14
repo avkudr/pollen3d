@@ -7,7 +7,6 @@ opencv/3.4.5@conan/stable
 [options]
 ceres-solver:use_gflags=False
 ceres-solver:use_glog=False
-ceres-solver:use_CXX11=True
 opencv:jasper=False
 
 [generators]

@@ -4,8 +4,8 @@
 #include "p3d/data/project_data.h"
 #include "p3d/project_manager.h"
 
-#include "common.h"
-#include "imgui_custom.h"
+#include "../common/common.h"
+#include "../common/imgui_custom.h"
 
 using namespace p3d;
 

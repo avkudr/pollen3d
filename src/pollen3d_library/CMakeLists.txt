@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.1)
 project( pollen3d_library )
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
@@ -22,10 +26,6 @@ conan_cmake_run(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-std=c++17)
-
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "compiling in debug")
@@ -142,8 +142,20 @@ add_library(pollen3d_lib_shared SHARED ${SOURCES})
 
 link_directories(${CONAN_LIB_DIRS})
 
-target_link_libraries(pollen3d_lib_static ${CONAN_LIBS})
-target_link_libraries(pollen3d_lib_shared ${CONAN_LIBS})
+target_link_libraries(pollen3d_lib_static
+    PUBLIC
+        ${opencv_LIBS}
+    PRIVATE
+        ${NLopt_LIBS}
+        ${ceres-solver_LIBS}
+    )
+target_link_libraries(pollen3d_lib_shared
+    PUBLIC
+        ${opencv_LIBS}
+    PRIVATE
+        ${NLopt_LIBS}
+        ${ceres-solver_LIBS}
+        )
 
 #set_target_properties(pollen3d_lib_static PROPERTIES OUTPUT_NAME p3d)
 #set_target_properties(pollen3d_lib_shared PROPERTIES OUTPUT_NAME p3d)
