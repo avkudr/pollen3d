@@ -5,31 +5,44 @@
 
 namespace p3d
 {
-enum p3dAffineCamera_ {
+enum P3D_EXPORTS p3dAffineCamera_ {
     p3dAffineCamera_Alpha = 0,  //< aspect ratio
     p3dAffineCamera_Skew = 1,   //< skew
     p3dAffineCamera_Focal = 2,  //< focal length
 };
 
-class AffineCamera : public Serializable<AffineCamera>{
+class P3D_EXPORTS AffineCamera : public Serializable<AffineCamera>
+{
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     static int initMeta();
 
-    AffineCamera(){ updateA(); }
-    AffineCamera(const Mat2 & A);
+    AffineCamera() { updateA(); }
+    AffineCamera(const Mat2& A);
     ~AffineCamera() override;
 
     // **** intrinsic parameters
 
-    void setFocal(double f) { m_focal = f; updateA(); }
-    void setAlpha(double a) { m_alpha = a; updateA(); }
-    void setSkew (double s) { m_skew  = s; updateA(); }
+    void setFocal(double f)
+    {
+        m_focal = f;
+        updateA();
+    }
+    void setAlpha(double a)
+    {
+        m_alpha = a;
+        updateA();
+    }
+    void setSkew(double s)
+    {
+        m_skew = s;
+        updateA();
+    }
 
     double getFocal() const { return m_focal; }
     double getAlpha() const { return m_alpha; }
-    double getSkew () const { return m_skew ; }
+    double getSkew() const { return m_skew; }
 
     Mat2 getA() const { return m_A; }
     Mat3 getK() const;

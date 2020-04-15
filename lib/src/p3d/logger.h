@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 
+#include "p3d/core.h"
+
 #define COLOR_INFO 4288256409  // ImVec4{0.6f,0.6f,0.6f,1.0f}
 #define COLOR_WARN 4281591526  // ImVec4{0.9f,0.9f,0.2f,1.0f}
 #define COLOR_ERR_ 4281545702  // ImVec4{0.9f,0.2f,0.2f,1.0f}
@@ -31,7 +33,7 @@ protected:
     unsigned int m_color{COLOR_OK};  // 32-bit unsigned integer - grey
 };
 
-extern std::shared_ptr<Logger> _logger;
+P3D_EXPORTS extern std::shared_ptr<Logger> _logger;
 
 class StdLogger : public Logger
 {
@@ -70,5 +72,5 @@ static void initStdLoger() { _logger = std::make_shared<StdLogger>(); }
 #ifdef POLLEN3D_DEBUG
 #define LOG_DBG(...) LOG_IMPL("[DEBUG] ", COLOR_DBG, __VA_ARGS__)
 #else
-#define LOG_DBG(...)
+#define LOG_DBG(...) do {} while (0)
 #endif

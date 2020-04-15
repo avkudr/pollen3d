@@ -7,7 +7,7 @@
 
 namespace p3d
 {
-struct RectificationData {
+P3D_EXPORTS struct RectificationData {
     // ***** input
     cv::Mat imL;
     cv::Mat imR;
@@ -25,7 +25,7 @@ struct RectificationData {
     double errorStd{std::numeric_limits<double>::max()};
 };
 
-struct RectificationUtil {
+P3D_EXPORTS struct RectificationUtil {
     static void rectify(RectificationData& data);
 };
 }  // namespace p3d

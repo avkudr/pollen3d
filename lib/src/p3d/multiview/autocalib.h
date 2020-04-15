@@ -17,7 +17,7 @@ namespace p3d
  * seen in all images. User may also specify slope angles of epipolar lines that
  * will be used as a starting point of the algorithm.
  */
-class AutoCalibrator
+class P3D_EXPORTS AutoCalibrator
 {
 public:
     /*! Available objective functions */

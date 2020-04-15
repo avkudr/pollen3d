@@ -22,7 +22,7 @@ enum p3dPointCloudContainer_ {
  * is rare
  */
 
-class PointCloudContainer : public Serializable<PointCloudContainer>
+class P3D_EXPORTS PointCloudContainer : public Serializable<PointCloudContainer>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -51,7 +51,7 @@ public:
 
     PointCloud* create(const std::string& lbl);
     void erase(const std::string& lbl);
-    size_t size() const { return m_pointClouds.size(); }
+    size_t size() const;
 
     std::vector<PointCloud> getPointClouds() const;
     void setPointClouds(const std::vector<PointCloud>& setPointClouds);

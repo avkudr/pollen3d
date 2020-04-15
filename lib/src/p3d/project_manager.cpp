@@ -21,7 +21,12 @@
 
 using namespace p3d;
 
-ProjectManager *ProjectManager::m_instance = nullptr;
+ProjectManager *ProjectManager::get()
+{
+    static ProjectManager *instance = nullptr;
+    if (!instance) instance = new ProjectManager();
+    return instance;
+}
 
 void ProjectManager::loadImages(ProjectData *list, const std::vector<std::string> &imPaths)
 {

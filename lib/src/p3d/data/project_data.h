@@ -14,7 +14,7 @@
 namespace p3d
 {
 typedef int p3dData;
-enum p3dData_ {
+enum P3D_EXPORTS p3dData_ {
     p3dData_projectData = 2000,
     p3dData_projectPath = 2001,
     p3dData_dummy = 2002,
@@ -25,8 +25,8 @@ enum p3dData_ {
     p3dData_pointCloudCtnr,
 };
 
-class ProjectData : public Serializable<ProjectData>{
-
+class P3D_EXPORTS ProjectData : public Serializable<ProjectData>
+{
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -35,8 +35,8 @@ public:
     ProjectData();
 
     const std::vector<Image> &getImageList() const { return m_images; }
-    void setImageList(const std::vector<Image> & imList);
-    const std::vector<ImagePair> & getImagePairs() const { return m_imagesPairs; }
+    void setImageList(const std::vector<Image> &imList);
+    const std::vector<ImagePair> &getImagePairs() const { return m_imagesPairs; }
     void setImagePairs(const std::vector<ImagePair> &imPairs);
 
     void clear();
@@ -45,11 +45,13 @@ public:
     bool empty() const { return nbImages() == 0; }
 
     std::string getProjectPath() const { return m_projectPath; }
-    void setProjectPath(const std::string & path) {
+    void setProjectPath(const std::string &path)
+    {
         m_projectPath = path;
     }
 
-    Image * image(const std::size_t idx) {
+    Image *image(const std::size_t idx)
+    {
         if (idx >= m_images.size()) return nullptr;
         return &m_images[idx];
     }

@@ -2,7 +2,11 @@
 
 using namespace p3d;
 
-CommandManager *CommandManager::m_instance = nullptr;
-
 Command::~Command() {}
 
+CommandManager *CommandManager::get()
+{
+    static CommandManager *instance = nullptr;
+    if (!instance) instance = new CommandManager();
+    return instance;
+}

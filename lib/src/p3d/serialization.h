@@ -8,8 +8,8 @@
 
 namespace p3d
 {
-namespace impl {
-
+namespace impl
+{
 template <typename Type>
 class Serializable;
 
@@ -47,12 +47,14 @@ class Serializable;
         .func<&p3d::impl::_writeVecEigen<Scalar, x, y>>("_write"_hs)
 
 template <typename Type>
-static void _write(cv::FileStorage& fs, P3D_ID_TYPE & id, Type & f){
+static void _write(cv::FileStorage& fs, P3D_ID_TYPE& id, Type& f)
+{
     fs << "p" + std::to_string(id) << f;
 }
 
 template <typename Type>
-static void _read(cv::FileNode& node, P3D_ID_TYPE & id, Type & v){
+static void _read(cv::FileNode& node, P3D_ID_TYPE& id, Type& v)
+{
     std::string name = "p" + std::to_string(id);
     Type t;
     if (node[name].empty()) {
@@ -63,16 +65,19 @@ static void _read(cv::FileNode& node, P3D_ID_TYPE & id, Type & v){
 }
 
 template <typename Type>
-static void _writeCustom(cv::FileStorage& fs, P3D_ID_TYPE & id, Type & f){
+static void _writeCustom(cv::FileStorage& fs, P3D_ID_TYPE& id, Type& f)
+{
     f.write(fs);
 }
 
 template <typename Type>
-static void _readCustom(cv::FileNode& node, P3D_ID_TYPE & id, Type & v){
+static void _readCustom(cv::FileNode& node, P3D_ID_TYPE& id, Type& v)
+{
     v.read(node);
 }
 
-static void _readBool(cv::FileNode& node, P3D_ID_TYPE & id, bool & v){
+static void _readBool(cv::FileNode& node, P3D_ID_TYPE& id, bool& v)
+{
     std::string name = "p" + std::to_string(id);
     if (node[name].empty()) return;
     bool res = static_cast<int>(node[name]) != 0;
@@ -80,20 +85,21 @@ static void _readBool(cv::FileNode& node, P3D_ID_TYPE & id, bool & v){
 }
 
 template <typename Type>
-static void _writeVec(cv::FileStorage& fs, P3D_ID_TYPE & id, std::vector<Type> & f){
+static void _writeVec(cv::FileStorage& fs, P3D_ID_TYPE& id, std::vector<Type>& f)
+{
     fs << "p" + std::to_string(id) << "[";
     for (auto i = 0; i < f.size(); ++i) fs << f[i];
     fs << "]";
 }
 
 template <typename Type>
-static void _readVec(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Type> & out){
+static void _readVec(cv::FileNode& node, P3D_ID_TYPE& id, std::vector<Type>& out)
+{
     std::string name = "p" + std::to_string(id);
     std::vector<Type> temp;
     cv::FileNode n = node[name];
     if (node[name].empty()) return;
-    if (n.type() != cv::FileNode::SEQ)
-    {
+    if (n.type() != cv::FileNode::SEQ) {
         std::cout << "[static void _readVec]: not a sequence" << std::endl;
         return;
     }
@@ -108,7 +114,8 @@ static void _readVec(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Type> & o
 }
 
 template <typename Type>
-static void _writeVecS(cv::FileStorage& fs, P3D_ID_TYPE & id, std::vector<Type> & f){
+static void _writeVecS(cv::FileStorage& fs, P3D_ID_TYPE& id, std::vector<Type>& f)
+{
     fs << "p" + std::to_string(id) << "[";
     for (auto i = 0; i < f.size(); ++i) {
         fs << "{";
@@ -119,13 +126,13 @@ static void _writeVecS(cv::FileStorage& fs, P3D_ID_TYPE & id, std::vector<Type> 
 }
 
 template <typename Type>
-static void _readVecS(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Type> & out){
+static void _readVecS(cv::FileNode& node, P3D_ID_TYPE& id, std::vector<Type>& out)
+{
     std::string name = "p" + std::to_string(id);
     std::vector<Type> temp;
     cv::FileNode n = node[name];
     if (node[name].empty()) return;
-    if (n.type() != cv::FileNode::SEQ)
-    {
+    if (n.type() != cv::FileNode::SEQ) {
         std::cout << "not a sequence";
         return;
     }
@@ -138,47 +145,50 @@ static void _readVecS(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Type> & 
     out = temp;
 }
 
-template<typename Type, int SizeX, int SizeY>
-static void _writeEigen(cv::FileStorage& fs, P3D_ID_TYPE & id, const Eigen::Matrix<Type, SizeX, SizeY> & f){
+template <typename Type, int SizeX, int SizeY>
+static void _writeEigen(cv::FileStorage& fs, P3D_ID_TYPE& id, const Eigen::Matrix<Type, SizeX, SizeY>& f)
+{
     cv::Mat temp;
-    cv::eigen2cv(f,temp);
+    cv::eigen2cv(f, temp);
     fs << "p" + std::to_string(id) << temp;
 }
 
-template<typename Type, int SizeX, int SizeY>
-static void _readEigen(cv::FileNode& node, P3D_ID_TYPE & id, Eigen::Matrix<Type, SizeX, SizeY> & mat){
+template <typename Type, int SizeX, int SizeY>
+static void _readEigen(cv::FileNode& node, P3D_ID_TYPE& id, Eigen::Matrix<Type, SizeX, SizeY>& mat)
+{
     std::string name = "p" + std::to_string(id);
     cv::Mat temp;
     if (node[name].empty()) return;
     node[name] >> temp;
     Eigen::Matrix<Type, SizeX, SizeY> out;
     if (temp.empty()) return;
-    out.setZero(temp.rows,temp.cols);
-    cv::cv2eigen(temp,out);
+    out.setZero(temp.rows, temp.cols);
+    cv::cv2eigen(temp, out);
     mat = out;
 }
 
-template<typename Type, int SizeX, int SizeY>
-static void _writeVecEigen(cv::FileStorage& fs, P3D_ID_TYPE & id, std::vector<Eigen::Matrix<Type, SizeX, SizeY>> & f){
+template <typename Type, int SizeX, int SizeY>
+static void _writeVecEigen(cv::FileStorage& fs, P3D_ID_TYPE& id, std::vector<Eigen::Matrix<Type, SizeX, SizeY>>& f)
+{
     fs << "p" + std::to_string(id) << "[";
     for (auto i = 0; i < f.size(); ++i) {
         fs << "{";
         cv::Mat temp;
-        cv::eigen2cv(f[i],temp);
+        cv::eigen2cv(f[i], temp);
         fs << "M" << temp;
         fs << "}";
     }
     fs << "]";
 }
 
-template<typename Type, int SizeX, int SizeY>
-static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Eigen::Matrix<Type, SizeX, SizeY>> & out){
+template <typename Type, int SizeX, int SizeY>
+static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE& id, std::vector<Eigen::Matrix<Type, SizeX, SizeY>>& out)
+{
     std::string name = "p" + std::to_string(id);
     std::vector<Eigen::Matrix<Type, SizeX, SizeY>> temp;
     cv::FileNode n = node[name];
     if (node[name].empty()) return;
-    if (n.type() != cv::FileNode::SEQ)
-    {
+    if (n.type() != cv::FileNode::SEQ) {
         std::cout << "not a sequence";
         return;
     }
@@ -188,7 +198,7 @@ static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Eige
         (*it)["M"] >> t;
         Eigen::Matrix<Type, SizeX, SizeY> a;
         a.setZero();
-        cv::cv2eigen(t,a);
+        cv::cv2eigen(t, a);
         temp.emplace_back(a);
     }
     out = temp;
@@ -196,11 +206,11 @@ static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE & id, std::vector<Eige
 
 static int registerTypes();
 
-}
+}  // namespace impl
 
-template<typename T>
-class Serializable{
-
+template <typename T>
+class Serializable
+{
 public:
     Serializable() {}
 
@@ -230,7 +240,7 @@ public:
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
                 entt::meta_any any = data.get(*ptr);
-                func.invoke(any,std::ref(fs),data.identifier(),any);
+                func.invoke(any, std::ref(fs), data.identifier(), any);
             } else {
                 LOG_ERR("not registered for write: %i", data.identifier());
             }
@@ -242,19 +252,20 @@ public:
         fs << "}";
     }
 
-    void read(const cv::FileNode& node) {
+    void read(const cv::FileNode& node)
+    {
         // **** first we read all registered properies
         std::string nodeName = "class" + std::to_string(entt::resolve<T>().identifier());
         cv::FileNode nodeL = node[nodeName];
 
         entt::resolve<T>().data([&](entt::meta_data data) {
-            entt::meta_func func  = data.type().func("_read"_hs);
+            entt::meta_func func = data.type().func("_read"_hs);
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
                 entt::meta_any old = data.get(*ptr);
                 entt::meta_any any = *old;
                 func.invoke(old, nodeL, data.identifier(), any);
-                data.set(*ptr,any);
+                data.set(*ptr, any);
             } else {
                 LOG_ERR("not registered for read: %i", data.identifier());
             }

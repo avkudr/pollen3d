@@ -7,8 +7,8 @@
 
 #include <opencv2/core.hpp>
 
-#include "p3d/logger.h"
 #include "p3d/core.h"
+#include "p3d/logger.h"
 
 namespace p3d
 {
@@ -26,7 +26,7 @@ inline bool isMetaEqual(const entt::meta_any &lhs, const entt::meta_any &rhs)
 }
 }  // namespace impl
 
-class Command
+class P3D_EXPORTS Command
 {
 public:
     Command() {}
@@ -168,7 +168,7 @@ private:
     cv::Mat m_from{};
 };
 
-class CommandGroup : public Command
+class P3D_EXPORTS CommandGroup : public Command
 {
 public:
     CommandGroup() {}
@@ -183,7 +183,7 @@ public:
 
     virtual void undo()
     {
-        for (int i = m_commandStack.size() - 1; i >= 0; --i) {
+        for (int i = int(m_commandStack.size()) - 1; i >= 0; --i) {
             auto &command = m_commandStack[i];
             if (command) {
                 command->undo();
@@ -207,14 +207,10 @@ protected:
     std::vector<Command *> m_commandStack;
 };
 
-class CommandManager
+class P3D_EXPORTS CommandManager
 {
 public:
-    static CommandManager *get()
-    {
-        if (!m_instance) m_instance = new CommandManager();
-        return m_instance;
-    }
+    static CommandManager *get();
 
     void executeCommand(Command *cmd)
     {
@@ -254,7 +250,6 @@ private:
         m_commandStack.clear();
     }
 
-    static CommandManager *m_instance;
     std::vector<Command *> m_commandStack;
 
     bool m_mergeNextCommand{false};

@@ -89,6 +89,8 @@ void PointCloudContainer::erase(const std::string &lbl)
     }
 }
 
+size_t PointCloudContainer::size() const { return m_pointClouds.size(); }
+
 std::vector<PointCloud> PointCloudContainer::getPointClouds() const
 {
     return m_pointClouds;

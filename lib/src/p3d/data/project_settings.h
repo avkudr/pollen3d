@@ -6,7 +6,7 @@
 namespace p3d
 {
 typedef int p3dSetting;
-enum p3dSetting_ {
+enum P3D_EXPORTS p3dSetting_ {
     p3dSetting_projectSettings = 1000,
 
     p3dSetting_featuresDescType = 1100,
@@ -17,8 +17,7 @@ enum p3dSetting_ {
     p3dSetting_shaderMatchingPars = 1200,
 };
 
-struct ProjectSettings : Serializable<ProjectSettings>{
-
+P3D_EXPORTS struct ProjectSettings : Serializable<ProjectSettings> {
     static int initMeta();
 
     ProjectSettings() {}

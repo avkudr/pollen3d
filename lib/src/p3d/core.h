@@ -17,7 +17,16 @@
 #define M_1_PI 0.31830988618379067153
 #endif
 
-#define P3D_EXPORTS
+#if defined(P3D_DLL) && (defined(_WIN32) || defined(__WIN32__)) && !defined(__LCC__)
+/* annoying Windows syntax for calling functions in a DLL */
+#  if defined(P3D_DLL_EXPORT)
+#    define P3D_EXPORTS __declspec(dllexport)
+#  else
+#    define P3D_EXPORTS __declspec(dllimport)
+#  endif
+#else
+#  define P3D_EXPORTS
+#endif
 
 #include "meta/factory.hpp"
 #include "meta/meta.hpp"

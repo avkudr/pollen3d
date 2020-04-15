@@ -6,14 +6,14 @@
 namespace p3d
 {
 typedef int p3dPointCloud;
-enum p3dPointCloud_ {
+enum P3D_EXPORTS p3dPointCloud_ {
     p3dPointCloud_label = 0,
     p3dPointCloud_vertices = 1,
     p3dPointCloud_colors = 2,
     p3dPointCloud_visible = 3,
 };
 
-class PointCloud : public Serializable<PointCloud>
+class P3D_EXPORTS PointCloud : public Serializable<PointCloud>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

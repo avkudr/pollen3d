@@ -1,9 +1,20 @@
 cmake_minimum_required(VERSION 3.1)
-project( pollen3d_library )
+project( p3d )
+
+#==============================================================================
+
+option (BUILD_SHARED_LIBS "Build p3d as a shared library" ON)
+
+#==============================================================================
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
+
+# To build shared libraries in Windows, we set CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS to TRUE.
+# See https://cmake.org/cmake/help/v3.4/variable/CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.html
+# See https://blog.kitware.com/create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
@@ -17,15 +28,13 @@ include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 conan_check()
 conan_add_remote(NAME bincrafters INDEX 1
             URL https://api.bintray.com/conan/bincrafters/public-conan)
-
 conan_cmake_run(
     CONANFILE conanfile.txt
     BUILD missing
-    BASIC_SETUP)
+    BASIC_SETUP NO_OUTPUT_DIRS)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_compile_options(-std=c++17)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "compiling in debug")
@@ -34,9 +43,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "compiling in release")
 endif()
-
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 option(USE_OPENMP "Use OpenMP" ON)
 
@@ -91,21 +97,19 @@ set(SOURCES
     ./src/p3d/stereo/rectification.h
 )
 
-add_library(pollen3d_lib_static STATIC ${SOURCES})
-add_library(pollen3d_lib_shared SHARED ${SOURCES})
+set (p3d_lib p3d)
+add_library (${p3d_lib} ${SOURCES})
 
 # ----- Add entt ---------------------------------------------
 
-target_include_directories(pollen3d_lib_shared PUBLIC ./../3rdparty/entt/src/entt/)
-target_include_directories(pollen3d_lib_static PUBLIC ./../3rdparty/entt/src/entt/)
+target_include_directories(${p3d_lib} SYSTEM PUBLIC ./../3rdparty/entt/src/entt/)
 
 # ----- Add Eigen --------------------------------------------
 
 find_package(Eigen3 REQUIRED QUIET)
 if (Eigen3_FOUND)
     message("Eigen3: found")
-    target_include_directories(pollen3d_lib_shared PUBLIC ${Eigen3_INCLUDE_DIR})
-    target_include_directories(pollen3d_lib_static PUBLIC ${Eigen3_INCLUDE_DIR})
+    target_include_directories(${p3d_lib} PUBLIC ${Eigen3_INCLUDE_DIR})
 else()
     message(FATAL_ERROR "Eigen3: not found")
 endif()
@@ -115,8 +119,7 @@ endif()
 find_package(opencv REQUIRED QUIET)
 if (opencv_FOUND)
     message("OpenCV: found")
-    target_include_directories(pollen3d_lib_shared PUBLIC ${opencv_INCLUDE_DIR})
-    target_include_directories(pollen3d_lib_static PUBLIC ${opencv_INCLUDE_DIR})
+    target_include_directories(${p3d_lib} PUBLIC ${opencv_INCLUDE_DIR})
 else()
     message(FATAL_ERROR "OpenCV: not found")
 endif()
@@ -126,64 +129,34 @@ endif()
 find_package(NLopt REQUIRED QUIET)
 if (NLopt_FOUND)
     message("nlopt: found")
-    target_include_directories(pollen3d_lib_shared PRIVATE ${NLopt_INCLUDE_DIR})
-    target_include_directories(pollen3d_lib_static PRIVATE ${NLopt_INCLUDE_DIR})
+    target_include_directories(${p3d_lib} PRIVATE ${NLopt_INCLUDE_DIR})
 else()
     message(FATAL_ERROR "nlopt: not found")
 endif()
-
-# ----- Add glog --------------------------------------------
-
-find_package(glog REQUIRED QUIET)
-if (glog_FOUND)
-    message("glog: found")
-    target_include_directories(pollen3d_lib_shared PRIVATE ${glog_INCLUDE_DIR})
-    target_include_directories(pollen3d_lib_static PRIVATE ${glog_INCLUDE_DIR})
-else()
-    message(FATAL_ERROR "glog: not found")
-endif()
-
-# ----- Add gflags --------------------------------------------
-
-find_package(gflags REQUIRED QUIET)
-if (gflags_FOUND)
-    message("gflags: found")
-    target_include_directories(pollen3d_lib_shared PRIVATE ${gflags_INCLUDE_DIR})
-    target_include_directories(pollen3d_lib_static PRIVATE ${gflags_INCLUDE_DIR})
-else()
-    message(FATAL_ERROR "gflags: not found")
-endif()
-
 
 # ----- Add ceres --------------------------------------------
 
 find_package(ceres-solver REQUIRED QUIET)
 if (ceres-solver_FOUND)
     message("ceres-solver: found")
-    target_include_directories(pollen3d_lib_shared PRIVATE ${ceres-solver_INCLUDE_DIR})
-    target_include_directories(pollen3d_lib_static PRIVATE ${ceres-solver_INCLUDE_DIR})
+    target_include_directories(${p3d_lib} PRIVATE ${ceres-solver_INCLUDE_DIR})
+    target_include_directories(${p3d_lib} PRIVATE ${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog)
 else()
     message(FATAL_ERROR "ceres-solver: not found")
 endif()
 
-# target_56454646link_directories(pollen3d_lib_static PUBLIC ${CONAN_LIB_DIRS})
-# target_56454646link_directories(pollen3d_lib_shared PUBLIC ${CONAN_LIB_DIRS})
-
-target_link_libraries(pollen3d_lib_static
+target_link_libraries(${p3d_lib}
     PUBLIC
         ${opencv_LIBS}
     PRIVATE
         ${NLopt_LIBS}
-        ${glog_LIBS}
-        ${gflags_LIBS}
         ${ceres-solver_LIBS}
     )
-target_link_libraries(pollen3d_lib_shared
-    PUBLIC
-        ${opencv_LIBS}
-    PRIVATE
-        ${NLopt_LIBS}
-        ${glog_LIBS}
-        ${gflags_LIBS}
-        ${ceres-solver_LIBS}
-        )
+
+if (BUILD_SHARED_LIBS)
+    target_compile_definitions (${p3d_lib} PUBLIC P3D_DLL)
+    target_compile_definitions (${p3d_lib} PRIVATE P3D_DLL_EXPORT)
+    message("shared: true")
+else()
+    message("shared: false")
+endif ()

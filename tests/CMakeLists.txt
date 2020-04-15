@@ -24,10 +24,6 @@ conan_cmake_run(
     BUILD missing
     BASIC_SETUP)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-add_compile_options(-std=c++17)
-
 option(USE_OPENMP "Use OpenMP" ON)
 
 set(CMAKE_MODULE_PATH 
@@ -107,10 +103,10 @@ if(OpenMP_CXX_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} OpenMP::OpenMP_CXX)
 endif()
 
-target_include_directories(pollen3d_tests PUBLIC ${CMAKE_SOURCE_DIR}/../lib/src)
-target_link_directories(pollen3d_tests PUBLIC ${CMAKE_SOURCE_DIR}/../build/lib/)
-target_link_directories(pollen3d_tests PUBLIC ${CMAKE_SOURCE_DIR}/../lib/build/lib)
-target_link_libraries(pollen3d_tests pollen3d_lib_shared ${TARGET_LIBS})
+target_include_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../lib/src)
+target_link_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../build/lib/)
+target_link_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/../lib/)
+target_link_libraries(pollen3d_tests p3d ${TARGET_LIBS})
 
 add_test(
     NAME pollen3d_tests

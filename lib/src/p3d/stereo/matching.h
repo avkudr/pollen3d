@@ -8,13 +8,13 @@ namespace p3d
 {
 // ***** Match
 
-P3D_EXPORTS enum p3dMatch_ {
+enum P3D_EXPORTS p3dMatch_ {
     p3dMatch_iPtL = 100,
     p3dMatch_iPtR = 101,
     p3dMatch_distance = 102,
 };
 
-P3D_EXPORTS class Match : public Serializable<Match>
+class P3D_EXPORTS Match : public Serializable<Match>
 {
 public:
     static int initMeta();
@@ -36,12 +36,12 @@ public:
     }
 };
 
-P3D_EXPORTS enum p3dMatching_ {
+enum P3D_EXPORTS p3dMatching_ {
     p3dMatching_method = 0,
     p3dMatching_filterCoeff = 1
 };
 
-P3D_EXPORTS enum MatchingMethod_ {
+enum P3D_EXPORTS MatchingMethod_ {
     MatchingMethod_FLANNBASED = 0,
     MatchingMethod_BRUTEFORCE = 1,
     MatchingMethod_BRUTEFORCE_L1 = 2,
@@ -50,7 +50,7 @@ P3D_EXPORTS enum MatchingMethod_ {
     MatchingMethod_BRUTEFORCE_SL2 = 5
 };
 
-P3D_EXPORTS class MatchingPars : public Serializable<MatchingPars>
+class P3D_EXPORTS MatchingPars : public Serializable<MatchingPars>
 {
 public:
     static int initMeta();
@@ -59,7 +59,7 @@ public:
     float filterCoeff{0.3f};
 };
 
-struct MatchingUtil {
+P3D_EXPORTS struct MatchingUtil {
     static void match(const cv::Mat& descL, const cv::Mat& descR,
                       const MatchingPars& pars, std::vector<Match>& matches);
 };

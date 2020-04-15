@@ -19,7 +19,7 @@
 
 namespace p3d
 {
-P3D_EXPORTS enum p3dImagePair_ {
+enum P3D_EXPORTS p3dImagePair_ {
     p3dImagePair_matches = 0,
     p3dImagePair_imL = 1,
     p3dImagePair_imR = 2,
@@ -37,7 +37,7 @@ P3D_EXPORTS enum p3dImagePair_ {
     p3dImagePair_matchingPars,
 };
 
-P3D_EXPORTS class ImagePair : public Serializable<ImagePair>
+class P3D_EXPORTS ImagePair : public Serializable<ImagePair>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

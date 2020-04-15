@@ -16,21 +16,21 @@
 
 namespace p3d
 {
-struct FundMatUtil {
-    static Mat3 findAffineGS(const std::vector<Vec2> & ptsL,const std::vector<Vec2> & ptsR);
-    static Mat3 findAffineCeres(const std::vector<Vec2> & ptsL, const std::vector<Vec2> & ptsR);
+struct P3D_EXPORTS FundMatUtil {
+    static Mat3 findAffineGS(const std::vector<Vec2>& ptsL, const std::vector<Vec2>& ptsR);
+    static Mat3 findAffineCeres(const std::vector<Vec2>& ptsL, const std::vector<Vec2>& ptsR);
 
-    template<typename T>
+    template <typename T>
     static void epiporalDistances(const T a, const T b, const T c, const T d, const T e,
-                               const T qx, const T qy, const T qTx, const T qTy,
-                               T * errorL, T * errorR);
-    static Vec2 epiporalDistancesF(const Mat3 & F, const Vec2 & qL, const Vec2 & qR);
+                                  const T qx, const T qy, const T qTx, const T qTy,
+                                  T* errorL, T* errorR);
+    static Vec2 epiporalDistancesF(const Mat3& F, const Vec2& qL, const Vec2& qR);
 
     // Mat3 affineFromP(const Mat34 & Pl, const Mat34 & Pr);
-    static std::pair<double,double> slopAngles(const Mat3 & F);
+    static std::pair<double, double> slopAngles(const Mat3& F);
 };
 
-void normalizePoints(std::vector<cv::Point2d> & pts, cv::Mat & transformMatrix);
+void normalizePoints(std::vector<cv::Point2d>& pts, cv::Mat& transformMatrix);
 
 }  // namespace p3d
 
@@ -39,4 +39,3 @@ void normalizePoints(std::vector<cv::Point2d> & pts, cv::Mat & transformMatrix);
 //    F = T2.t() * F * T1;
 //}
 //F = F / F.at<double>(2,2);
-
