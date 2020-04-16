@@ -12,7 +12,7 @@ int AffineCamera::initMeta()
     if (firstCall) {
         std::cout << "Reflecting: AffineCamera" << std::endl;
         entt::meta<AffineCamera>()
-            .type("AffineCamera"_hs)
+            .alias("AffineCamera"_hs)
             .data<&AffineCamera::setAlpha, &AffineCamera::getAlpha>(
                 P3D_ID_TYPE(p3dAffineCamera_Alpha))
             .data<&AffineCamera::setSkew, &AffineCamera::getSkew>(

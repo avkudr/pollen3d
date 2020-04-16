@@ -10,12 +10,9 @@ namespace p3d
 {
 namespace impl
 {
-template <typename Type>
-class Serializable;
-
 #define SERIALIZE_TYPE(x, name)                 \
     entt::meta<x>()                             \
-        .type(name)                             \
+        .alias(name)                            \
         .func<&p3d::impl::_read<x>>("_read"_hs) \
         .func<&p3d::impl::_write<x>>("_write"_hs)
 
@@ -26,23 +23,23 @@ class Serializable;
 
 #define SERIALIZE_TYPE_VEC(x, name)                \
     entt::meta<std::vector<x>>()                   \
-        .type(name)                                \
+        .alias(name)                                \
         .func<&p3d::impl::_readVec<x>>("_read"_hs) \
         .func<&p3d::impl::_writeVec<x>>("_write"_hs)
 
 #define SERIALIZE_TYPE_VECS(x, name)                \
     entt::meta<std::vector<x>>()                    \
-        .type(name)                                 \
+        .alias(name)                                 \
         .func<&p3d::impl::_readVecS<x>>("_read"_hs) \
         .func<&p3d::impl::_writeVecS<x>>("_write"_hs)
 
 #define SERIALIZE_TYPE_EIGEN(Scalar, x, y, name)                   \
     entt::meta<Eigen::Matrix<Scalar, x, y>>()                      \
-        .type(name)                                                \
+        .alias(name)                                                \
         .func<&p3d::impl::_readEigen<Scalar, x, y>>("_read"_hs)    \
         .func<&p3d::impl::_writeEigen<Scalar, x, y>>("_write"_hs); \
     entt::meta<std::vector<Eigen::Matrix<Scalar, x, y>>>()         \
-        .type("vector_" name)                                      \
+        .alias("vector_" name)                                      \
         .func<&p3d::impl::_readVecEigen<Scalar, x, y>>("_read"_hs) \
         .func<&p3d::impl::_writeVecEigen<Scalar, x, y>>("_write"_hs)
 
@@ -204,7 +201,7 @@ static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE& id, std::vector<Eigen
     out = temp;
 }
 
-static int registerTypes();
+void P3D_API registerTypes();
 
 }  // namespace impl
 
@@ -233,16 +230,16 @@ public:
     {
         // **** first we write all registered properies
 
-        std::string nodeName = "class" + std::to_string(entt::resolve<T>().identifier());
+        std::string nodeName = "class" + std::to_string(entt::resolve<T>().id());
         fs << nodeName << "{";
         entt::resolve<T>().data([&](entt::meta_data data) {
             entt::meta_func func = data.type().func("_write"_hs);
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
                 entt::meta_any any = data.get(*ptr);
-                func.invoke(any, std::ref(fs), data.identifier(), any);
+                func.invoke(any, std::ref(fs), data.type(), any);
             } else {
-                LOG_ERR("not registered for write: %i", data.identifier());
+                LOG_ERR("not registered for write: %i", data.type());
             }
         });
 
@@ -255,7 +252,7 @@ public:
     void read(const cv::FileNode& node)
     {
         // **** first we read all registered properies
-        std::string nodeName = "class" + std::to_string(entt::resolve<T>().identifier());
+        std::string nodeName = "class" + std::to_string(entt::resolve<T>().id());
         cv::FileNode nodeL = node[nodeName];
 
         entt::resolve<T>().data([&](entt::meta_data data) {
@@ -263,11 +260,11 @@ public:
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
                 entt::meta_any old = data.get(*ptr);
-                entt::meta_any any = *old;
-                func.invoke(old, nodeL, data.identifier(), any);
+                entt::meta_any any = old;
+                func.invoke(old, nodeL, data.type(), any);
                 data.set(*ptr, any);
             } else {
-                LOG_ERR("not registered for read: %i", data.identifier());
+                LOG_ERR("not registered for read: %i", data.type());
             }
         });
 

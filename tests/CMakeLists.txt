@@ -40,14 +40,16 @@ add_executable(pollen3d_tests
     ./test_fundmat.h
     ./test_diamond.h
     ./main_tests.cpp
-    ${SOURCES}
+    ../lib/src/p3d/command_manager.h
+    ../lib/src/p3d/project_manager.cpp
+    ../lib/src/p3d/project_manager.h
 )
 
-# ----- entt --------------------------------------------------
+target_compile_definitions (pollen3d_tests PRIVATE P3D_API_IMPORT)
 
-target_include_directories(pollen3d_tests PUBLIC ./../3rdparty/entt/src/entt/)
+target_include_directories(pollen3d_tests SYSTEM PRIVATE ./../3rdparty/)
 
-# ----- OpenMP
+# ----- OpenMP --------------------------------------------
 
 if(USE_OPENMP)
     find_package(OpenMP QUIET)
@@ -106,7 +108,13 @@ endif()
 target_include_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../lib/src)
 target_link_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../build/lib/)
 target_link_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/../lib/)
-target_link_libraries(pollen3d_tests p3d ${TARGET_LIBS})
+target_link_libraries(pollen3d_tests ${TARGET_LIBS} p3d )
+
+#--- target_compile_definitions (pollen3d_tests PRIVATE P3D_API_IMPORT ENTT_API_IMPORT)
+
+if(EXISTS D:/Projects/build-pollen3d-Desktop_2019_64bit-Release/lib/p3d.dll)
+    configure_file(D:/Projects/build-pollen3d-Desktop_2019_64bit-Release/lib/p3d.dll ${CMAKE_CURRENT_BINARY_DIR}/bin/p3d.dll COPYONLY)
+endif()
 
 add_test(
     NAME pollen3d_tests

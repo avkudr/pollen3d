@@ -10,7 +10,7 @@ int ProjectSettings::initMeta()
     if (firstCall) {
         firstCall = false;
         entt::meta<ProjectSettings>()
-            .type(P3D_ID_TYPE(p3dSetting_projectSettings))
+            .alias(P3D_ID_TYPE(p3dSetting_projectSettings))
             .data<&ProjectSettings::featuresDescType>(P3D_ID_TYPE(p3dSetting_featuresDescType))
             .data<&ProjectSettings::featuresDescSize>(P3D_ID_TYPE(p3dSetting_featuresDescSize))
             .data<&ProjectSettings::featuresDescChannels>(

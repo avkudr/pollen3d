@@ -26,7 +26,7 @@ inline bool isMetaEqual(const entt::meta_any &lhs, const entt::meta_any &rhs)
 }
 }  // namespace impl
 
-class P3D_EXPORTS Command
+class P3D_API Command
 {
 public:
     Command() {}
@@ -168,7 +168,7 @@ private:
     cv::Mat m_from{};
 };
 
-class P3D_EXPORTS CommandGroup : public Command
+class CommandGroup : public Command
 {
 public:
     CommandGroup() {}
@@ -205,54 +205,6 @@ public:
 
 protected:
     std::vector<Command *> m_commandStack;
-};
-
-class P3D_EXPORTS CommandManager
-{
-public:
-    static CommandManager *get();
-
-    void executeCommand(Command *cmd)
-    {
-        if (cmd->isValid()) {
-            cmd->execute();
-
-            if (m_mergeNextCommand) {
-                CommandGroup *newGroup = new CommandGroup();
-                newGroup->add(m_commandStack.back());
-                newGroup->add(cmd);
-                m_commandStack.pop_back();
-                m_commandStack.push_back(newGroup);
-                m_mergeNextCommand = false;
-            } else
-                m_commandStack.push_back(cmd);
-        }
-    }
-    void undoCommand()
-    {
-        if (m_commandStack.size() > 0) {
-            auto command = m_commandStack[m_commandStack.size() - 1];
-            if (command) {
-                LOG_INFO("Undo last command");
-                command->undo();
-                m_commandStack.pop_back();
-                delete command;
-            }
-        }
-    }
-
-    void mergeNextCommand() { m_mergeNextCommand = true; }
-
-private:
-    CommandManager() {}
-    ~CommandManager()
-    {
-        m_commandStack.clear();
-    }
-
-    std::vector<Command *> m_commandStack;
-
-    bool m_mergeNextCommand{false};
 };
 
 }  // namespace p3d

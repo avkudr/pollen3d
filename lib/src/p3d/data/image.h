@@ -16,7 +16,7 @@
 
 namespace p3d
 {
-enum P3D_EXPORTS p3dImage_ {
+enum P3D_API p3dImage_ {
     p3dImage_path = 0,
     p3dImage_descriptors = 1,
     p3dImage_keypoints = 2,
@@ -24,7 +24,7 @@ enum P3D_EXPORTS p3dImage_ {
     p3dImage_translation = 4,
 };
 
-class P3D_EXPORTS Image : public Serializable<Image>
+class P3D_API Image : public Serializable<Image>
 {
 public:
     static int initMeta();

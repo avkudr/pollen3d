@@ -13,7 +13,7 @@ int Image::initMeta()
     if (firstCall) {
         // reflecting: Image
         entt::meta<Image>()
-            .type("Image"_hs)
+            .alias("Image"_hs)
             .data<&Image::setPath, &Image::getPath>(P3D_ID_TYPE(p3dImage_path))
             .data<&Image::setCamera, &Image::getCamera>(
                 P3D_ID_TYPE(p3dImage_camera))

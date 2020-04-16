@@ -10,11 +10,14 @@
 
 namespace p3d
 {
-class P3D_EXPORTS ProjectManager
+class ProjectManager
 {
 public:
-    static ProjectManager *get();
-
+    static ProjectManager *get() {
+        static ProjectManager *instance = nullptr;
+        if (!instance) instance = new ProjectManager();
+        return instance;
+    }
     // ***** Files
 
     void loadImages(ProjectData *list, const std::vector<std::string> &imPaths);

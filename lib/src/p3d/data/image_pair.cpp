@@ -10,7 +10,7 @@ int ImagePair::initMeta()
     if (firstCall) {
         std::cout << "Reflecting: ImagePair" << std::endl;
         entt::meta<ImagePair>()
-            .type("ImagePair"_hs)
+            .alias("ImagePair"_hs)
             .data<&ImagePair::setDenseMatchingPars,
                   &ImagePair::getDenseMatchingPars>(
                 P3D_ID_TYPE(p3dImagePair_denseMatchingPars))

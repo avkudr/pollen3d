@@ -10,11 +10,29 @@
 
 int main(int argc, char **argv)
 {
-#ifndef POLLEN3D_DEBUG
-    std::cout.setstate(std::ios_base::failbit);
-    std::cerr.setstate(std::ios_base::failbit);
-#endif
+//#ifndef POLLEN3D_DEBUG
+//    std::cout.setstate(std::ios_base::failbit);
+//    std::cerr.setstate(std::ios_base::failbit);
+//#endif
 
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    p3d::initStdLoger();
+
+    p3d::ProjectData p1;
+    p3d::ProjectData p2;
+
+    p3d::Image im1("Brassica01.jpg");
+    p3d::Image im2("Brassica02.jpg");
+
+    p1.setImageList({im1,im2});
+    ProjectManager::get()->loadImages(&p2,{"Brassica01.jpg","Brassica02.jpg"});
+
+    std::cout << p1.nbImages() << std::endl;
+    std::cout << p2.nbImages() << std::endl;
+
+    //ProjectManager::get()->extractFeatures(p1,{});
+    ProjectManager::get()->extractFeatures(p2,{});
+
+    return 0;
+//    ::testing::InitGoogleTest(&argc, argv);
+//    return RUN_ALL_TESTS();
 }

@@ -5,13 +5,13 @@
 
 namespace p3d
 {
-enum P3D_EXPORTS p3dAffineCamera_ {
+enum P3D_API p3dAffineCamera_ {
     p3dAffineCamera_Alpha = 0,  //< aspect ratio
     p3dAffineCamera_Skew = 1,   //< skew
     p3dAffineCamera_Focal = 2,  //< focal length
 };
 
-class P3D_EXPORTS AffineCamera : public Serializable<AffineCamera>
+class P3D_API AffineCamera : public Serializable<AffineCamera>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

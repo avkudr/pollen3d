@@ -13,7 +13,7 @@ int Match::initMeta()
     if (firstCall) {
         std::cout << "Reflecting: Match" << std::endl;
         entt::meta<Match>()
-            .type("Match"_hs)
+            .alias("Match"_hs)
             .data<&Match::iPtL>(P3D_ID_TYPE(p3dMatch_iPtL))
             .data<&Match::iPtR>(P3D_ID_TYPE(p3dMatch_iPtR))
             .data<&Match::distance>(P3D_ID_TYPE(p3dMatch_distance));
@@ -32,7 +32,7 @@ int MatchingPars::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         entt::meta<MatchingPars>()
-            .type("MatchingPars"_hs)
+            .alias("MatchingPars"_hs)
             .data<&MatchingPars::method>(P3D_ID_TYPE(p3dMatching_method))
             .data<&MatchingPars::filterCoeff>(
                 P3D_ID_TYPE(p3dMatching_filterCoeff));

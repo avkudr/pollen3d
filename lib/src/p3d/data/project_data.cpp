@@ -23,7 +23,7 @@ int ProjectData::initMeta()
     if (firstCall) {
         std::cout << "Reflecting: ProjectData" << std::endl;
         entt::meta<ProjectData>()
-            .type("ProjectData"_hs)
+            .alias("ProjectData"_hs)
             .data<&ProjectData::setPointCloudCtnr,
                   &ProjectData::getPointCloudCtnr>(
                 P3D_ID_TYPE(p3dData_pointCloudCtnr))

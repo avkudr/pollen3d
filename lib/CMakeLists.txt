@@ -8,7 +8,7 @@ option (BUILD_SHARED_LIBS "Build p3d as a shared library" ON)
 #==============================================================================
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 # To build shared libraries in Windows, we set CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS to TRUE.
@@ -53,8 +53,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_MODULE_PATH})
 
 # ----- Sources ----------------------------------------------
 
-include_directories(./src/)
-
 set(SOURCES
     ./src/p3d/commands.cpp
     ./src/p3d/commands.h
@@ -62,8 +60,6 @@ set(SOURCES
     ./src/p3d/core.h
     ./src/p3d/logger.cpp
     ./src/p3d/logger.h
-    ./src/p3d/project_manager.cpp
-    ./src/p3d/project_manager.h
     ./src/p3d/serialization.cpp
     ./src/p3d/serialization.h
     ./src/p3d/utils.cpp
@@ -100,9 +96,8 @@ set(SOURCES
 set (p3d_lib p3d)
 add_library (${p3d_lib} ${SOURCES})
 
-# ----- Add entt ---------------------------------------------
-
-target_include_directories(${p3d_lib} SYSTEM PUBLIC ./../3rdparty/entt/src/entt/)
+target_include_directories(${p3d_lib} SYSTEM PRIVATE ./../3rdparty/)
+target_include_directories(${p3d_lib} SYSTEM PRIVATE ./src/)
 
 # ----- Add Eigen --------------------------------------------
 
@@ -154,8 +149,7 @@ target_link_libraries(${p3d_lib}
     )
 
 if (BUILD_SHARED_LIBS)
-    target_compile_definitions (${p3d_lib} PUBLIC P3D_DLL)
-    target_compile_definitions (${p3d_lib} PRIVATE P3D_DLL_EXPORT)
+    target_compile_definitions (${p3d_lib} PRIVATE P3D_API_EXPORT)
     message("shared: true")
 else()
     message("shared: false")

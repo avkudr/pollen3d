@@ -12,7 +12,7 @@ int DenseMatchingPars::initMeta()
     if (firstCall) {
         std::cout << "Reflecting: DenseMatching" << std::endl;
         entt::meta<DenseMatchingPars>()
-            .type("DenseMatching"_hs)
+            .alias("DenseMatching"_hs)
             .data<&DenseMatchingPars::dispMethod>(
                 P3D_ID_TYPE(p3dDense_DispMethod))
             .data<&DenseMatchingPars::dispLowerBound>(

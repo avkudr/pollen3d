@@ -12,7 +12,7 @@ int PointCloud::initMeta()
     if (firstCall) {
         std::cout << "Reflecting: PointCloud" << std::endl;
         entt::meta<PointCloud>()
-            .type("PointCloud"_hs)
+            .alias("PointCloud"_hs)
             .data<&PointCloud::setLabel, &PointCloud::getLabel>(
                 P3D_ID_TYPE(p3dPointCloud_label))
             .data<&PointCloud::setVertices, &PointCloud::getVertices>(

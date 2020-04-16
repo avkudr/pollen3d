@@ -12,7 +12,7 @@ int PointCloudContainer::initMeta()
     if (firstCall) {
         std::cout << "Reflecting: PointCloudContainer" << std::endl;
         entt::meta<PointCloudContainer>()
-            .type("PointCloudContainer"_hs)
+            .alias("PointCloudContainer"_hs)
             .data<&PointCloudContainer::setPointClouds,
                   &PointCloudContainer::getPointClouds>(
                 P3D_ID_TYPE(p3dPointCloudContainer_clouds));

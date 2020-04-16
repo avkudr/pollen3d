@@ -144,7 +144,6 @@ TEST(MISC, test_pointCloudCtnr)
 TEST(MISC, test_pointCloudCtnrCmds)
 {
     PointCloudContainer ctnr;
-
     {
         auto& pcd = ctnr["random"];
         int nbPts = 10;

@@ -17,16 +17,11 @@
 #include "p3d/stereo/rectification.h"
 #include "p3d/utils.h"
 
+#include "p3d/command_manager.h"
+
 #define P3D_PROJECT_EXTENSION ".yml.gz"
 
 using namespace p3d;
-
-ProjectManager *ProjectManager::get()
-{
-    static ProjectManager *instance = nullptr;
-    if (!instance) instance = new ProjectManager();
-    return instance;
-}
 
 void ProjectManager::loadImages(ProjectData *list, const std::vector<std::string> &imPaths)
 {

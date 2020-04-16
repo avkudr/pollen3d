@@ -18,7 +18,7 @@
 
 namespace p3d
 {
-class Logger
+class P3D_API Logger
 {
 public:
     Logger() {}
@@ -33,9 +33,9 @@ protected:
     unsigned int m_color{COLOR_OK};  // 32-bit unsigned integer - grey
 };
 
-P3D_EXPORTS extern std::shared_ptr<Logger> _logger;
+extern P3D_API std::shared_ptr<Logger> _logger;
 
-class StdLogger : public Logger
+class P3D_API StdLogger : public Logger
 {
 public:
     StdLogger() : Logger() {}
@@ -52,7 +52,7 @@ public:
     }
 };
 
-static void initStdLoger() { _logger = std::make_shared<StdLogger>(); }
+void P3D_API initStdLoger();
 }  // namespace p3d
 
 #define LOG_IMPL(type, color, ...)            \

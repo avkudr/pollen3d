@@ -8,7 +8,7 @@
 namespace p3d
 {
 typedef int p3dPointCloudContainer;
-enum p3dPointCloudContainer_ {
+enum P3D_API p3dPointCloudContainer_ {
     p3dPointCloudContainer_clouds = 0,
 };
 
@@ -18,11 +18,11 @@ enum p3dPointCloudContainer_ {
  *
  * It is not implemented as a map because the serialization of std::map
  * is not implemented => technical debt. However, in this particular case it
- * should not be problem because (IMHO) a project with more than 10 point clouds
+ * should not be a problem because (IMHO) a project with more than 10 point clouds
  * is rare
  */
 
-class P3D_EXPORTS PointCloudContainer : public Serializable<PointCloudContainer>
+class P3D_API PointCloudContainer : public Serializable<PointCloudContainer>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -68,7 +68,7 @@ private:
     std::vector<PointCloud> m_pointClouds;
 };
 
-class CommandPointCloudAdd : public Command
+class P3D_API CommandPointCloudAdd : public Command
 {
 public:
     CommandPointCloudAdd(PointCloudContainer* ctnr, const std::string& lbl,
@@ -98,7 +98,7 @@ protected:
     PointCloud m_pcd;
 };
 
-class CommandPointCloudDelete : public Command
+class P3D_API CommandPointCloudDelete : public Command
 {
 public:
     CommandPointCloudDelete(PointCloudContainer* ctnr, const std::string& lbl)

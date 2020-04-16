@@ -10,7 +10,7 @@ namespace p3d
  * @brief BundleData holds the data that on which the bundle adjustment will
  * operate
  */
-P3D_EXPORTS struct BundleData {
+P3D_API struct BundleData {
     /**
      * @brief vector of rotation vectors (3\times1)
      *
@@ -59,7 +59,7 @@ P3D_EXPORTS struct BundleData {
     }
 };
 
-class P3D_EXPORTS BundleAdjustment
+class P3D_API BundleAdjustment
 {
 public:
     /*! @brief magic happens here. */

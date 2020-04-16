@@ -9,7 +9,7 @@
 
 namespace p3d
 {
-enum P3D_EXPORTS p3dDense_ {
+enum P3D_API p3dDense_ {
     p3dDense_DispMap = 0,
     p3dDense_DispMethod,
     p3dDense_DispLowerBound,
@@ -41,7 +41,7 @@ enum P3D_EXPORTS p3dDense_ {
 
 };
 
-class P3D_EXPORTS DenseMatchingPars : public Serializable<DenseMatchingPars>
+class P3D_API DenseMatchingPars : public Serializable<DenseMatchingPars>
 {
 public:
     enum DenseMatchingMethod_ {

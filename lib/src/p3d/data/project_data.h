@@ -14,7 +14,7 @@
 namespace p3d
 {
 typedef int p3dData;
-enum P3D_EXPORTS p3dData_ {
+enum P3D_API p3dData_ {
     p3dData_projectData = 2000,
     p3dData_projectPath = 2001,
     p3dData_dummy = 2002,
@@ -25,7 +25,7 @@ enum P3D_EXPORTS p3dData_ {
     p3dData_pointCloudCtnr,
 };
 
-class P3D_EXPORTS ProjectData : public Serializable<ProjectData>
+class P3D_API ProjectData : public Serializable<ProjectData>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
