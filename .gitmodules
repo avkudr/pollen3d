@@ -5,6 +5,3 @@
 	path = 3rdparty/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
-[submodule "3rdparty/entt"]
-	path = 3rdparty/entt
-	url = https://github.com/avkudr/entt.git
