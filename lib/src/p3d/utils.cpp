@@ -26,7 +26,7 @@ void utils::saveFileToMatlab(std::string fileName, cv::Mat a, std::string varNam
 
     std::ofstream myfile;
     myfile.open(fileName);
-    myfile << "%File generated with Pollen3D \n";
+    myfile << "%File generated with pollen3d \n";
 
     myfile << varName << " = [";
 

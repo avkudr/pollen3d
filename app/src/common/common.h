@@ -53,7 +53,7 @@ static std::string saveProjectDialog()
 
     saveFilePath = tinyfd_saveFileDialog("Save project as...", "",
                                          1,  // nb files to save
-                                         saveFilePattern, "Pollen3D project");
+                                         saveFilePattern, "pollen3d project");
 
     if (!saveFilePath) return "";
 

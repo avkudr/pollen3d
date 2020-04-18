@@ -16,7 +16,7 @@
 #define COLOR_OK 4283282176    // ImVec4{0.0f,0.7f,0.3f,1.0f}
 #define COLOR_DBG 4288237055   // ImVec4{1.0f,0.3f,0.6f,1.0f}
 
-namespace p3d
+namespace p3d::logger
 {
 class P3D_API Logger
 {
@@ -38,8 +38,6 @@ protected:
     bool m_isOn{true};
 };
 
-extern P3D_API std::shared_ptr<Logger> _logger;
-
 class P3D_API StdLogger : public Logger
 {
 public:
@@ -57,28 +55,32 @@ public:
     }
 };
 
-void P3D_API loggerStd();
-void P3D_API loggerOn();
-void P3D_API loggerOff();
+std::shared_ptr<Logger> P3D_API get();
+void P3D_API set(std::shared_ptr<Logger> l);
+void P3D_API setStd();
+void P3D_API on();
+void P3D_API off();
 
-}  // namespace p3d
+}  // namespace p3d::logger
 
-#define LOG_IMPL(type, color, ...)                  \
-    do {                                            \
-        if (p3d::_logger && p3d::_logger->isOn()) { \
-            p3d::_logger->setType(type);            \
-            p3d::_logger->setColor(color);          \
-            p3d::_logger->print(__VA_ARGS__);       \
-        }                                           \
+#define LOG_IMPL(type, color, ...)                    \
+    do {                                              \
+        if (p3d::logger::get()                     \
+            && p3d::logger::get()->isOn())         \
+        {                                             \
+            p3d::logger::get()->setType(type);     \
+            p3d::logger::get()->setColor(color);   \
+            p3d::logger::get()->print(__VA_ARGS__);\
+        }                                             \
     } while (0)
 
-#define LOG_OK(...) LOG_IMPL("[ OK ] ", COLOR_OK, __VA_ARGS__)
-#define LOG_INFO(...) LOG_IMPL("[INFO] ", COLOR_INFO, __VA_ARGS__)
-#define LOG_WARN(...) LOG_IMPL("[WARN] ", COLOR_WARN, __VA_ARGS__)
-#define LOG_ERR(...) LOG_IMPL("[ERR ] ", COLOR_ERR_, __VA_ARGS__)
+#define LOG_OK(...) LOG_IMPL("* ", COLOR_OK, __VA_ARGS__)
+#define LOG_INFO(...) LOG_IMPL("* ", COLOR_INFO, __VA_ARGS__)
+#define LOG_WARN(...) LOG_IMPL("* ", COLOR_WARN, __VA_ARGS__)
+#define LOG_ERR(...) LOG_IMPL("* ", COLOR_ERR_, __VA_ARGS__)
 
 #ifdef POLLEN3D_DEBUG
-#define LOG_DBG(...) LOG_IMPL("[DEBUG] ", COLOR_DBG, __VA_ARGS__)
+#define LOG_DBG(...) LOG_IMPL("* ", COLOR_DBG, __VA_ARGS__)
 #else
 #define LOG_DBG(...) do {} while (0)
 #endif

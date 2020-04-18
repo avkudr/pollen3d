@@ -1,12 +1,11 @@
 [requires]
 eigen/3.3.7@conan/stable
-opencv/3.4.5@conan/stable
+opencv/3.4.8@camposs/stable
 gtest/1.8.1@bincrafters/stable
 
 [options]
 gtest:build_gmock=False
 gtest:shared=True
-opencv:openexr=False
 opencv:shared=True
 
 [generators]

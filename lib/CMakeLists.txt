@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 project( p3d )
 
+include ( CMakePackageConfigHelpers )
+
 #==============================================================================
 
 option (BUILD_SHARED_LIBS "Build p3d as a shared library" ON)
@@ -28,6 +30,9 @@ include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 conan_check()
 conan_add_remote(NAME bincrafters INDEX 1
             URL https://api.bintray.com/conan/bincrafters/public-conan)
+conan_add_remote(NAME camposs INDEX 2
+            URL https://conan.campar.in.tum.de/api/conan/conan-camposs)
+
 conan_cmake_run(
     CONANFILE conanfile.txt
     BUILD missing
@@ -158,3 +163,38 @@ if (BUILD_SHARED_LIBS)
 else()
     message("shared: false")
 endif ()
+
+
+# ===== Install ==============================================
+
+#set ( p3d_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src" )
+#set ( p3d_CONFIG_DEST "${CMAKE_CURRENT_SOURCE_DIR}/../cmake" )
+
+#configure_package_config_file (
+#        "${p3d_CONFIG_DEST}/p3d-config.cmake.in"
+#        # Important to write in CMAKE_BINARY_DIR if you want the registry
+#        # mechanism to work:
+#        "${p3d_CONFIG_DEST}/p3d-config.cmake"
+#        INSTALL_DESTINATION "${p3d_CONFIG_DEST}"
+#        PATH_VARS p3d_INCLUDE_DIRS )
+
+## This file is included in our template:
+#export ( TARGETS ${p3d_lib} FILE "${CMAKE_BINARY_DIR}/p3dTargets.cmake" )
+
+#export ( PACKAGE p3d )
+
+
+## We redefine this variable, using this time a relative path:
+#set ( p3d_INCLUDE_DIRS "src" )
+
+## We write in the 'export' folder in order not to collide with
+## the previous config file:
+#configure_package_config_file (
+#       "${p3d_CONFIG_DEST}/p3d-config.cmake.in"
+#       "${p3d_CONFIG_DEST}/export/p3d-config.cmake.cmake"
+#       INSTALL_DESTINATION "${CMAKE_CONFIG_DEST}"
+#       PATH_VARS p3d_INCLUDE_DIRS )
+
+#install (
+#      EXPORT export
+#      DESTINATION ${CMAKE_CONFIG_DEST} FILE "p3dTargets.cmake" )

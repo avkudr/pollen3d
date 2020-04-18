@@ -23,10 +23,10 @@ private:
     std::string m_str{};
 };
 
-class WidgetLogger : public p3d::Logger
+class WidgetLogger : public p3d::logger::Logger
 {
 public:
-    WidgetLogger() : p3d::Logger() {}
+    WidgetLogger() : p3d::logger::Logger() {}
     ~WidgetLogger() {}
     void render(ImGuiWindowFlags flags = 0);
 

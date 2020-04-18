@@ -1,0 +1,5 @@
+@PACKAGE_INIT@ 
+
+set_and_check ( p3d_INCLUDE_DIRS "@PACKAGE_p3d_INCLUDE_DIRS@")
+
+include ( "${CMAKE_CURRENT_LIST_DIR}/p3dTargets.cmake" )

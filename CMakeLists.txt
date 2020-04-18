@@ -5,14 +5,20 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Prevented in-tree built. Please create a build directory outside of the source code and call cmake from there. Thank you.")
 endif()
 
-option(BUILD_UNIT_TESTS "Build unit tests" ON)
+option(BUILD_UNIT_TESTS "Build unit tests" OFF)
+option(BUILD_EXAMPLES "Build examples" OFF)
 
 set(GLOBAL_BINARY_DIR ${CMAKE_BINARY_DIR})
 set(GLOBAL_SOURCE_DIR ${CMAKE_SOURCE_DIR})
 
 add_subdirectory(./lib)
-add_subdirectory(./examples)
-#add_subdirectory(./tests)
 add_subdirectory(./app)
 
-#add_subdirectory(./src/tests)
+if(BUILD_EXAMPLES)
+    add_subdirectory(./examples)
+endif()
+
+if(BUILD_UNIT_TESTS)
+    add_subdirectory(./tests)
+endif()
+

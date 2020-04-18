@@ -30,7 +30,7 @@ public:
     void setWindowTitle(std::string str)
     {
         if (str == "") str = "*";
-        std::string title = "Pollen3D: " + str;
+        std::string title = "pollen3d: " + str;
         setWindowTitleImpl(title);
     }
 

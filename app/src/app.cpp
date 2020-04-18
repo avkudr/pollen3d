@@ -28,12 +28,12 @@ using namespace p3d;
 Application::Application()
 {
     m_widgetLogger = std::make_shared<WidgetLogger>();
-    p3d::_logger = m_widgetLogger;
+    p3d::logger::set(m_widgetLogger);
 
     m_widgetFeat = std::make_unique<WidgetFeatureExtract>();
     m_widgetMatching = std::make_unique<WidgetMatching>();
     m_widgetDenseMatching = std::make_unique<WidgetDenseMatching>();
-    LOG_OK("Welcome to Pollen3D!");
+    LOG_OK("Welcome to pollen3d!");
 
     m_execPath = utils::getExecPath();
 }
@@ -199,8 +199,8 @@ void Application::draw(int width, int height)
             std::future_status::ready) {
             counter++;
             ImGui::SetNextWindowSize(ImVec2(400, 200));
-            ImGui::OpenPopup("Pollen3D");
-            if (ImGui::BeginPopupModal("Pollen3D", nullptr,
+            ImGui::OpenPopup("pollen3d");
+            if (ImGui::BeginPopupModal("pollen3d", nullptr,
                                        ImGuiWindowFlags_Modal |
                                            ImGuiWindowFlags_NoResize |
                                            ImGuiWindowFlags_NoSavedSettings)) {

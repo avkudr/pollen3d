@@ -211,7 +211,7 @@ bool p3d::matchFeatures(Project &data, std::vector<int> imPairsIds)
         delete groupCmd;
         return false;
     } else
-        _cmdManager->executeCommand(groupCmd);
+        p3d::cmder::get()->executeCommand(groupCmd);
 
     return true;
 }
@@ -262,7 +262,7 @@ bool p3d::findFundamentalMatrix(Project &data, std::vector<int> imPairsIds)
         delete groupCmd;
         return false;
     } else
-        _cmdManager->executeCommand(groupCmd);
+        p3d::cmder::get()->executeCommand(groupCmd);
 
     return true;
 }
@@ -350,7 +350,7 @@ bool p3d::rectifyImagePairs(Project &data, std::vector<int> imPairsIds)
         delete groupCmd;
         return false;
     } else
-        _cmdManager->executeCommand(groupCmd);
+        p3d::cmder::get()->executeCommand(groupCmd);
 
     return true;
 }
@@ -401,7 +401,7 @@ bool p3d::findDisparityMap(Project &data, std::vector<int> imPairsIds)
         delete groupCmd;
         return false;
     } else
-        _cmdManager->executeCommand(groupCmd);
+        p3d::cmder::get()->executeCommand(groupCmd);
 
     return true;
 }
@@ -448,7 +448,7 @@ void p3d::filterDisparityBilateral(Project &data, std::vector<int> imPairsIds)
     if (groupCmd->empty())
         delete groupCmd;
     else
-        _cmdManager->executeCommand(groupCmd);
+        p3d::cmder::get()->executeCommand(groupCmd);
 }
 
 void p3d::filterDisparitySpeckles(Project &data, std::vector<int> imPairsIds)
@@ -494,7 +494,7 @@ void p3d::findMeasurementMatrixFull(Project &data)
         }
     }
     //data.setMeasurementMatrixFull(Wfull);
-    _cmdManager->executeCommand(
+    p3d::cmder::get()->executeCommand(
         new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_measMatFull), Wfull));
     LOG_OK("Full measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
 }
@@ -517,7 +517,7 @@ void p3d::findMeasurementMatrix(Project &data)
     }
 
     //data.setMeasurementMatrix(W);
-    _cmdManager->executeCommand(
+    p3d::cmder::get()->executeCommand(
         new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_measMat), W));
     LOG_OK("Measurement matrix: %ix%i", W.rows(), W.cols());
 }
@@ -617,7 +617,7 @@ void p3d::triangulateSparse(Project &data)
         pts3D.col(p) = pt.topRows(3).cast<float>();
     }
 
-    _cmdManager->executeCommand(
+    p3d::cmder::get()->executeCommand(
         new CommandPointCloudAdd(&data.pointCloudCtnr(), "sparse", pts3D));
 
     LOG_OK("Triangulated %i points",
@@ -713,7 +713,7 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
     if (groupCmd->empty())
         delete groupCmd;
     else
-        _cmdManager->executeCommand(groupCmd);
+        p3d::cmder::get()->executeCommand(groupCmd);
 }
 
 void p3d::triangulateDenseDev(Project &data)
@@ -806,7 +806,7 @@ void p3d::triangulateDenseDev(Project &data)
     Mat3Xf result;
     utils::convert(pts3D, result);
 
-    //    _cmdManager->executeCommand(
+    //    p3d::cmder::get()->executeCommand(
     //        new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_pts3DDense),
     //        result, true));
 
@@ -905,7 +905,7 @@ void p3d::exportPLY(const Project &data, const std::string &label,
 void p3d::deletePointCloud(Project &data, const char *lbl)
 {
     auto ctnr = &data.pointCloudCtnr();
-    _cmdManager->executeCommand(new CommandPointCloudDelete(ctnr, lbl));
+    p3d::cmder::get()->executeCommand(new CommandPointCloudDelete(ctnr, lbl));
 }
 
 /*
@@ -918,7 +918,7 @@ entt::meta_any p3d::getSetting(const p3dSetting &name)
 
 void p3d::setSetting(const p3dSetting &id, const entt::meta_any &value)
 {
-    _cmdManager->executeCommand(
+    p3d::cmder::get()->executeCommand(
         new CommandSetProperty(&m_settings, P3D_ID_TYPE(id), value));
 }
 */
@@ -943,7 +943,7 @@ void p3d::setImagePairProperty(Project &data, const P3D_ID_TYPE &propId,
     if (group->empty())
         delete group;
     else
-        _cmdManager->executeCommand(group);
+        p3d::cmder::get()->executeCommand(group);
 }
 
 void p3d::copyImagePairProperty(Project &projectData, const P3D_ID_TYPE &propId, int from,
@@ -979,7 +979,7 @@ void p3d::copyImagePairProperty(Project &projectData, const P3D_ID_TYPE &propId,
     if (groupCmd->empty())
         delete groupCmd;
     else
-        _cmdManager->executeCommand(groupCmd);
+        p3d::cmder::get()->executeCommand(groupCmd);
 
     std::string output = "Copied settings from image pair (" +
                          std::to_string(from) + ") to " +
@@ -990,14 +990,17 @@ void p3d::copyImagePairProperty(Project &projectData, const P3D_ID_TYPE &propId,
 
 void p3d::undo()
 {
-    if (_cmdManager) _cmdManager->undoCommand();
+    if (p3d::cmder::get())
+        p3d::cmder::get()->undoCommand();
 }
 void p3d::redo()
 {
-    if (_cmdManager) LOG_WARN("Not implemented");
+    if (p3d::cmder::get())
+        LOG_WARN("Not implemented");
 }
 
 void p3d::mergeNextCommand()
 {
-    if (_cmdManager) _cmdManager->mergeNextCommand();
+    if (p3d::cmder::get())
+        p3d::cmder::get()->mergeNextCommand();
 }

@@ -1,9 +1,12 @@
 #include "command_manager.h"
 
-P3D_API std::shared_ptr<p3d::CommandManager> p3d::_cmdManager =
-    std::make_shared<p3d::LibCommandManager>();
+namespace p3d::cmder
+{
 
-void p3d::LibCommandManager::executeCommand(p3d::Command *cmd)
+std::shared_ptr<CommandManager> _cmdManager =
+        std::make_shared<p3d::cmder::LibCommandManager>();
+
+void LibCommandManager::executeCommand(p3d::Command *cmd)
 {
     if (cmd->isValid()) {
         cmd->execute();
@@ -20,7 +23,7 @@ void p3d::LibCommandManager::executeCommand(p3d::Command *cmd)
     }
 }
 
-void p3d::LibCommandManager::undoCommand()
+void LibCommandManager::undoCommand()
 {
     if (m_commandStack.size() > 0) {
         auto command = m_commandStack[m_commandStack.size() - 1];
@@ -32,3 +35,17 @@ void p3d::LibCommandManager::undoCommand()
         }
     }
 }
+
+std::shared_ptr<CommandManager> get()
+{
+    return p3d::cmder::_cmdManager;
+}
+
+void set(std::shared_ptr<CommandManager> cmdManager)
+{
+    if (cmdManager)
+        p3d::cmder::_cmdManager = cmdManager;
+}
+
+
+} // namespace p3d::cmder

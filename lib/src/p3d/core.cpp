@@ -50,8 +50,8 @@ const char* arErrorStr( int status ){
     static char buf[256];
 
     switch (status) {
-        case Exception::ERROR_CODE :      return "Application error";
-        case Exception::ASSERTION_CODE :  return "Assertion failed";
+        case Exception::ERROR_CODE :      return "application error";
+        case Exception::ASSERTION_CODE :  return "assertion failed";
     };
 
 #ifdef WIN32
@@ -68,11 +68,11 @@ void error(const Exception &exc)
     char buf[1 << 16];
 
 #ifdef WIN32
-    sprintf_s( buf, "Pollen3D Error: %s (%s) \n    function: %s\n    file    : %s\n    line    : %d",
+    sprintf_s( buf, "pollen3d error: %s (%s) \n    function: %s\n    file    : %s\n    line    : %d",
         errorStr, exc.err.c_str(), exc.func.size() > 0 ?
         exc.func.c_str() : "unknown function", exc.file.c_str(), exc.line );
 #elif __linux__ || __APPLE__
-    sprintf( buf, "Pollen3D Error: %s (%s) \n    function: %s\n    file    : %s\n    line    : %d",
+    sprintf( buf, "pollen3d error: %s (%s) \n    function: %s\n    file    : %s\n    line    : %d",
         errorStr, exc.err.c_str(), exc.func.size() > 0 ?
         exc.func.c_str() : "unknown function", exc.file.c_str(), exc.line );
 #endif

@@ -1,16 +1,35 @@
 #include "logger.h"
 
-P3D_API std::shared_ptr<p3d::Logger> p3d::_logger = nullptr;
 
-namespace p3d
+namespace p3d::logger
 {
-void loggerStd() { _logger = std::make_shared<StdLogger>(); }
-void loggerOn()
+std::shared_ptr<p3d::logger::Logger> _logger = nullptr;
+
+std::shared_ptr<Logger> get()
 {
-    if (_logger) _logger->setOn();
+    return p3d::logger::_logger;
 }
-void loggerOff()
+
+void on()
 {
-    if (_logger) _logger->setOff();
+    if (p3d::logger::_logger)
+        p3d::logger::_logger->setOn();
 }
+
+void off()
+{
+    if (p3d::logger::_logger)
+        p3d::logger::_logger->setOff();
 }
+
+void set(std::shared_ptr<Logger> l)
+{
+    if (l) p3d::logger::_logger = l;
+}
+
+void setStd()
+{
+    p3d::logger::_logger = std::make_shared<StdLogger>();
+}
+
+} // namespace p3d

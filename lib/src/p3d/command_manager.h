@@ -6,7 +6,7 @@
 
 #include "p3d/commands.h"
 
-namespace p3d
+namespace p3d::cmder
 {
 class P3D_API CommandManager
 {
@@ -33,6 +33,9 @@ public:
     void undoCommand() override;
 };
 
-extern P3D_API std::shared_ptr<CommandManager> _cmdManager;
+std::shared_ptr<CommandManager> P3D_API get();
+void P3D_API set(std::shared_ptr<CommandManager> cmdManager);
+// void P3D_API on(); // TODO
+// void P3D_API off(); // TODO
 
-}  // namespace p3d
+}  // namespace p3d::cmder
