@@ -1,15 +1,15 @@
 #include "widget_matching.h"
 
 #include "p3d/core.h"
-#include "p3d/data/project_data.h"
-#include "p3d/project_manager.h"
+#include "p3d/project.h"
+#include "p3d/tasks.h"
 
 #include "../common/common.h"
 #include "../common/imgui_custom.h"
 
 using namespace p3d;
 
-void WidgetMatching::drawImpl(ProjectData& data)
+void WidgetMatching::drawImpl(Project& data)
 {
     bool disabled = false;
     auto imPair = data.imagePair(m_currentItemIdx);
@@ -64,21 +64,21 @@ void WidgetMatching::drawImpl(ProjectData& data)
             needsUpdate = true;
         }
 
-        bool globalSetting =
-            ProjectManager::get()->getSetting(p3dSetting_shaderMatchingPars).cast<bool>();
+        bool globalSetting = false;
+        // p3d::getSetting(p3dSetting_shaderMatchingPars).cast<bool>();
         if (ImGui::Checkbox("shared parameters##matching", &globalSetting)) {
             if (globalSetting == true) {
-                ProjectManager::get()->copyImagePairProperty(data, p3dImagePair_matchingPars,
+                p3d::copyImagePairProperty(data, p3dImagePair_matchingPars,
                                                              m_currentItemIdx);
-                CommandManager::get()->mergeNextCommand();
+                p3d::mergeNextCommand();
             }
-            ProjectManager::get()->setSetting(p3dSetting_shaderMatchingPars, globalSetting);
+            // p3d::setSetting(p3dSetting_shaderMatchingPars, globalSetting);
         }
 
         if (needsUpdate) {
             std::vector<int> pairsToUpdate = {};
             if (!globalSetting) pairsToUpdate = {m_currentItemIdx};
-            ProjectManager::get()->setImagePairProperty(data, p3dImagePair_matchingPars,
+            p3d::setImagePairProperty(data, p3dImagePair_matchingPars,
                                                         matchingPars, pairsToUpdate);
         }
 

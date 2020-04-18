@@ -1,15 +1,15 @@
 #include "widget_dense_matching.h"
 
 #include "p3d/core.h"
-#include "p3d/data/project_data.h"
-#include "p3d/project_manager.h"
+#include "p3d/project.h"
+#include "p3d/tasks.h"
 
 #include "../common/common.h"
 #include "../common/imgui_custom.h"
 
 using namespace p3d;
 
-void WidgetDenseMatching::drawImpl(ProjectData& data)
+void WidgetDenseMatching::drawImpl(Project& data)
 {
     bool disabled = false;
     auto imPair = data.imagePair(m_currentItemIdx);
@@ -32,9 +32,9 @@ void WidgetDenseMatching::drawImpl(ProjectData& data)
 
         if (ImGui::Combo("method", &matcherCurAlg, denseMatchingAlgos,
                          IM_ARRAYSIZE(denseMatchingAlgos))) {
-            ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                               p3dDense_DispMethod,
-                                               matcherCurAlg);
+            //            p3d::setProperty(imPair->denseMatchingPars(),
+            //                                               p3dDense_DispMethod,
+            //                                               matcherCurAlg);
         }
 
         {
@@ -47,22 +47,22 @@ void WidgetDenseMatching::drawImpl(ProjectData& data)
 
             ImGui::InputInt("lowew bound", &dispLowerBound);
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_DispLowerBound,
-                                                   dispLowerBound);
-            ImGui::InputInt("upper bound", &dispUpperBound);
+                //                p3d::setProperty(imPair->denseMatchingPars(),
+                //                                                   p3dDense_DispLowerBound,
+                //                                                   dispLowerBound);
+                ImGui::InputInt("upper bound", &dispUpperBound);
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_DispUpperBound,
-                                                   dispUpperBound);
-            ImGui::InputInt("block size", &dispBlockSize, 2, 2);
+                //                p3d::setProperty(imPair->denseMatchingPars(),
+                //                                                   p3dDense_DispUpperBound,
+                //                                                   dispUpperBound);
+                ImGui::InputInt("block size", &dispBlockSize, 2, 2);
             if (ImGui::IsItemEdited()) {
                 if (dispBlockSize % 2 == 0) dispBlockSize--;
                 dispBlockSize = std::min(dispBlockSize, 21);
                 dispBlockSize = std::max(dispBlockSize, 1);
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_DispBlockSize,
-                                                   dispBlockSize);
+                //                p3d::setProperty(imPair->denseMatchingPars(),
+                //                                                   p3dDense_DispBlockSize,
+                //                                                   dispBlockSize);
             }
         }
 
@@ -86,38 +86,39 @@ void WidgetDenseMatching::drawImpl(ProjectData& data)
 
             ImGui::InputInt("diameter", &v1);
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_BilateralD, v1);
-            ImGuiC::HelpMarker(
-                "Diameter of each pixel neighborhood that is used during "
-                "filtering. "
-                "If it is non-positive, it is computed from sigmaSpace.");
+                //                p3d::setProperty(imPair->denseMatchingPars(),
+                //                                                   p3dDense_BilateralD,
+                //                                                   v1);
+                ImGuiC::HelpMarker(
+                    "Diameter of each pixel neighborhood that is used during "
+                    "filtering. "
+                    "If it is non-positive, it is computed from sigmaSpace.");
 
             ImGui::InputInt("sigma color", &v2);
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_BilateralSigmaColor,
-                                                   v2);
-            ImGuiC::HelpMarker(
-                "Filter sigma in the color space. A larger value of the "
-                "parameter means that "
-                "farther colors within the pixel neighborhood (see sigmaSpace) "
-                "will be mixed "
-                "together, resulting in larger areas of semi-equal color.");
+                //                p3d::setProperty(imPair->denseMatchingPars(),
+                //                                                   p3dDense_BilateralSigmaColor,
+                //                                                   v2);
+                ImGuiC::HelpMarker(
+                    "Filter sigma in the color space. A larger value of the "
+                    "parameter means that "
+                    "farther colors within the pixel neighborhood (see sigmaSpace) "
+                    "will be mixed "
+                    "together, resulting in larger areas of semi-equal color.");
 
             ImGui::InputInt("sigma space", &v3);
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_BilateralSigmaSpace,
-                                                   v3);
-            ImGuiC::HelpMarker(
-                "Filter sigma in the coordinate space. A larger value of the "
-                "parameter means that "
-                "farther pixels will influence each other as long as their "
-                "colors are close enough (see sigmaColor"
-                "). When diameter>0, it specifies the neighborhood size "
-                "regardless of sigmaSpace. Otherwise, d is"
-                "proportional to sigmaSpace.");
+                //                p3d::setProperty(imPair->denseMatchingPars(),
+                //                                                   p3dDense_BilateralSigmaSpace,
+                //                                                   v3);
+                ImGuiC::HelpMarker(
+                    "Filter sigma in the coordinate space. A larger value of the "
+                    "parameter means that "
+                    "farther pixels will influence each other as long as their "
+                    "colors are close enough (see sigmaColor"
+                    "). When diameter>0, it specifies the neighborhood size "
+                    "regardless of sigmaSpace. Otherwise, d is"
+                    "proportional to sigmaSpace.");
         }
 
         if (ImGui::Button("Filter##bilateral")) runBilateral = true;
@@ -138,20 +139,23 @@ void WidgetDenseMatching::drawImpl(ProjectData& data)
 
             ImGui::InputInt("new value", &dispFilterNewValue);
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_DispFilterNewValue,
-                                                   dispFilterNewValue);
+                ;
+            //                p3d::setProperty(imPair->denseMatchingPars(),
+            //                                                   p3dDense_DispFilterNewValue,
+            //                                                   dispFilterNewValue);
             ImGui::InputInt("max speckle size", &dispFilterMaxSpeckleSize);
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(
-                    imPair->denseMatchingPars(),
-                    p3dDense_DispFilterMaxSpeckleSize,
-                    dispFilterMaxSpeckleSize);
+                ;
+            //                p3d::setProperty(
+            //                    imPair->denseMatchingPars(),
+            //                    p3dDense_DispFilterMaxSpeckleSize,
+            //                    dispFilterMaxSpeckleSize);
             ImGui::InputInt("max diff", &dispFilterMaxDiff);
             if (ImGui::IsItemEdited())
-                ProjectManager::get()->setProperty(imPair->denseMatchingPars(),
-                                                   p3dDense_DispFilterMaxDiff,
-                                                   dispFilterMaxDiff);
+                ;
+            //                p3d::setProperty(imPair->denseMatchingPars(),
+            //                                                   p3dDense_DispFilterMaxDiff,
+            //                                                   dispFilterMaxDiff);
         }
 
         if (ImGui::Button("Filter##speckles")) runFilterSpeckles = true;

@@ -13,26 +13,26 @@
 
 namespace p3d
 {
-typedef int p3dData;
-enum P3D_API p3dData_ {
-    p3dData_projectData = 2000,
-    p3dData_projectPath = 2001,
-    p3dData_dummy = 2002,
-    p3dData_images = 2003,
-    p3dData_imagePairs = 2004,
-    p3dData_measMat = 2005,
-    p3dData_measMatFull = 2006,
-    p3dData_pointCloudCtnr,
+typedef int p3dProject;
+enum P3D_API p3dProject_ {
+    p3dProject_projectData = 2000,
+    p3dProject_projectPath = 2001,
+    p3dProject_dummy = 2002,
+    p3dProject_images = 2003,
+    p3dProject_imagePairs = 2004,
+    p3dProject_measMat = 2005,
+    p3dProject_measMatFull = 2006,
+    p3dProject_pointCloudCtnr,
 };
 
-class P3D_API ProjectData : public Serializable<ProjectData>
+class P3D_API Project : public Serializable<Project>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     static int initMeta();
 
-    ProjectData();
+    Project();
 
     const std::vector<Image> &getImageList() const { return m_images; }
     void setImageList(const std::vector<Image> &imList);

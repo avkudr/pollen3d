@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.1)
-project( pollen3d_gui )
+project( pollen3d_app )
 
 set(CMAKE_CXX_STANDARD 17)
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
@@ -178,7 +178,7 @@ else()
 
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/entt/src/entt/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty)
 
 set(TARGET_LIBS ${TARGET_LIBS} ${ImGui_LIBS} ${CONAN_LIBS})
 if(Eigen_FOUND)
@@ -196,12 +196,24 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES} ./src/pollen3d.rc)
-target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS})
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/../lib/src)
-target_link_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/../build/lib/)
-target_link_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/../lib/build/lib)
-target_link_libraries(${PROJECT_NAME} pollen3d_lib_shared ${TARGET_LIBS})
+# ----- add library
+
+set(P3D_LIB_DIR ${GLOBAL_BINARY_DIR}/lib)
+set(P3D_INCLUDE_DIR ${GLOBAL_SOURCE_DIR}/lib/src)
+target_include_directories(${PROJECT_NAME} PRIVATE ${P3D_INCLUDE_DIR})
+
+target_link_directories(${PROJECT_NAME} PRIVATE ${P3D_LIB_DIR} )
+target_link_libraries( ${PROJECT_NAME} ${TARGET_LIBS} p3d)
+
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD        # Adds a post-build event to MyTest
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        "${P3D_LIB_DIR}/libp3d-debug.so"      # <--this is in-file
+        $<TARGET_FILE_DIR:extract_features>)                 # <--this is out-file path
+
+
+# ===========================================================================================================
 
 set_target_properties( ${PROJECT_NAME}
     PROPERTIES

@@ -59,7 +59,7 @@ public:
     float filterCoeff{0.3f};
 };
 
-P3D_API struct MatchingUtil {
+struct P3D_API MatchingUtil {
     static void match(const cv::Mat& descL, const cv::Mat& descR,
                       const MatchingPars& pars, std::vector<Match>& matches);
 };

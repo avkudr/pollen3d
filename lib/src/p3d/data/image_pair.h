@@ -56,7 +56,8 @@ public:
     // ***** Matches
 
     bool hasMatches() { return getNbMatches() > 0; }
-    int getNbMatches() { return int(m_matches.size()); }
+    int nbMatches() const { return int(m_matches.size()); }
+    int getNbMatches() { return nbMatches(); }  // refactor delete
     const std::vector<Match> &getMatches() const { return m_matches; }
     void getMatchesAsMap(std::map<int, int> &map) const;
     void setMatches(const std::vector<Match> &matches) { m_matches = matches; }

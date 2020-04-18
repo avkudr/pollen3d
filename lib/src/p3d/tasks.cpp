@@ -1,4 +1,4 @@
-#include "project_manager.h"
+#include "tasks.h"
 
 #include <omp.h>
 
@@ -23,16 +23,15 @@
 
 using namespace p3d;
 
-void ProjectManager::loadImages(ProjectData *list, const std::vector<std::string> &imPaths)
+void p3d::loadImages(Project &list, const std::vector<std::string> &imPaths)
 {
-    if (!list) return;
     if (imPaths.empty()) {
         LOG_ERR("Image list is empty");
         return;
     }
 
     const size_t nbIm = imPaths.size();
-    list->clear();
+    list.clear();
 
     std::vector<Image> imgs;
     LOG_INFO("Loading %i images...", nbIm);
@@ -49,10 +48,10 @@ void ProjectManager::loadImages(ProjectData *list, const std::vector<std::string
     LOG_OK("Loaded %i/%i", imgs.size(), imPaths.size());
     LOG_WARN("No Undo functionnality");
 
-    list->setImageList(imgs);
+    list.setImageList(imgs);
 }
 
-void ProjectManager::saveProject(ProjectData *data, std::string path)
+void p3d::saveProject(Project *data, std::string path)
 {
     if (!data) return;
     if (path == "") {
@@ -63,10 +62,6 @@ void ProjectManager::saveProject(ProjectData *data, std::string path)
     data->setProjectPath(path);
     cv::FileStorage fs(path, cv::FileStorage::WRITE);
     if (fs.isOpened()) {
-        fs << "ProjectSettings"
-           << "{";
-        m_settings.write(fs);
-        fs << "}";
         fs << "ProjectData"
            << "{";
         data->write(fs);
@@ -78,26 +73,24 @@ void ProjectManager::saveProject(ProjectData *data, std::string path)
     }
 }
 
-void ProjectManager::closeProject(ProjectData *data)
+void p3d::closeProject(Project *data)
 {
-    if (data)
-        *data = ProjectData();
+    if (data) *data = Project();
 }
 
-void ProjectManager::openProject(ProjectData *data, std::string path)
+void p3d::openProject(Project *data, std::string path)
 {
     if (!data) return;
     if (path == "") return;
     if (!utils::endsWith(path, P3D_PROJECT_EXTENSION)) return;
 
-    closeProject(data);
+    p3d::closeProject(data);
 
     LOG_OK("Loading %s", path.c_str());
 
     try {
         cv::FileStorage fs(path, cv::FileStorage::READ);
         if (fs.isOpened()) {
-            m_settings.read(fs["ProjectSettings"]);
             data->read(fs["ProjectData"]);
             LOG_OK("Done");
             fs.fs.release();
@@ -111,7 +104,7 @@ void ProjectManager::openProject(ProjectData *data, std::string path)
     }
 }
 
-void ProjectManager::extractFeatures(ProjectData &data, std::vector<int> imIds)
+void p3d::extractFeatures(Project &data, std::vector<int> imIds)
 {
     if (data.nbImages() == 0) return;
     if (imIds.empty())
@@ -134,11 +127,11 @@ void ProjectManager::extractFeatures(ProjectData &data, std::vector<int> imIds)
         cv::Mat desc;
 
         try {
-            cv::Ptr<cv::AKAZE> akaze =
-                cv::AKAZE::create(getSetting(p3dSetting_featuresDescType).cast<int>(),
-                                  getSetting(p3dSetting_featuresDescSize).cast<int>(),
-                                  getSetting(p3dSetting_featuresDescChannels).cast<int>(),
-                                  getSetting(p3dSetting_featuresThreshold).cast<float>());
+            cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+            //                cv::AKAZE::create(getSetting(p3dSetting_featuresDescType).cast<int>(),
+            //                                  getSetting(p3dSetting_featuresDescSize).cast<int>(),
+            //                                  getSetting(p3dSetting_featuresDescChannels).cast<int>(),
+            //                                  getSetting(p3dSetting_featuresThreshold).cast<float>());
             akaze->detectAndCompute(im->cvMat(), cv::noArray(), kpts, desc);
             akaze.release();
 
@@ -160,7 +153,7 @@ void ProjectManager::extractFeatures(ProjectData &data, std::vector<int> imIds)
     LOG_DBG("No undo functionnality");
 }
 
-bool ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsIds)
+bool p3d::matchFeatures(Project &data, std::vector<int> imPairsIds)
 {
     if (data.nbImagePairs() == 0) return false;
     if (imPairsIds.empty())
@@ -218,12 +211,12 @@ bool ProjectManager::matchFeatures(ProjectData &data, std::vector<int> imPairsId
         delete groupCmd;
         return false;
     } else
-        CommandManager::get()->executeCommand(groupCmd);
+        _cmdManager->executeCommand(groupCmd);
 
     return true;
 }
 
-bool ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> imPairsIds)
+bool p3d::findFundamentalMatrix(Project &data, std::vector<int> imPairsIds)
 {
     if (data.nbImagePairs() == 0) return false;
     if (imPairsIds.empty())
@@ -269,14 +262,14 @@ bool ProjectManager::findFundamentalMatrix(ProjectData &data, std::vector<int> i
         delete groupCmd;
         return false;
     } else
-        CommandManager::get()->executeCommand(groupCmd);
+        _cmdManager->executeCommand(groupCmd);
 
     return true;
 }
 
-bool ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPairsIds)
+bool p3d::rectifyImagePairs(Project &data, std::vector<int> imPairsIds)
 {
-    LOG_INFO("ProjectManager::rectifyImagePairs");
+    LOG_INFO("p3d::rectifyImagePairs");
 
     if (data.nbImagePairs() == 0) {
         LOG_ERR("No image pair to rectify");
@@ -357,12 +350,12 @@ bool ProjectManager::rectifyImagePairs(ProjectData &data, std::vector<int> imPai
         delete groupCmd;
         return false;
     } else
-        CommandManager::get()->executeCommand(groupCmd);
+        _cmdManager->executeCommand(groupCmd);
 
     return true;
 }
 
-bool ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPairsIds)
+bool p3d::findDisparityMap(Project &data, std::vector<int> imPairsIds)
 {
     if (data.nbImagePairs() == 0) return false;
     if (imPairsIds.empty())
@@ -408,12 +401,12 @@ bool ProjectManager::findDisparityMap(ProjectData &data, std::vector<int> imPair
         delete groupCmd;
         return false;
     } else
-        CommandManager::get()->executeCommand(groupCmd);
+        _cmdManager->executeCommand(groupCmd);
 
     return true;
 }
 
-void ProjectManager::filterDisparityBilateral(ProjectData &data, std::vector<int> imPairsIds)
+void p3d::filterDisparityBilateral(Project &data, std::vector<int> imPairsIds)
 {
     if (data.nbImagePairs() == 0) return;
     if (imPairsIds.empty())
@@ -455,15 +448,15 @@ void ProjectManager::filterDisparityBilateral(ProjectData &data, std::vector<int
     if (groupCmd->empty())
         delete groupCmd;
     else
-        CommandManager::get()->executeCommand(groupCmd);
+        _cmdManager->executeCommand(groupCmd);
 }
 
-void ProjectManager::filterDisparitySpeckles(ProjectData &data, std::vector<int> imPairsIds)
+void p3d::filterDisparitySpeckles(Project &data, std::vector<int> imPairsIds)
 {
     LOG_ERR("Not implemented yet");
 }
 
-void ProjectManager::findMeasurementMatrixFull(ProjectData &data)
+void p3d::findMeasurementMatrixFull(Project &data)
 {
     Mat Wfull;
     auto nbIm = data.nbImages();
@@ -501,12 +494,12 @@ void ProjectManager::findMeasurementMatrixFull(ProjectData &data)
         }
     }
     //data.setMeasurementMatrixFull(Wfull);
-    CommandManager::get()->executeCommand(
-        new CommandSetProperty(&data, P3D_ID_TYPE(p3dData_measMatFull), Wfull));
+    _cmdManager->executeCommand(
+        new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_measMatFull), Wfull));
     LOG_OK("Full measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
 }
 
-void ProjectManager::findMeasurementMatrix(ProjectData &data)
+void p3d::findMeasurementMatrix(Project &data)
 {
     const auto &Wf = data.getMeasurementMatrixFull();
     if (Wf.cols() == 0 || Wf.rows() == 0) {
@@ -524,12 +517,12 @@ void ProjectManager::findMeasurementMatrix(ProjectData &data)
     }
 
     //data.setMeasurementMatrix(W);
-    CommandManager::get()->executeCommand(
-        new CommandSetProperty(&data, P3D_ID_TYPE(p3dData_measMat), W));
+    _cmdManager->executeCommand(
+        new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_measMat), W));
     LOG_OK("Measurement matrix: %ix%i", W.rows(), W.cols());
 }
 
-void ProjectManager::autocalibrate(ProjectData &data)
+void p3d::autocalibrate(Project &data)
 {
     auto W = data.getMeasurementMatrix();
     if (W.cols() == 0 || W.rows() == 0) {
@@ -589,7 +582,7 @@ void ProjectManager::autocalibrate(ProjectData &data)
               << rot.format(CleanFmt) << std::endl;
 }
 
-void ProjectManager::triangulateSparse(ProjectData &data)
+void p3d::triangulateSparse(Project &data)
 {
     LOG_DBG("MAKE BUTTON DISABLED IF NO CALIB + NO FULL W");
 
@@ -624,15 +617,14 @@ void ProjectManager::triangulateSparse(ProjectData &data)
         pts3D.col(p) = pt.topRows(3).cast<float>();
     }
 
-    CommandManager::get()->executeCommand(
+    _cmdManager->executeCommand(
         new CommandPointCloudAdd(&data.pointCloudCtnr(), "sparse", pts3D));
 
     LOG_OK("Triangulated %i points",
            data.pointCloudCtnr()["sparse"].nbPoints());
 }
 
-void ProjectManager::triangulateDenseStereo(ProjectData &data,
-                                            std::vector<int> imPairsIds)
+void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
 {
     if (data.nbImagePairs() == 0) return;
     if (imPairsIds.empty())
@@ -721,10 +713,10 @@ void ProjectManager::triangulateDenseStereo(ProjectData &data,
     if (groupCmd->empty())
         delete groupCmd;
     else
-        CommandManager::get()->executeCommand(groupCmd);
+        _cmdManager->executeCommand(groupCmd);
 }
 
-void ProjectManager::triangulateDenseDev(ProjectData &data)
+void p3d::triangulateDenseDev(Project &data)
 {
     //LOG_ERR("Not implemented yet");
     //return;
@@ -814,14 +806,14 @@ void ProjectManager::triangulateDenseDev(ProjectData &data)
     Mat3Xf result;
     utils::convert(pts3D, result);
 
-    //    CommandManager::get()->executeCommand(
-    //        new CommandSetProperty(&data, P3D_ID_TYPE(p3dData_pts3DDense),
+    //    _cmdManager->executeCommand(
+    //        new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_pts3DDense),
     //        result, true));
 
     LOG_OK("Triangulated %i points", pts3D.size());
 }
 
-void ProjectManager::bundleAdjustment(ProjectData &data)
+void p3d::bundleAdjustment(Project &data)
 {
     if (!data.pointCloudCtnr().contains("sparse")) {
         LOG_ERR("Bundle adjust. needs a sparse cloud");
@@ -881,9 +873,8 @@ void ProjectManager::bundleAdjustment(ProjectData &data)
     LOG_WARN("Bundle adjustement: no undo");
 }
 
-void ProjectManager::exportPLY(const ProjectData &data,
-                               const std::string &label,
-                               const std::string &filepath)
+void p3d::exportPLY(const Project &data, const std::string &label,
+                    const std::string &filepath)
 {
     if (filepath == "") {
         LOG_ERR("Can't export to an empty file");
@@ -911,29 +902,29 @@ void ProjectManager::exportPLY(const ProjectData &data,
     }
 }
 
-void ProjectManager::deletePointCloud(ProjectData &data, const char *lbl)
+void p3d::deletePointCloud(Project &data, const char *lbl)
 {
     auto ctnr = &data.pointCloudCtnr();
-    CommandManager::get()->executeCommand(
-        new CommandPointCloudDelete(ctnr, lbl));
+    _cmdManager->executeCommand(new CommandPointCloudDelete(ctnr, lbl));
 }
 
-entt::meta_any ProjectManager::getSetting(const p3dSetting &name)
+/*
+entt::meta_any p3d::getSetting(const p3dSetting &name)
 {
     auto data = entt::resolve<ProjectSettings>().data(P3D_ID_TYPE(name));
     if (!data) return entt::meta_any{nullptr};
     return data.get(m_settings);
 }
 
-void ProjectManager::setSetting(const p3dSetting &id, const entt::meta_any &value)
+void p3d::setSetting(const p3dSetting &id, const entt::meta_any &value)
 {
-    CommandManager::get()->executeCommand(
+    _cmdManager->executeCommand(
         new CommandSetProperty(&m_settings, P3D_ID_TYPE(id), value));
 }
+*/
 
-void ProjectManager::setImagePairProperty(ProjectData &data, const P3D_ID_TYPE &propId,
-                                          const entt::meta_any &value,
-                                          std::vector<int> imPairsIds)
+void p3d::setImagePairProperty(Project &data, const P3D_ID_TYPE &propId,
+                               const entt::meta_any &value, std::vector<int> imPairsIds)
 {
     if (data.nbImagePairs() == 0) return;
     if (imPairsIds.empty())
@@ -952,12 +943,11 @@ void ProjectManager::setImagePairProperty(ProjectData &data, const P3D_ID_TYPE &
     if (group->empty())
         delete group;
     else
-        CommandManager::get()->executeCommand(group);
+        _cmdManager->executeCommand(group);
 }
 
-void ProjectManager::copyImagePairProperty(ProjectData &projectData,
-                                           const P3D_ID_TYPE &propId, int from,
-                                           const std::vector<int> &to)
+void p3d::copyImagePairProperty(Project &projectData, const P3D_ID_TYPE &propId, int from,
+                                const std::vector<int> &to)
 {
     auto imFrom = projectData.imagePair(from);
     if (imFrom == nullptr) return;
@@ -989,11 +979,25 @@ void ProjectManager::copyImagePairProperty(ProjectData &projectData,
     if (groupCmd->empty())
         delete groupCmd;
     else
-        CommandManager::get()->executeCommand(groupCmd);
+        _cmdManager->executeCommand(groupCmd);
 
     std::string output = "Copied settings from image pair (" +
                          std::to_string(from) + ") to " +
                          utils::to_string(toVec);
 
     LOG_DBG("%s", output.c_str());
+}
+
+void p3d::undo()
+{
+    if (_cmdManager) _cmdManager->undoCommand();
+}
+void p3d::redo()
+{
+    if (_cmdManager) LOG_WARN("Not implemented");
+}
+
+void p3d::mergeNextCommand()
+{
+    if (_cmdManager) _cmdManager->mergeNextCommand();
 }

@@ -4,11 +4,11 @@
 
 #include "p3d/commands.h"
 #include "p3d/core.h"
-#include "p3d/data/project_data.h"
+#include "p3d/project.h"
 #include "p3d/serialization.h"
 #include "p3d/utils.h"
 
-#include "p3d/project_manager.h"
+#include "p3d/tasks.h"
 #include "p3d/command_manager.h"
 
 #ifndef P3D_PROJECT_EXTENSION
@@ -124,9 +124,9 @@ TEST(META, meta_serializedTypes)
 
 TEST(META, meta_nbReflectedDataMembers)
 {
-    p3d::ProjectData data;
+    p3d::Project data;
     int cnt = 0;
-    entt::resolve<p3d::ProjectData>().data([&](entt::meta_data data) {
+    entt::resolve<p3d::Project>().data([&](entt::meta_data data) {
         (void)data;
         cnt++;
     });
@@ -369,10 +369,10 @@ TEST(META, meta_serializeProject)
     ProjectData data1;
     std::string path = "test" + std::string(P3D_PROJECT_EXTENSION);
     data1.setProjectPath(path);
-    ProjectManager::get()->saveProject(&data1, path);
+    p3d::saveProject(&data1, path);
 
     ProjectData data2;
-    ProjectManager::get()->openProject(&data2, path);
+    p3d::openProject(&data2, path);
 
     entt::resolve<ProjectData>().data([&](entt::meta_data data) {
         EXPECT_EQ(data.get(data1).operator bool(), data.get(data2).operator bool());  // both exist
@@ -470,7 +470,7 @@ TEST(META, meta_setSettings)
     float f = ProjectManager::get()
                   ->getSetting(p3dSetting_featuresThreshold)
                   .cast<float>();
-    ProjectManager::get()->setSetting(p3dSetting_featuresThreshold, 2.0f * f);
+    p3d::setSetting(p3dSetting_featuresThreshold, 2.0f * f);
     float f2 = ProjectManager::get()
                    ->getSetting(p3dSetting_featuresThreshold)
                    .cast<float>();

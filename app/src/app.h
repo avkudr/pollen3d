@@ -8,7 +8,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include "p3d/data/project_data.h"
+#include "p3d/project.h"
 #include "p3d/data/project_settings.h"
 #include "p3d/logger.h"
 
@@ -165,5 +165,5 @@ protected:
 
     std::future<void> m_heavyAsyncTask;
 
-    p3d::ProjectData m_projectData;
+    p3d::Project m_projectData;
 };

@@ -6,7 +6,7 @@
 #include "../assets/fonts/IconsFontAwesome5.h"
 
 #include "p3d/commands.h"
-#include "p3d/project_manager.h"
+#include "p3d/tasks.h"
 #include "p3d/utils.h"
 
 #include "common/common.h"
@@ -284,7 +284,7 @@ void Application::_drawMenuBar(int width)
         auto files = loadImagesDialog();
         if (!files.empty()) {
             auto f = [&](const std::vector<std::string> &files) {
-                ProjectManager::get()->loadImages(&m_projectData, files);
+                p3d::loadImages(m_projectData, files);
                 if (!m_projectData.empty()) m_currentImage = 0;
                 _resetAppState();
             };
@@ -298,7 +298,7 @@ void Application::_drawMenuBar(int width)
         if (path == "") path = saveProjectDialog();
         if (path != "") {
             auto f = [&](const std::string &path) {
-                ProjectManager::get()->saveProject(&m_projectData, path);
+                p3d::saveProject(&m_projectData, path);
                 _resetAppState();
             };
             _doHeavyTask(f, path);
@@ -308,7 +308,7 @@ void Application::_drawMenuBar(int width)
     if (ImGui::Button("Save as...", buttonRect)) {
         auto file = saveProjectDialog();
         if (file != "") {
-            ProjectManager::get()->saveProject(&m_projectData, file);
+            p3d::saveProject(&m_projectData, file);
             _resetAppState();
         }
     }
@@ -318,7 +318,7 @@ void Application::_drawMenuBar(int width)
         if (file != "") {
             LOG_DBG("Open project: %s", file.c_str());
             auto f = [&, file]() {
-                ProjectManager::get()->openProject(&m_projectData, file);
+                p3d::openProject(&m_projectData, file);
                 _resetAppState();
             };
             _doHeavyTask(f);
@@ -340,7 +340,7 @@ void Application::_drawMenuBar(int width)
 
         if (ImGui::Button("OK", ImVec2(120, 0))) {
             LOG_DBG("Close project");
-            ProjectManager::get()->closeProject(&m_projectData);
+            p3d::closeProject(&m_projectData);
             _resetAppState();
             ImGui::CloseCurrentPopup();
         }
@@ -409,7 +409,7 @@ void Application::_drawMenuBar(int width)
             "/home/andrey/Projects/pollen3d/_datasets/pot_06.tif");
 
         auto f = [&, imPaths]() {
-            ProjectManager::get()->loadImages(&m_projectData, imPaths);
+            p3d::loadImages(m_projectData, imPaths);
             if (!m_projectData.empty()) m_currentImage = 0;
             _resetAppState();
         };
@@ -418,9 +418,8 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
     if (ImGui::Button("DBG_PROJ", buttonRect)) {
         auto f = [&]() {
-            ProjectManager::get()->openProject(
-                &m_projectData,
-                "test_project" + std::string(P3D_PROJECT_EXTENSION));
+            p3d::openProject(&m_projectData,
+                             "test_project" + std::string(P3D_PROJECT_EXTENSION));
             m_currentImage = 0;
             _resetAppState();
         };
@@ -429,9 +428,8 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
     if (ImGui::Button("DBG_PROJ2", buttonRect)) {
         auto f = [&]() {
-            ProjectManager::get()->openProject(
-                &m_projectData,
-                "test_project2" + std::string(P3D_PROJECT_EXTENSION));
+            p3d::openProject(&m_projectData,
+                             "test_project2" + std::string(P3D_PROJECT_EXTENSION));
             m_currentImage = 0;
             _resetAppState();
         };
@@ -440,9 +438,8 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
     if (ImGui::Button("DBG_PROJ3", buttonRect)) {
         auto f = [&]() {
-            ProjectManager::get()->openProject(
-                &m_projectData,
-                "test_project3" + std::string(P3D_PROJECT_EXTENSION));
+            p3d::openProject(&m_projectData,
+                             "test_project3" + std::string(P3D_PROJECT_EXTENSION));
             m_currentImage = 0;
             _resetAppState();
         };
@@ -458,22 +455,22 @@ void Application::_drawMenuBar(int width)
     if (ImGui::Button(ICON_FA_ROCKET " One click!", buttonRect)) {
         LOG_OK("3D reconstruction in one click...");
         auto f = [&]() {
-            ProjectManager::get()->extractFeatures(m_projectData);
-            ProjectManager::get()->matchFeatures(m_projectData);
-            ProjectManager::get()->findFundamentalMatrix(m_projectData);
+            p3d::extractFeatures(m_projectData);
+            p3d::matchFeatures(m_projectData);
+            p3d::findFundamentalMatrix(m_projectData);
 
-            ProjectManager::get()->findMeasurementMatrixFull(m_projectData);
-            ProjectManager::get()->findMeasurementMatrix(m_projectData);
-            ProjectManager::get()->autocalibrate(m_projectData);
+            p3d::findMeasurementMatrixFull(m_projectData);
+            p3d::findMeasurementMatrix(m_projectData);
+            p3d::autocalibrate(m_projectData);
 
-            ProjectManager::get()->triangulateSparse(m_projectData);
-            ProjectManager::get()->bundleAdjustment(m_projectData);
+            p3d::triangulateSparse(m_projectData);
+            p3d::bundleAdjustment(m_projectData);
 
-            ProjectManager::get()->rectifyImagePairs(m_projectData);
-            ProjectManager::get()->findDisparityMap(m_projectData);
-            ProjectManager::get()->filterDisparityBilateral(m_projectData);
+            p3d::rectifyImagePairs(m_projectData);
+            p3d::findDisparityMap(m_projectData);
+            p3d::filterDisparityBilateral(m_projectData);
 
-            ProjectManager::get()->triangulateDenseStereo(m_projectData, {0});
+            p3d::triangulateDenseStereo(m_projectData, {0});
 
             _resetAppState();
         };
@@ -536,16 +533,11 @@ void Application::_drawTab_Image()
             m_widgetFeat->draw(m_projectData, m_currentImage);
 
             if (m_widgetFeat->isRequested("run")) {
-                auto f = [&]() {
-                    ProjectManager::get()->extractFeatures(m_projectData,
-                                                           {m_currentImage});
-                };
+                auto f = [&]() { p3d::extractFeatures(m_projectData, {m_currentImage}); };
                 _doHeavyTask(f);
             }
             if (m_widgetFeat->isRequested("run_all")) {
-                auto f = [&]() {
-                    ProjectManager::get()->extractFeatures(m_projectData);
-                };
+                auto f = [&]() { p3d::extractFeatures(m_projectData); };
                 _doHeavyTask(f);
             }
         }
@@ -579,8 +571,7 @@ void Application::_drawTab_Stereo()
                 m_widgetMatching->draw(m_projectData, m_currentImage);
 
                 auto f = [&](const std::vector<int> &imIds) {
-                    bool success =
-                        ProjectManager::get()->matchFeatures(m_projectData, imIds);
+                    bool success = p3d::matchFeatures(m_projectData, imIds);
                     if (success) {
                         m_currentSection = Section_Matches;
                         m_textureNeedsUpdate = true;
@@ -613,8 +604,7 @@ void Application::_drawTab_Stereo()
                 if (disableButtons) ImGuiC::PopDisabled();
 
                 auto f = [&](const std::vector<int> &imIds) {
-                    bool success = ProjectManager::get()->findFundamentalMatrix(
-                        m_projectData, imIds);
+                    bool success = p3d::findFundamentalMatrix(m_projectData, imIds);
                     if (success) {
                         m_currentSection = Section_Epilines;
                         m_textureNeedsUpdate = true;
@@ -648,8 +638,7 @@ void Application::_drawTab_Stereo()
                 if (disableButtons) ImGuiC::PopDisabled();
 
                 auto f = [&](const std::vector<int> &imIds) {
-                    bool success =
-                        ProjectManager::get()->rectifyImagePairs(m_projectData, imIds);
+                    bool success = p3d::rectifyImagePairs(m_projectData, imIds);
                     if (success) {
                         m_currentSection = Section_Rectified;
                         m_textureNeedsUpdate = true;
@@ -666,8 +655,7 @@ void Application::_drawTab_Stereo()
                 m_widgetDenseMatching->draw(m_projectData, m_currentImage);
 
                 auto fDisp = [&](const std::vector<int> &imIds) {
-                    bool success =
-                        ProjectManager::get()->findDisparityMap(m_projectData, imIds);
+                    bool success = p3d::findDisparityMap(m_projectData, imIds);
                     if (success) {
                         m_currentSection = Section_DisparityMap;
                         m_textureNeedsUpdate = true;
@@ -681,31 +669,27 @@ void Application::_drawTab_Stereo()
 
                 if (m_widgetDenseMatching->isRequested("run_bilateral")) {
                     _doHeavyTask([&]() {
-                        ProjectManager::get()->filterDisparityBilateral(
-                            m_projectData, {m_currentImage});
+                        p3d::filterDisparityBilateral(m_projectData, {m_currentImage});
                         m_textureNeedsUpdate = true;
                     });
                 }
                 if (m_widgetDenseMatching->isRequested("run_bilateral_all")) {
                     auto f = [&]() {
-                        ProjectManager::get()->filterDisparityBilateral(
-                            m_projectData);
+                        p3d::filterDisparityBilateral(m_projectData);
                         m_textureNeedsUpdate = true;
                     };
                     _doHeavyTask(f);
                 }
                 if (m_widgetDenseMatching->isRequested("run_filter_speckles")) {
                     _doHeavyTask([&]() {
-                        ProjectManager::get()->filterDisparitySpeckles(
-                            m_projectData, {m_currentImage});
+                        p3d::filterDisparitySpeckles(m_projectData, {m_currentImage});
                         m_textureNeedsUpdate = true;
                     });
                 }
                 if (m_widgetDenseMatching->isRequested(
                         "run_filter_speckles_all")) {
                     _doHeavyTask([&]() {
-                        ProjectManager::get()->filterDisparitySpeckles(
-                            m_projectData);
+                        p3d::filterDisparitySpeckles(m_projectData);
                         m_textureNeedsUpdate = true;
                     });
                 }
@@ -742,27 +726,19 @@ void Application::_drawTab_Multiview()
                     ImGuiC::BeginSubGroup();
 
                     if (ImGui::Button("Get full W")) {
-                        auto f = [&]() {
-                            ProjectManager::get()->findMeasurementMatrixFull(
-                                m_projectData);
-                        };
+                        auto f = [&]() { p3d::findMeasurementMatrixFull(m_projectData); };
                         _doHeavyTask(f);
                     }
                     if (ImGui::Button(P3D_ICON_RUN " Get W")) {
-                        auto f = [&]() {
-                            ProjectManager::get()->findMeasurementMatrix(
-                                m_projectData);
-                        };
+                        auto f = [&]() { p3d::findMeasurementMatrix(m_projectData); };
                         _doHeavyTask(f);
                     }
                     ImGuiC::EndSubGroup();
                 }
                 if (run)
                     _doHeavyTask([&]() {
-                        ProjectManager::get()->findMeasurementMatrixFull(
-                            m_projectData);
-                        ProjectManager::get()->findMeasurementMatrix(
-                            m_projectData);
+                        p3d::findMeasurementMatrixFull(m_projectData);
+                        p3d::findMeasurementMatrix(m_projectData);
                     });
             }
 
@@ -779,7 +755,7 @@ void Application::_drawTab_Multiview()
                 }
                 if (run)
                     _doHeavyTask([&]() {
-                        ProjectManager::get()->autocalibrate(m_projectData);
+                        p3d::autocalibrate(m_projectData);
                         m_viewer3dNeedsUpdate = true;
                     });
             }
@@ -798,8 +774,7 @@ void Application::_drawTab_Multiview()
                                      m_projectData.nbImagePairs() - 1);
                     if (ImGui::Button("Triangulate dense (stereo)")) {
                         auto f = [&](int imPairIdx) {
-                            ProjectManager::get()->triangulateDenseStereo(m_projectData,
-                                                                          {imPairIdx});
+                            p3d::triangulateDenseStereo(m_projectData, {imPairIdx});
                             m_viewer3dNeedsUpdate = true;
                         };
                         _doHeavyTask(f, imPairIdx);
@@ -807,22 +782,21 @@ void Application::_drawTab_Multiview()
                     ImGui::SameLine();
                     if (ImGui::Button("ALL")) {
                         _doHeavyTask([&]() {
-                            ProjectManager::get()->triangulateDenseStereo(m_projectData,
-                                                                          {});
+                            p3d::triangulateDenseStereo(m_projectData, {});
                             m_viewer3dNeedsUpdate = true;
                         });
                     }
 #ifdef POLLEN3D_DEBUG
                     if (ImGui::Button("Triangulate dense (multi-view)")) {
                         _doHeavyTask([&]() {
-                            ProjectManager::get()->triangulateDenseDev(m_projectData);
+                            p3d::triangulateDenseDev(m_projectData);
                             m_viewer3dNeedsUpdate = true;
                         });
                     }
 
                     if (ImGui::Button("Triangulate dense (dev)")) {
                         _doHeavyTask([&]() {
-                            ProjectManager::get()->triangulateDenseDev(m_projectData);
+                            p3d::triangulateDenseDev(m_projectData);
                             m_viewer3dNeedsUpdate = true;
                         });
                     }
@@ -831,7 +805,7 @@ void Application::_drawTab_Multiview()
                 }
                 if (run)
                     _doHeavyTask([&]() {
-                        ProjectManager::get()->triangulateSparse(m_projectData);
+                        p3d::triangulateSparse(m_projectData);
                         m_viewer3dNeedsUpdate = true;
                     });
             }
@@ -848,7 +822,7 @@ void Application::_drawTab_Multiview()
                 }
                 if (run)
                     _doHeavyTask([&]() {
-                        ProjectManager::get()->bundleAdjustment(m_projectData);
+                        p3d::bundleAdjustment(m_projectData);
                         m_viewer3dNeedsUpdate = true;
                     });
             }
@@ -914,8 +888,7 @@ void Application::_drawTab_PointCloud()
                         LOG_DBG("Exporting pcd: %s", label.c_str());
 
                         auto f = [&](std::string label, std::string filepath) {
-                            ProjectManager::get()->exportPLY(m_projectData, label,
-                                                             filepath);
+                            p3d::exportPLY(m_projectData, label, filepath);
                         };
 
                         _doHeavyTask(f, label, filepath);
@@ -1096,8 +1069,7 @@ void Application::_drawData()
                     ImGui::Text("- %s\n\n", lbl);
 
                     if (ImGui::Button("OK", ImVec2(120, 0))) {
-                        ProjectManager::get()->deletePointCloud(m_projectData,
-                                                                lbl);
+                        p3d::deletePointCloud(m_projectData, lbl);
                         m_viewer3dNeedsUpdate = true;
                         ImGui::CloseCurrentPopup();
                     }
@@ -1506,15 +1478,14 @@ void Application::_processKeyboardInput()
             std::string path = m_projectData.getProjectPath();
             if (path == "") path = saveProjectDialog();
             if (path != "") {
-                _doHeavyTask(
-                    [&]() { ProjectManager::get()->saveProject(&m_projectData, path); });
+                _doHeavyTask([&]() { p3d::saveProject(&m_projectData, path); });
             }
         } else if (ImGui::IsKeyPressed('t') || ImGui::IsKeyPressed('T')) {
             m_showConsole = !m_showConsole;
         } else if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
             m_textureNeedsUpdate = true;
             m_viewer3dNeedsUpdate = true;
-            CommandManager::get()->undoCommand();
+            p3d::undo();
         } else if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
         }
         return;

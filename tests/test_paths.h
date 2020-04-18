@@ -5,8 +5,8 @@
 #include "gtest/gtest.h"
 
 #include "p3d/core.h"
-#include "p3d/data/project_data.h"
-#include "p3d/project_manager.h"
+#include "p3d/project.h"
+#include "p3d/tasks.h"
 #include "p3d/utils.h"
 
 #ifndef P3D_PROJECT_EXTENSION

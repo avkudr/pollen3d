@@ -7,9 +7,9 @@
 #include "p3d/core.h"
 #include "p3d/data/affine_camera.h"
 #include "p3d/data/point_cloud_container.h"
-#include "p3d/data/project_data.h"
+#include "p3d/project.h"
 #include "p3d/multiview/bundle_params.h"
-#include "p3d/project_manager.h"
+#include "p3d/tasks.h"
 #include "p3d/utils.h"
 
 using namespace p3d;

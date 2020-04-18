@@ -5,8 +5,8 @@
 #include "gtest/gtest.h"
 
 #include "p3d/core.h"
-#include "p3d/data/project_data.h"
-#include "p3d/project_manager.h"
+#include "p3d/project.h"
+#include "p3d/tasks.h"
 #include "p3d/utils.h"
 
 using namespace p3d;
@@ -64,14 +64,14 @@ TEST(FUNDMAT, fundmat_testData)
 // TEST(FUNDMAT, fundmat_testImages)
 //{
 //    ProjectData data;
-//    ProjectManager::get()->loadImages(
+//    p3d::loadImages(
 //        &data, {"../../_datasets/brassica/Brassica01.jpg",
 //                "../../_datasets/brassica/Brassica02.jpg"});
 
 //    data.imagePair(0)->matchingPars()->filterCoeff = 0.2f;
 
 //    // --- extract features from all images. {} = all
-//    ProjectManager::get()->extractFeatures(data, {});
+//    p3d::extractFeatures(data, {});
 
 //    ASSERT_EQ(data.nbImages(), 2);
 //    ASSERT_NE(data.image(0), nullptr);
@@ -80,9 +80,9 @@ TEST(FUNDMAT, fundmat_testData)
 //    EXPECT_GE(data.image(1)->getNbFeatures(), 100);
 
 //    // --- extract matches ({} = for all pairs)
-//    ProjectManager::get()->matchFeatures(data, {});
+//    p3d::matchFeatures(data, {});
 
-//    ProjectManager::get()->findFundamentalMatrix(data, {});
+//    p3d::findFundamentalMatrix(data, {});
 
 //    Vec errors;
 //    data.getEpipolarErrorsResidual(0, errors);

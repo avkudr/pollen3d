@@ -53,7 +53,8 @@ public:
     // ***** features
 
     bool hasFeatures() { return _kpts.size() > 0; }
-    int getNbFeatures() const { return _kpts.size(); }
+    int nbFeatures() const { return _kpts.size(); }
+    int getNbFeatures() const { return nbFeatures(); }  // refactor delete
     const std::vector<cv::KeyPoint> &getKeyPoints() { return _kpts; }
     void setKeyPoints(std::vector<cv::KeyPoint> kpts);
 

@@ -3,14 +3,14 @@
 #include <set>
 
 #include "p3d/core.h"
-#include "p3d/data/project_data.h"
+#include "p3d/project.h"
 
 class Widget
 {
 public:
     virtual ~Widget() {}
 
-    void draw(p3d::ProjectData& data, int currentItem = 0)
+    void draw(p3d::Project& data, int currentItem = 0)
     {
         m_currentItemIdx = currentItem;
         drawImpl(data);
@@ -22,7 +22,7 @@ public:
     }
 
 protected:
-    virtual void drawImpl(p3d::ProjectData& data) = 0;
+    virtual void drawImpl(p3d::Project& data) = 0;
 
     int m_currentItemIdx{0};
     std::set<std::string> m_tasks;

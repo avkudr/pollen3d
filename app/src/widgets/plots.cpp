@@ -3,11 +3,11 @@
 #include "imgui.h"
 
 #include "p3d/core.h"
-#include "p3d/data/project_data.h"
+#include "p3d/project.h"
 
 namespace p3d::plot
 {
-void ReprojectionError(const ProjectData& data, bool* open, int width)
+void ReprojectionError(const Project& data, bool* open, int width)
 {
     if (!data.getPointCloudCtnr().contains("sparse")) {
         LOG_ERR("Plot of reprojection error needs a sparse point cloud");

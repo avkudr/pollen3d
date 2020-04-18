@@ -28,9 +28,14 @@ public:
     void setType(std::string type) { m_type = type; }
     void setColor(unsigned int color) { m_color = color; }
 
+    void setOn() { m_isOn = true; }
+    void setOff() { m_isOn = false; }
+    bool isOn() const { return m_isOn; }
+
 protected:
     std::string m_type{"[ OK ]"};
     unsigned int m_color{COLOR_OK};  // 32-bit unsigned integer - grey
+    bool m_isOn{true};
 };
 
 extern P3D_API std::shared_ptr<Logger> _logger;
@@ -52,16 +57,19 @@ public:
     }
 };
 
-void P3D_API initStdLoger();
+void P3D_API loggerStd();
+void P3D_API loggerOn();
+void P3D_API loggerOff();
+
 }  // namespace p3d
 
-#define LOG_IMPL(type, color, ...)            \
-    do {                                      \
-        if (p3d::_logger) {                   \
-            p3d::_logger->setType(type);      \
-            p3d::_logger->setColor(color);    \
-            p3d::_logger->print(__VA_ARGS__); \
-        }                                     \
+#define LOG_IMPL(type, color, ...)                  \
+    do {                                            \
+        if (p3d::_logger && p3d::_logger->isOn()) { \
+            p3d::_logger->setType(type);            \
+            p3d::_logger->setColor(color);          \
+            p3d::_logger->print(__VA_ARGS__);       \
+        }                                           \
     } while (0)
 
 #define LOG_OK(...) LOG_IMPL("[ OK ] ", COLOR_OK, __VA_ARGS__)

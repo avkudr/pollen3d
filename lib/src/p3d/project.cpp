@@ -1,4 +1,4 @@
-#include "project_data.h"
+#include "project.h"
 
 #include <iostream>
 
@@ -15,41 +15,36 @@
 
 using namespace p3d;
 
-int dummyProjectData_ = ProjectData::initMeta();
+int dummyProjectData_ = Project::initMeta();
 
-int ProjectData::initMeta()
+int Project::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        std::cout << "Reflecting: ProjectData" << std::endl;
-        entt::meta<ProjectData>()
+        std::cout << "Reflecting: Project" << std::endl;
+        entt::meta<Project>()
             .alias("ProjectData"_hs)
-            .data<&ProjectData::setPointCloudCtnr,
-                  &ProjectData::getPointCloudCtnr>(
-                P3D_ID_TYPE(p3dData_pointCloudCtnr))
-            .data<&ProjectData::setMeasurementMatrix,
-                  &ProjectData::getMeasurementMatrix>(
-                P3D_ID_TYPE(p3dData_measMat))
-            .data<&ProjectData::setMeasurementMatrixFull,
-                  &ProjectData::getMeasurementMatrixFull>(
-                P3D_ID_TYPE(p3dData_measMatFull))
-            .data<&ProjectData::setImagePairs, &ProjectData::getImagePairs>(
-                P3D_ID_TYPE(p3dData_imagePairs))
-            .data<&ProjectData::setImageList, &ProjectData::getImageList>(
-                P3D_ID_TYPE(p3dData_images))
-            .data<&ProjectData::setProjectPath, &ProjectData::getProjectPath>(
-                P3D_ID_TYPE(p3dData_projectPath));
+            .data<&Project::setPointCloudCtnr, &Project::getPointCloudCtnr>(
+                P3D_ID_TYPE(p3dProject_pointCloudCtnr))
+            .data<&Project::setMeasurementMatrix, &Project::getMeasurementMatrix>(
+                P3D_ID_TYPE(p3dProject_measMat))
+            .data<&Project::setMeasurementMatrixFull, &Project::getMeasurementMatrixFull>(
+                P3D_ID_TYPE(p3dProject_measMatFull))
+            .data<&Project::setImagePairs, &Project::getImagePairs>(
+                P3D_ID_TYPE(p3dProject_imagePairs))
+            .data<&Project::setImageList, &Project::getImageList>(
+                P3D_ID_TYPE(p3dProject_images))
+            .data<&Project::setProjectPath, &Project::getProjectPath>(
+                P3D_ID_TYPE(p3dProject_projectPath));
         firstCall = false;
     }
     return 0;
 }
 
+Project::Project() : Serializable() { clear(); }
 
-ProjectData::ProjectData() : Serializable(){
-    clear();
-}
-
-void ProjectData::setImageList(const std::vector<Image> &imList){
+void Project::setImageList(const std::vector<Image> &imList)
+{
     if (imList.empty()) return;
     m_images = std::vector<Image>(imList);
 
@@ -59,7 +54,7 @@ void ProjectData::setImageList(const std::vector<Image> &imList){
     }
 }
 
-void ProjectData::setImagePairs(const std::vector<ImagePair> &imPairs)
+void Project::setImagePairs(const std::vector<ImagePair> &imPairs)
 {
     if (m_images.size() - 1 != imPairs.size()) {
         LOG_ERR("Can't load imagePairs: %i != %i", m_images.size() - 1,
@@ -70,23 +65,18 @@ void ProjectData::setImagePairs(const std::vector<ImagePair> &imPairs)
     m_imagesPairs = imPairs;
 }
 
-void ProjectData::clear()
+void Project::clear()
 {
     m_images.clear();
     m_imagesPairs.clear();
 }
 
-Image *ProjectData::imagePairL(const std::size_t idx)
-{
-    return imagePairImage(idx, true);
-}
+Image *Project::imagePairL(const std::size_t idx) { return imagePairImage(idx, true); }
 
-Image *ProjectData::imagePairR(const std::size_t idx)
-{
-    return imagePairImage(idx, false);
-}
+Image *Project::imagePairR(const std::size_t idx) { return imagePairImage(idx, false); }
 
-void ProjectData::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &ptsL, std::vector<Vec2> &ptsR)
+void Project::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &ptsL,
+                                 std::vector<Vec2> &ptsR)
 {
     ptsL.clear();
     ptsR.clear();
@@ -113,7 +103,7 @@ void ProjectData::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &pts
     }
 }
 
-void ProjectData::getEpipolarErrorsResidual(const std::size_t idx, Vec &errorsSquared)
+void Project::getEpipolarErrorsResidual(const std::size_t idx, Vec &errorsSquared)
 {
     if (idx >= m_imagesPairs.size()) return;
     std::vector<Vec2> ptsL, ptsR;
@@ -135,7 +125,7 @@ void ProjectData::getEpipolarErrorsResidual(const std::size_t idx, Vec &errorsSq
 /*
  * see Equation 2.33, p53
  */
-void ProjectData::getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances)
+void Project::getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances)
 {
     if (idx >= m_imagesPairs.size()) return;
     std::vector<Vec2> ptsL, ptsR;
@@ -150,7 +140,7 @@ void ProjectData::getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distan
     }
 }
 
-void ProjectData::getCamerasIntrinsics(std::vector<Vec3> *cam) const
+void Project::getCamerasIntrinsics(std::vector<Vec3> *cam) const
 {
     if (nbImages() == 0) return;
     if (cam == nullptr) return;
@@ -164,7 +154,7 @@ void ProjectData::getCamerasIntrinsics(std::vector<Vec3> *cam) const
     }
 }
 
-void ProjectData::setCamerasIntrinsics(std::vector<Vec3> &cam)
+void Project::setCamerasIntrinsics(std::vector<Vec3> &cam)
 {
     if (nbImages() != cam.size()) {
         LOG_ERR("Wrong number of instrinsic matrices");
@@ -180,7 +170,7 @@ void ProjectData::setCamerasIntrinsics(std::vector<Vec3> &cam)
     }
 }
 
-void ProjectData::getCamerasRotations(std::vector<Mat3> *R) const
+void Project::getCamerasRotations(std::vector<Mat3> *R) const
 {
     if (!R) return;
     if (nbImages() == 0) return;
@@ -199,8 +189,7 @@ void ProjectData::getCamerasRotations(std::vector<Mat3> *R) const
     }
 }
 
-void ProjectData::getCamerasExtrinsics(std::vector<Vec3> *Rvec,
-                                       std::vector<Vec2> *t) const
+void Project::getCamerasExtrinsics(std::vector<Vec3> *Rvec, std::vector<Vec2> *t) const
 {
     if (nbImages() == 0) return;
 
@@ -224,8 +213,7 @@ void ProjectData::getCamerasExtrinsics(std::vector<Vec3> *Rvec,
     }
 }
 
-void ProjectData::setCamerasExtrinsics(std::vector<Vec3> &Rvec,
-                                       std::vector<Vec2> &t)
+void Project::setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t)
 {
     if (t.size() != Rvec.size()) return;
     if (nbImages() != Rvec.size()) return;
@@ -256,7 +244,7 @@ void ProjectData::setCamerasExtrinsics(std::vector<Vec3> &Rvec,
         m_images[i].setTranslation(t[i]);
 }
 
-std::vector<Mat34> ProjectData::getCameraMatrices() const
+std::vector<Mat34> Project::getCameraMatrices() const
 {
     if (nbImages() == 0) return {};
 
@@ -278,7 +266,7 @@ std::vector<Mat34> ProjectData::getCameraMatrices() const
     return Ps;
 }
 
-Mat ProjectData::getCameraMatricesMat() const
+Mat Project::getCameraMatricesMat() const
 {
     Mat Pm;
     std::vector<Mat34> Ps = getCameraMatrices();
@@ -291,12 +279,9 @@ Mat ProjectData::getCameraMatricesMat() const
     return Pm;
 }
 
-const PointCloudContainer &ProjectData::getPointCloudCtnr() const
-{
-    return m_pointCloudCtnr;
-}
+const PointCloudContainer &Project::getPointCloudCtnr() const { return m_pointCloudCtnr; }
 
-void ProjectData::setPointCloudCtnr(const PointCloudContainer &pointCloudCtnr)
+void Project::setPointCloudCtnr(const PointCloudContainer &pointCloudCtnr)
 {
     m_pointCloudCtnr = pointCloudCtnr;
 }

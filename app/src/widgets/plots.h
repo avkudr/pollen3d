@@ -4,11 +4,11 @@
 
 namespace p3d
 {
-class ProjectData;
+class Project;
 
 namespace plot
 {
-void ReprojectionError(const p3d::ProjectData& data, bool* open, int width);
+void ReprojectionError(const p3d::Project& data, bool* open, int width);
 }  // namespace plot
 
 }  // namespace p3d

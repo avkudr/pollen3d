@@ -11358,7 +11358,7 @@ template<typename... Type>
 struct ENTT_API meta_node {
     static_assert(std::is_same_v<Type..., std::remove_cv_t<std::remove_reference_t<Type>>...>);
 
-    inline static meta_type_node * resolve() ENTT_NOEXCEPT {
+    static meta_type_node * resolve() ENTT_NOEXCEPT {
         static meta_type_node node{
             type_info<Type...>::id(),
             {},
@@ -11387,7 +11387,7 @@ struct ENTT_API meta_node {
 
 
 template<>
-struct meta_node<> {
+struct ENTT_API meta_node<> {
     inline static meta_type_node *local = nullptr;
     inline static meta_type_node **global = &local;
 };
