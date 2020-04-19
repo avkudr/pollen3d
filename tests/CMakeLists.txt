@@ -40,14 +40,53 @@ add_executable(pollen3d_tests
     ./test_fundmat.h
     ./test_diamond.h
     ./main_tests.cpp
-    ../lib/src/p3d/command_manager.h
-    ../lib/src/p3d/project_manager.cpp
-    ../lib/src/p3d/project_manager.h
+    ./../lib/src/p3d/core.cpp
+    ./../lib/src/p3d/core.h
+    ./../lib/src/p3d/logger.cpp
+    ./../lib/src/p3d/logger.h
+    ./../lib/src/p3d/serialization.h
+    ./../lib/src/p3d/serialization.cpp
+    ./../lib/src/p3d/commands.cpp
+    ./../lib/src/p3d/commands.h
+    ./../lib/src/p3d/utils.cpp
+    ./../lib/src/p3d/utils.h
+    ./../lib/src/p3d/command_manager.h
+    ./../lib/src/p3d/command_manager.cpp
+    ./../lib/src/p3d/image/feature_extraction.cpp
+    ./../lib/src/p3d/image/feature_extraction.h
+    ./../lib/src/p3d/multiview/autocalib.cpp
+    ./../lib/src/p3d/multiview/autocalib.h
+    ./../lib/src/p3d/multiview/bundle_adjustment.cpp
+    ./../lib/src/p3d/multiview/bundle_adjustment.h
+    ./../lib/src/p3d/multiview/bundle_params.h
+    ./../lib/src/p3d/stereo/dense_matching.cpp
+    ./../lib/src/p3d/stereo/dense_matching.h
+    ./../lib/src/p3d/stereo/fundmat.cpp
+    ./../lib/src/p3d/stereo/fundmat.h
+    ./../lib/src/p3d/stereo/matching.cpp
+    ./../lib/src/p3d/stereo/matching.h
+    ./../lib/src/p3d/stereo/rectification.cpp
+    ./../lib/src/p3d/stereo/rectification.h
+    ./../lib/src/p3d/tasks.h
+    ./../lib/src/p3d/tasks.cpp
+    ./../lib/src/p3d/data/project_settings.cpp
+    ./../lib/src/p3d/data/project_settings.h
+    ./../lib/src/p3d/data/affine_camera.cpp
+    ./../lib/src/p3d/data/affine_camera.h
+    ./../lib/src/p3d/data/image.cpp
+    ./../lib/src/p3d/data/image.h
+    ./../lib/src/p3d/data/image_pair.cpp
+    ./../lib/src/p3d/data/image_pair.h
+    ./../lib/src/p3d/data/point_cloud_container.cpp
+    ./../lib/src/p3d/data/point_cloud_container.h
+    ./../lib/src/p3d/data/point_cloud.cpp
+    ./../lib/src/p3d/data/point_cloud.h
+    ./../lib/src/p3d/project.cpp
+    ./../lib/src/p3d/project.h
 )
 
-target_compile_definitions (pollen3d_tests PRIVATE P3D_API_IMPORT)
-
-target_include_directories(pollen3d_tests SYSTEM PRIVATE ./../3rdparty/)
+target_include_directories(pollen3d_tests SYSTEM PRIVATE ./../3rdparty)
+target_include_directories(pollen3d_tests SYSTEM PRIVATE ./../lib/src)
 
 # ----- OpenMP --------------------------------------------
 
@@ -84,6 +123,27 @@ else()
     message(FATAL_ERROR "OpenCV: not found")
 endif()
 
+# ----- Add NLopt --------------------------------------------
+
+find_package(NLopt REQUIRED QUIET)
+if (NLopt_FOUND)
+    message("nlopt: found")
+    target_include_directories(pollen3d_tests PRIVATE ${NLopt_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "nlopt: not found")
+endif()
+
+# ----- Add ceres --------------------------------------------
+
+find_package(ceres-solver REQUIRED QUIET)
+if (ceres-solver_FOUND)
+    message("ceres-solver: found")
+    target_include_directories(pollen3d_tests PRIVATE ${ceres-solver_INCLUDE_DIR})
+    target_include_directories(pollen3d_tests PRIVATE ${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog)
+else()
+    message(FATAL_ERROR "ceres-solver: not found")
+endif()
+
 # ----- Add testing -------------------------------------------
 
 enable_testing()
@@ -105,16 +165,7 @@ if(OpenMP_CXX_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} OpenMP::OpenMP_CXX)
 endif()
 
-target_include_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../lib/src)
-target_link_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../build/lib/)
-target_link_directories(pollen3d_tests PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/../lib/)
-target_link_libraries(pollen3d_tests ${TARGET_LIBS} p3d )
-
-#--- target_compile_definitions (pollen3d_tests PRIVATE P3D_API_IMPORT ENTT_API_IMPORT)
-
-if(EXISTS D:/Projects/build-pollen3d-Desktop_2019_64bit-Release/lib/p3d.dll)
-    configure_file(D:/Projects/build-pollen3d-Desktop_2019_64bit-Release/lib/p3d.dll ${CMAKE_CURRENT_BINARY_DIR}/bin/p3d.dll COPYONLY)
-endif()
+target_link_libraries(pollen3d_tests ${TARGET_LIBS})
 
 add_test(
     NAME pollen3d_tests

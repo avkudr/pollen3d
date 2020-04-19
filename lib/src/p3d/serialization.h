@@ -59,6 +59,7 @@ static void _read(cv::FileNode& node, P3D_ID_TYPE& id, Type& v)
     }
     node[name] >> t;
     v = t;
+    std::cout << "_read(cv::FileNode& node: " << id << "| " << t << std::endl;
 }
 
 template <typename Type>
@@ -234,14 +235,14 @@ public:
 
         std::string nodeName = "class" + std::to_string(entt::resolve<T>().id());
         fs << nodeName << "{";
-        entt::resolve<T>().data([&](entt::meta_data data) {
-            entt::meta_func func = data.type().func("_write"_hs);
+        entt::resolve<T>().data([&](auto data) {
+            auto func = data.type().func("_write"_hs);
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
                 entt::meta_any any = data.get(*ptr);
-                func.invoke(any, std::ref(fs), data.type(), any);
+                func.invoke(any, std::ref(fs), P3D_ID_TYPE(data.alias()), any);
             } else {
-                LOG_ERR("not registered for write: %i", data.type());
+                LOG_ERR("not registered for write: %i", data.alias());
             }
         });
 
@@ -257,16 +258,16 @@ public:
         std::string nodeName = "class" + std::to_string(entt::resolve<T>().id());
         cv::FileNode nodeL = node[nodeName];
 
-        entt::resolve<T>().data([&](entt::meta_data data) {
+        entt::resolve<T>().data([&](auto data) {
             entt::meta_func func = data.type().func("_read"_hs);
             if (func) {
                 auto ptr = dynamic_cast<T*>(this);
                 entt::meta_any old = data.get(*ptr);
-                entt::meta_any any = old;
-                func.invoke(old, nodeL, data.type(), any);
+                entt::meta_any any(old);
+                func.invoke(old, nodeL, P3D_ID_TYPE(data.alias()), *any);
                 data.set(*ptr, any);
             } else {
-                LOG_ERR("not registered for read: %i", data.type());
+                LOG_ERR("not registered for read: %i", data.alias());
             }
         });
 

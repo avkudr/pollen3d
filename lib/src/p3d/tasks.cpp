@@ -62,7 +62,7 @@ void p3d::saveProject(Project *data, std::string path)
     data->setProjectPath(path);
     cv::FileStorage fs(path, cv::FileStorage::WRITE);
     if (fs.isOpened()) {
-        fs << "ProjectData"
+        fs << "Project"
            << "{";
         data->write(fs);
         fs << "}";
@@ -91,7 +91,7 @@ void p3d::openProject(Project *data, std::string path)
     try {
         cv::FileStorage fs(path, cv::FileStorage::READ);
         if (fs.isOpened()) {
-            data->read(fs["ProjectData"]);
+            data->read(fs["Project"]);
             LOG_OK("Done");
             fs.fs.release();
         } else {

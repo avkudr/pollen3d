@@ -63,7 +63,7 @@ TEST(FUNDMAT, fundmat_testData)
 
 // TEST(FUNDMAT, fundmat_testImages)
 //{
-//    ProjectData data;
+//    Project data;
 //    p3d::loadImages(
 //        &data, {"../../_datasets/brassica/Brassica01.jpg",
 //                "../../_datasets/brassica/Brassica02.jpg"});

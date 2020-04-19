@@ -1,6 +1,7 @@
 #include "heavy_task.h"
 
 #include <future>
+#include <vector>
 
 std::future<void> HeavyTask::impl::heavyAsyncTask;
 bool              HeavyTask::impl::startedHeavyCalculus = false;

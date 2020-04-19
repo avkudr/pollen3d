@@ -107,7 +107,7 @@ set(SOURCES
 set (p3d_lib p3d)
 add_library (${p3d_lib} ${SOURCES})
 
-target_include_directories(${p3d_lib} SYSTEM PRIVATE ./../3rdparty/)
+target_include_directories(${p3d_lib} SYSTEM PRIVATE ./../3rdparty)
 target_include_directories(${p3d_lib} SYSTEM PRIVATE ./src/)
 
 # ----- Add Eigen --------------------------------------------

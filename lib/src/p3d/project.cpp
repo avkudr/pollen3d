@@ -15,7 +15,7 @@
 
 using namespace p3d;
 
-int dummyProjectData_ = Project::initMeta();
+int dummyProject_ = Project::initMeta();
 
 int Project::initMeta()
 {
@@ -23,7 +23,7 @@ int Project::initMeta()
     if (firstCall) {
         LOG_DBG("Reflecting: Project");
         entt::meta<Project>()
-            .alias("ProjectData"_hs)
+            .alias("Project"_hs)
             .data<&Project::setPointCloudCtnr, &Project::getPointCloudCtnr>(
                 P3D_ID_TYPE(p3dProject_pointCloudCtnr))
             .data<&Project::setMeasurementMatrix, &Project::getMeasurementMatrix>(
