@@ -83,13 +83,6 @@ protected:
     template <typename Type>
     void drawProperty_basic(const Type &v, const std::string &name, const char *fmt, const char *icon = nullptr);
 
-    template <typename Func, class... Args>
-    void _doHeavyTask(Func f, Args... args)
-    {
-        m_startedHeavyCalculus = true;
-        m_heavyAsyncTask = std::async(std::launch::async, f, args...);
-    }
-
     void _resetAppState()
     {
         setWindowTitle(m_projectData.getProjectPath());
@@ -159,11 +152,6 @@ protected:
 
     bool m_initialised = false;
     std::string m_execPath = "";
-
-    // *** std::async + wait popup for heavy stuff
-    bool m_startedHeavyCalculus = false;
-
-    std::future<void> m_heavyAsyncTask;
 
     p3d::Project m_projectData;
 };

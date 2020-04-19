@@ -133,6 +133,8 @@ set(SOURCES_GUI
     ./src/widgets/widget.h
     ./src/widgets/widget_matching.cpp
     ./src/widgets/widget_matching.h
+    ./src/widgets/heavy_task.h
+    ./src/widgets/heavy_task.cpp
 )
 
 set(SOURCES_GUI
