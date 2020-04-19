@@ -1,6 +1,7 @@
 #include "widget_feature_extract.h"
 
 #include "p3d/core.h"
+#include "p3d/image/feature_extraction.h"
 #include "p3d/project.h"
 #include "p3d/tasks.h"
 
@@ -18,40 +19,76 @@ void WidgetFeatureExtract::drawImpl(p3d::Project& data)
     if (disabled) ImGuiC::PushDisabled();
 
     bool run = false, runAll = false;
-    if (ImGuiC::Collapsing("Feature extraction", &run, &runAll)) {
-        //        auto v2 = p3d::settings().featuresDescSize;
-        //        auto v3 = p3d::settings().featuresDescChannels;
-        //        auto v4 = p3d::settings().featuresThreshold;
+    if (ImGuiC::Collapsing("Feature extraction", &run, &runAll))
+    {
+        bool needsUpdate        = false;
+        auto featExtractionPars = image ? image->getFeatExtractionPars() : FeatExtractionPars();
 
-        //        ImGui::Text("AKAZE keypoint detector");
-        //        ImGuiC::HelpMarker(
-        //            "Fast Explicit Diffusion for Accelerated Features in Nonlinear "
-        //            "Scale Spaces. Pablo F. Alcantarilla, Jesús Nuevo and Adrien "
-        //            "Bartoli. (BMVC 2013)");
+        ImGui::Text("AKAZE keypoint detector");
+        ImGuiC::HelpMarker("Fast Explicit Diffusion for Accelerated Features in Nonlinear "
+                           "Scale Spaces. Pablo F. Alcantarilla, Jesús Nuevo and Adrien "
+                           "Bartoli. (BMVC 2013)");
 
-        //        ImGui::InputInt("desc size", &v2);
-        //        if (ImGui::IsItemEdited())
-        //            p3d::setSetting(p3dSetting_featuresDescSize, v2);
-        //        ImGuiC::HelpMarker("Size of the descriptor in bits. 0 => Full size");
+        auto descSize = featExtractionPars.descSize;
+        ImGui::InputInt("desc size", &descSize);
+        if (ImGui::IsItemEdited())
+        {
+            featExtractionPars.descSize = descSize;
+            needsUpdate                 = true;
+        }
+        ImGuiC::HelpMarker("Size of the descriptor in bits. 0 => Full size");
 
-        //        ImGui::InputInt("desc channels", &v3);
-        //        if (ImGui::IsItemEdited()) {
-        //            v3 = std::min(std::max(v3, 1), 3);
-        //            p3d::setSetting(p3dSetting_featuresDescChannels,
-        //                                              v3);
-        //        }
-        //        ImGuiC::HelpMarker("Number of channels in the descriptor (1, 2, 3)");
+        auto descCh = featExtractionPars.descChannels;
+        ImGui::InputInt("desc channels", &descCh);
+        if (ImGui::IsItemEdited())
+        {
+            descCh                          = std::min(std::max(descCh, 1), 3);
+            featExtractionPars.descChannels = descCh;
+            needsUpdate                     = true;
+        }
+        ImGuiC::HelpMarker("Number of channels in the descriptor (1, 2, 3)");
 
-        //        ImGui::InputFloat("threshold", &v4, 0.0002f, 0.0f, "%0.5f",
-        //                          ImGuiInputTextFlags_CharsScientific);
-        //        if (ImGui::IsItemEdited())
-        //            p3d::setSetting(p3dSetting_featuresThreshold, v4);
-        //        ImGuiC::HelpMarker("Detector response threshold to accept point");
+        auto threshold = featExtractionPars.threshold;
 
-        //        if (ImGui::Button(P3D_ICON_RUN " Extract features")) run = true;
-        //        ImGui::SameLine();
-        //        if (ImGui::Button(P3D_ICON_RUNALL " ALL##extract_features"))
-        //            runAll = true;
+        ImGui::InputFloat("threshold",
+                          &threshold,
+                          0.0002f,
+                          0.0f,
+                          "%0.5f",
+                          ImGuiInputTextFlags_CharsScientific);
+        if (ImGui::IsItemEdited())
+        {
+            featExtractionPars.threshold = threshold;
+            needsUpdate                  = true;
+        }
+        ImGuiC::HelpMarker("Detector response threshold to accept point");
+
+        bool globalSetting = false;
+        // p3d::getSetting(p3dSetting_shaderMatchingPars).cast<bool>();
+        if (ImGui::Checkbox("shared parameters##matching", &globalSetting))
+        {
+            if (globalSetting == true)
+            {
+                //p3d::copyImageProperty(data, p3dImage_featExtractionPars, m_currentItemIdx);
+                p3d::mergeNextCommand();
+            }
+            //p3d::setSetting(p3dSetting_sharedFeatExtractionPars, globalSetting);
+        }
+
+        if (ImGui::Button(P3D_ICON_RUN " Extract features")) run = true;
+        ImGui::SameLine();
+        if (ImGui::Button(P3D_ICON_RUNALL " ALL##extract_features")) runAll = true;
+
+        if (needsUpdate)
+        {
+            std::vector<int> imgsToUpdate = {};
+            if (!globalSetting) imgsToUpdate = {m_currentItemIdx};
+
+            p3d::setImageProperty(data,
+                                  p3dImage_featExtractionPars,
+                                  featExtractionPars,
+                                  imgsToUpdate);
+        }
     }
 
     if (disabled) {

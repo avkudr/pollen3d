@@ -24,7 +24,7 @@ void P3D_API openProject(Project *data, std::string path = "");
 
 // ***** Image
 
-void P3D_API extractFeatures(Project &data, std::vector<int> imIds = {});
+bool P3D_API extractFeatures(Project &data, std::vector<int> imIds = {});
 
 // ***** Pairs
 
@@ -57,6 +57,11 @@ void P3D_API deletePointCloud(Project &data, const char *lbl);
 // void setSettings(const ProjectSettings &settings) { m_settings = settings; }
 
 // ***** Misc
+
+void P3D_API setImageProperty(Project &             data,
+                              const P3D_ID_TYPE &   propId,
+                              const entt::meta_any &value,
+                              std::vector<int>      imPairsIds = {});
 
 void P3D_API setImagePairProperty(Project &data, const P3D_ID_TYPE &propId,
                                   const entt::meta_any &value,

@@ -11,7 +11,7 @@ int Match::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        std::cout << "Reflecting: Match" << std::endl;
+        LOG_DBG("Reflecting: Match");
         entt::meta<Match>()
             .alias("Match"_hs)
             .data<&Match::iPtL>(P3D_ID_TYPE(p3dMatch_iPtL))

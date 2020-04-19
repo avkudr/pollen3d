@@ -201,12 +201,12 @@ static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE& id, std::vector<Eigen
     out = temp;
 }
 
-void P3D_API registerTypes();
+int P3D_API registerTypes();
 
 }  // namespace impl
 
-template <typename T>
-class Serializable
+template<typename T>
+class P3D_API Serializable
 {
 public:
     Serializable() {}
@@ -215,10 +215,12 @@ public:
 
     virtual bool operator==(const T& i) const
     {
-        T* lhs = dynamic_cast<T*>(const_cast<Serializable<T>*>(this));
+        T *  lhs = dynamic_cast<T *>(const_cast<Serializable<T> *>(this));
         T* rhs = const_cast<T*>(&i);
         bool res = true;
-        entt::resolve<T>().data([&](entt::meta_data data) {
+        if (!entt::resolve<T>()) { LOG_DBG("Serializable::== : unknown type"); }
+
+        entt::resolve<T>().data([&](auto data) {
             if (data.get(*lhs) != data.get(*rhs)) res = false;
         });
         return res && equalsAdditional();

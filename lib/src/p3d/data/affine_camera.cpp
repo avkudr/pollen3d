@@ -10,7 +10,7 @@ int AffineCamera::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        std::cout << "Reflecting: AffineCamera" << std::endl;
+        LOG_DBG("Reflecting: AffineCamera");
         entt::meta<AffineCamera>()
             .alias("AffineCamera"_hs)
             .data<&AffineCamera::setAlpha, &AffineCamera::getAlpha>(

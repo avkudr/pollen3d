@@ -72,7 +72,7 @@ void WidgetMatching::drawImpl(Project& data)
                                                              m_currentItemIdx);
                 p3d::mergeNextCommand();
             }
-            // p3d::setSetting(p3dSetting_shaderMatchingPars, globalSetting);
+            //p3d::setSetting(p3dSetting_sharedMatchingPars, globalSetting);
         }
 
         if (needsUpdate) {

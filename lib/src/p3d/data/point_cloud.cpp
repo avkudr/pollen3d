@@ -10,7 +10,7 @@ int PointCloud::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        std::cout << "Reflecting: PointCloud" << std::endl;
+        LOG_DBG("Reflecting: PointCloud");
         entt::meta<PointCloud>()
             .alias("PointCloud"_hs)
             .data<&PointCloud::setLabel, &PointCloud::getLabel>(

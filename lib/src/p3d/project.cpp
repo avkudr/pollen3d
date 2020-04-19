@@ -21,7 +21,7 @@ int Project::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        std::cout << "Reflecting: Project" << std::endl;
+        LOG_DBG("Reflecting: Project");
         entt::meta<Project>()
             .alias("ProjectData"_hs)
             .data<&Project::setPointCloudCtnr, &Project::getPointCloudCtnr>(

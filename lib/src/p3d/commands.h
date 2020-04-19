@@ -86,9 +86,23 @@ public:
         m_from = entt::meta_any{m_data.get(*instance)};
 
         if (force)
+        {
             m_isValid = true;
-        else if (m_to.type() == m_data.type() && !impl::isMetaEqual(m_to, m_from)) {
+            return;
+        }
+
+        if (m_to.type() != m_data.type())
+        {
+            LOG_DBG("set property: types are different");
+            return;
+        }
+
+        if (!impl::isMetaEqual(m_to, m_from))
+        {
             m_isValid = true;
+        } else
+        {
+            LOG_DBG("set property: new equals old");
         }
     }
 

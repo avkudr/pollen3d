@@ -10,7 +10,7 @@ int PointCloudContainer::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        std::cout << "Reflecting: PointCloudContainer" << std::endl;
+        LOG_DBG("Reflecting: PointCloudContainer");
         entt::meta<PointCloudContainer>()
             .alias("PointCloudContainer"_hs)
             .data<&PointCloudContainer::setPointClouds,

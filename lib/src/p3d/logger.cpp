@@ -3,7 +3,7 @@
 
 namespace p3d::logger
 {
-std::shared_ptr<p3d::logger::Logger> _logger = nullptr;
+std::shared_ptr<p3d::logger::Logger> _logger = std::make_shared<StdLogger>();
 
 std::shared_ptr<Logger> get()
 {

@@ -2,9 +2,11 @@
 
 namespace p3d::impl{
 
-void registerTypes() {
+int dummyPrimitives_ = registerTypes();
 
-    std::cout << "Reflecting: primitives" << std::endl;
+int registerTypes()
+{
+    LOG_DBG("Reflecting: primitives");
 
     SERIALIZE_TYPE(float,"float"_hs);
     SERIALIZE_TYPE(double,"double"_hs);
@@ -37,6 +39,7 @@ void registerTypes() {
     SERIALIZE_TYPE_EIGEN(double, 2,-1, "Eigen__double2X"_hs);
     SERIALIZE_TYPE_EIGEN(double, 3,-1, "Eigen__double3X"_hs);
     SERIALIZE_TYPE_EIGEN(double, 4,-1, "Eigen__double4X"_hs);
-}
 
+    return 0;
 }
+} // namespace p3d::impl

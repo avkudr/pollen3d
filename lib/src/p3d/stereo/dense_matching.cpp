@@ -10,7 +10,7 @@ int DenseMatchingPars::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        std::cout << "Reflecting: DenseMatching" << std::endl;
+        LOG_DBG("Reflecting: DenseMatching");
         entt::meta<DenseMatchingPars>()
             .alias("DenseMatching"_hs)
             .data<&DenseMatchingPars::dispMethod>(

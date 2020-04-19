@@ -104,13 +104,14 @@ void p3d::openProject(Project *data, std::string path)
     }
 }
 
-void p3d::extractFeatures(Project &data, std::vector<int> imIds)
+bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
 {
-    if (data.nbImages() == 0) return;
+    if (data.nbImages() == 0) return false;
     if (imIds.empty())
         for (int i = 0; i < data.nbImages(); ++i) imIds.push_back(i);
 
     auto nbImgs = static_cast<int>(imIds.size());
+
 #ifdef WITH_OPENMP
     omp_set_num_threads(std::min(nbImgs, utils::nbAvailableThreads()));
 #pragma omp parallel for
@@ -123,34 +124,31 @@ void p3d::extractFeatures(Project &data, std::vector<int> imIds)
             continue;
         }
 
-        std::vector<cv::KeyPoint> kpts;
-        cv::Mat desc;
+        try
+        {
+            std::vector<cv::KeyPoint> kpts;
+            cv::Mat                   desc;
+            auto                      pars = im->getFeatExtractionPars();
 
-        try {
-            cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
-            //                cv::AKAZE::create(getSetting(p3dSetting_featuresDescType).cast<int>(),
-            //                                  getSetting(p3dSetting_featuresDescSize).cast<int>(),
-            //                                  getSetting(p3dSetting_featuresDescChannels).cast<int>(),
-            //                                  getSetting(p3dSetting_featuresThreshold).cast<float>());
-            akaze->detectAndCompute(im->cvMat(), cv::noArray(), kpts, desc);
-            akaze.release();
+            FeatExtractionUtil::extract(im->cvMat(), pars, kpts, desc);
+
+            if (kpts.empty())
+            {
+                LOG_OK("%s: no features", im->name().c_str());
+                continue;
+            }
 
             im->setKeyPoints(kpts);
             im->setDescriptors(desc);
-
             LOG_OK("%s: extracted %i features", im->name().c_str(), int(kpts.size()));
-
-            kpts.clear();
-            desc.release();
-        } catch (...) {
-#pragma omp critical
-            {
-                LOG_ERR("Image %i, feature extraction failed", i);
-            }
+        } catch (...)
+        {
+            LOG_ERR("Image %i, feature extraction failed", i);
         }
     }
 
-    LOG_DBG("No undo functionnality");
+    LOG_WARN("no undo functionnality");
+    return true;
 }
 
 bool p3d::matchFeatures(Project &data, std::vector<int> imPairsIds)
@@ -922,6 +920,32 @@ void p3d::setSetting(const p3dSetting &id, const entt::meta_any &value)
         new CommandSetProperty(&m_settings, P3D_ID_TYPE(id), value));
 }
 */
+
+void p3d::setImageProperty(Project &             data,
+                           const uint32_t &      propId,
+                           const entt::meta_any &value,
+                           std::vector<int>      imIds)
+{
+    if (data.nbImages() == 0) return;
+    if (imIds.empty())
+        for (int i = 0; i < data.nbImagePairs(); ++i)
+            imIds.push_back(i);
+
+    CommandGroup *group = new CommandGroup();
+    for (int idx = 0; idx < imIds.size(); idx++)
+    {
+        auto i  = imIds[idx];
+        auto im = data.image(i);
+        if (!im) continue;
+
+        group->add(new CommandSetProperty(im, propId, value));
+    }
+
+    if (group->empty())
+        delete group;
+    else
+        p3d::cmder::get()->executeCommand(group);
+}
 
 void p3d::setImagePairProperty(Project &data, const P3D_ID_TYPE &propId,
                                const entt::meta_any &value, std::vector<int> imPairsIds)

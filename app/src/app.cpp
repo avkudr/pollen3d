@@ -501,14 +501,16 @@ void Application::_drawTab_Image()
         if (m_widgetFeat) {
             m_widgetFeat->draw(m_projectData, m_currentImage);
 
-            //            if (m_widgetFeat->isRequested("run")) {
-            //                auto f = [&]() { p3d::extractFeatures(m_projectData, {m_currentImage}); };
-            //                HeavyTask::run(f);
-            //            }
-            //            if (m_widgetFeat->isRequested("run_all")) {
-            //                auto f = [&]() { p3d::extractFeatures(m_projectData); };
-            //                HeavyTask::run(f);
-            //            }
+            if (m_widgetFeat->isRequested("run"))
+            {
+                auto f = [&]() { p3d::extractFeatures(m_projectData, {m_currentImage}); };
+                HeavyTask::run(f);
+            }
+            if (m_widgetFeat->isRequested("run_all"))
+            {
+                auto f = [&]() { p3d::extractFeatures(m_projectData); };
+                HeavyTask::run(f);
+            }
         }
 
         ImGui::EndTabItem();
@@ -528,7 +530,6 @@ void Application::_drawTab_Stereo()
     if (ImGui::BeginTabItem(ICON_FA_IMAGES "", nullptr, flags)) {
         if (ImGui::BeginChild("")) {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
-            int matchingWidgetW = 250;
 
             bool disabled = false;
             ImagePair *imPair = m_projectData.imagePair(m_currentImage);

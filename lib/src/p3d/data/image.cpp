@@ -15,10 +15,10 @@ int Image::initMeta()
         entt::meta<Image>()
             .alias("Image"_hs)
             .data<&Image::setPath, &Image::getPath>(P3D_ID_TYPE(p3dImage_path))
-            .data<&Image::setCamera, &Image::getCamera>(
-                P3D_ID_TYPE(p3dImage_camera))
-            .data<&Image::setTranslation, &Image::getTranslation>(
-                P3D_ID_TYPE(p3dImage_translation));
+            .data<&Image::setCamera, &Image::getCamera>(P3D_ID_TYPE(p3dImage_camera))
+            .data<&Image::setTranslation, &Image::getTranslation>(P3D_ID_TYPE(p3dImage_translation))
+            .data<&Image::setFeatExtractionPars, &Image::getFeatExtractionPars>(
+                P3D_ID_TYPE(p3dImage_featExtractionPars));
 
         SERIALIZE_TYPE_VECS(Image, "vector_Image"_hs);
         firstCall = false;
@@ -68,4 +68,19 @@ void Image::readAdditional(const cv::FileNode &node)
 
     node["im_p" + std::to_string(int(p3dImage_descriptors))] >> _desc;
     node["im_p" + std::to_string(int(p3dImage_keypoints))] >> _kpts;
+}
+
+FeatExtractionPars *Image::featExtractionPars()
+{
+    return &m_featExtractionPars;
+}
+
+const FeatExtractionPars &Image::getFeatExtractionPars() const
+{
+    return m_featExtractionPars;
+}
+
+void Image::setFeatExtractionPars(const FeatExtractionPars &featExtractionPars)
+{
+    m_featExtractionPars = featExtractionPars;
 }

@@ -59,34 +59,20 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_MODULE_PATH})
 # ----- Sources ----------------------------------------------
 
 set(SOURCES
-    ./src/p3d/commands.cpp
-    ./src/p3d/commands.h
-    ./src/p3d/command_manager.h
-    ./src/p3d/command_manager.cpp
-    ./src/p3d/tasks.h
-    ./src/p3d/tasks.cpp
     ./src/p3d/core.cpp
     ./src/p3d/core.h
     ./src/p3d/logger.cpp
     ./src/p3d/logger.h
-    ./src/p3d/serialization.cpp
     ./src/p3d/serialization.h
+    ./src/p3d/serialization.cpp
+    ./src/p3d/commands.cpp
+    ./src/p3d/commands.h
     ./src/p3d/utils.cpp
     ./src/p3d/utils.h
-    ./src/p3d/data/affine_camera.cpp
-    ./src/p3d/data/affine_camera.h
-    ./src/p3d/data/image.cpp
-    ./src/p3d/data/image.h
-    ./src/p3d/data/image_pair.cpp
-    ./src/p3d/data/image_pair.h
-    ./src/p3d/data/point_cloud_container.cpp
-    ./src/p3d/data/point_cloud_container.h
-    ./src/p3d/data/point_cloud.cpp
-    ./src/p3d/data/point_cloud.h
-    ./src/p3d/project.cpp
-    ./src/p3d/project.h
-    ./src/p3d/data/project_settings.cpp
-    ./src/p3d/data/project_settings.h
+    ./src/p3d/command_manager.h
+    ./src/p3d/command_manager.cpp
+    ./src/p3d/image/feature_extraction.cpp
+    ./src/p3d/image/feature_extraction.h
     ./src/p3d/multiview/autocalib.cpp
     ./src/p3d/multiview/autocalib.h
     ./src/p3d/multiview/bundle_adjustment.cpp
@@ -100,6 +86,22 @@ set(SOURCES
     ./src/p3d/stereo/matching.h
     ./src/p3d/stereo/rectification.cpp
     ./src/p3d/stereo/rectification.h
+    ./src/p3d/tasks.h
+    ./src/p3d/tasks.cpp
+    ./src/p3d/data/project_settings.cpp
+    ./src/p3d/data/project_settings.h
+    ./src/p3d/data/affine_camera.cpp
+    ./src/p3d/data/affine_camera.h
+    ./src/p3d/data/image.cpp
+    ./src/p3d/data/image.h
+    ./src/p3d/data/image_pair.cpp
+    ./src/p3d/data/image_pair.h
+    ./src/p3d/data/point_cloud_container.cpp
+    ./src/p3d/data/point_cloud_container.h
+    ./src/p3d/data/point_cloud.cpp
+    ./src/p3d/data/point_cloud.h
+    ./src/p3d/project.cpp
+    ./src/p3d/project.h
 )
 
 set (p3d_lib p3d)

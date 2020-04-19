@@ -8,7 +8,7 @@ int ImagePair::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        std::cout << "Reflecting: ImagePair" << std::endl;
+        LOG_DBG("Reflecting: ImagePair");
         entt::meta<ImagePair>()
             .alias("ImagePair"_hs)
             .data<&ImagePair::setDenseMatchingPars,

@@ -195,6 +195,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES} ./src/pollen3d.rc)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_definitions(${PROJECT_NAME} PRIVATE P3D_API_IMPORT)
 
 # ----- link p3d library
 
