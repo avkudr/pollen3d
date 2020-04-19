@@ -8,6 +8,7 @@
 #include "p3d/data/image.h"
 #include "p3d/data/image_pair.h"
 #include "p3d/data/point_cloud_container.h"
+#include "p3d/data/project_settings.h"
 #include "p3d/logger.h"
 #include "p3d/serialization.h"
 
@@ -15,13 +16,12 @@ namespace p3d
 {
 typedef int p3dProject;
 enum P3D_API p3dProject_ {
-    p3dProject_projectData = 2000,
-    p3dProject_projectPath = 2001,
-    p3dProject_dummy = 2002,
-    p3dProject_images = 2003,
-    p3dProject_imagePairs = 2004,
-    p3dProject_measMat = 2005,
-    p3dProject_measMatFull = 2006,
+    p3dProject_projectSettings,
+    p3dProject_projectPath,
+    p3dProject_images,
+    p3dProject_imagePairs,
+    p3dProject_measMat,
+    p3dProject_measMatFull,
     p3dProject_pointCloudCtnr,
 };
 
@@ -104,6 +104,10 @@ public:
     const PointCloudContainer &getPointCloudCtnr() const;
     void setPointCloudCtnr(const PointCloudContainer &pointCloudCtnr);
 
+    ProjectSettings *settings() { return &m_settings; }
+    const ProjectSettings &getSettings() const;
+    void setSettings(const ProjectSettings &settings);
+
 private:
     Image *imagePairImage(const std::size_t idx, bool left)
     {
@@ -121,5 +125,6 @@ private:
     Mat m_measurementMatrixFull{};
 
     PointCloudContainer m_pointCloudCtnr{};
+    ProjectSettings m_settings;
 };
 }  // namespace p3d

@@ -21,6 +21,7 @@ struct P3D_API ProjectSettings : Serializable<ProjectSettings> {
     bool sharedFeatExtractionPars{true};
     bool sharedMatchingPars{true};
 
-    static constexpr P3D_ID_TYPE alias() { return "ProjectSettings"_hs; }
+    static constexpr const char* className() { return "ProjectSettings"; }
+    static constexpr P3D_ID_TYPE alias() { return entt::hashed_string{className()}; }
 };
 }  // namespace p3d

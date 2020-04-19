@@ -21,7 +21,7 @@ int FeatExtractionPars::initMeta()
             .data<&FeatExtractionPars::descChannels>(P3D_ID_TYPE(p3dFeatExtraction_descChannels))
             .data<&FeatExtractionPars::threshold>(P3D_ID_TYPE(p3dFeatExtraction_descThreshold));
 
-        SERIALIZED_ADD_READ_WRITE(FeatExtractionPars, "FeatExtractionPars"_hs);
+        SERIALIZED_ADD_READ_WRITE(FeatExtractionPars);
         firstCall = false;
     }
     return 0;

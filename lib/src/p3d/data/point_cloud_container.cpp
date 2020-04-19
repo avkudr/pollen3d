@@ -17,8 +17,7 @@ int PointCloudContainer::initMeta()
                   &PointCloudContainer::getPointClouds>(
                 P3D_ID_TYPE(p3dPointCloudContainer_clouds));
 
-        SERIALIZED_ADD_READ_WRITE(PointCloudContainer,
-                                  "PointCloudContainer"_hs);
+        SERIALIZED_ADD_READ_WRITE(PointCloudContainer);
         SERIALIZE_TYPE_VECS(PointCloudContainer,
                             "vector_PointCloudContainer"_hs);
         firstCall = false;

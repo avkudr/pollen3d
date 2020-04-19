@@ -34,7 +34,7 @@ int DenseMatchingPars::initMeta()
             .data<&DenseMatchingPars::bilateralSigmaSpace>(
                 P3D_ID_TYPE(p3dDense_BilateralSigmaSpace));
 
-        SERIALIZED_ADD_READ_WRITE(DenseMatchingPars, "DenseMatching"_hs);
+        SERIALIZED_ADD_READ_WRITE(DenseMatchingPars);
         firstCall = false;
     }
     return 0;

@@ -22,7 +22,7 @@ int PointCloud::initMeta()
             .data<&PointCloud::setVisible, &PointCloud::isVisible>(
                 P3D_ID_TYPE(p3dPointCloud_visible));
 
-        SERIALIZED_ADD_READ_WRITE(PointCloud, "PointCloud"_hs);
+        SERIALIZED_ADD_READ_WRITE(PointCloud);
         SERIALIZE_TYPE_VECS(PointCloud, "vector_PointCloud"_hs);
         firstCall = false;
     }

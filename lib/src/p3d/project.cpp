@@ -35,7 +35,9 @@ int Project::initMeta()
             .data<&Project::setImageList, &Project::getImageList>(
                 P3D_ID_TYPE(p3dProject_images))
             .data<&Project::setProjectPath, &Project::getProjectPath>(
-                P3D_ID_TYPE(p3dProject_projectPath));
+                P3D_ID_TYPE(p3dProject_projectPath))
+            .data<&Project::setSettings, &Project::getSettings>(
+                P3D_ID_TYPE(p3dProject_projectSettings));
         firstCall = false;
     }
     return 0;
@@ -285,3 +287,7 @@ void Project::setPointCloudCtnr(const PointCloudContainer &pointCloudCtnr)
 {
     m_pointCloudCtnr = pointCloudCtnr;
 }
+
+const ProjectSettings &Project::getSettings() const { return m_settings; }
+
+void Project::setSettings(const ProjectSettings &settings) { m_settings = settings; }

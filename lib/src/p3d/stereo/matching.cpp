@@ -37,7 +37,7 @@ int MatchingPars::initMeta()
             .data<&MatchingPars::filterCoeff>(
                 P3D_ID_TYPE(p3dMatching_filterCoeff));
 
-        SERIALIZED_ADD_READ_WRITE(MatchingPars, "MatchingPars"_hs);
+        SERIALIZED_ADD_READ_WRITE(MatchingPars);
         firstCall = false;
     }
     return 0;

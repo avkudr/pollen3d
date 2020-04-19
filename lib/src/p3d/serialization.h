@@ -16,7 +16,7 @@ namespace impl
         .func<&p3d::impl::_read<x>>("_read"_hs) \
         .func<&p3d::impl::_write<x>>("_write"_hs)
 
-#define SERIALIZED_ADD_READ_WRITE(x, name)            \
+#define SERIALIZED_ADD_READ_WRITE(x)                  \
     entt::meta<x>()                                   \
         .func<&p3d::impl::_readCustom<x>>("_read"_hs) \
         .func<&p3d::impl::_writeCustom<x>>("_write"_hs)
