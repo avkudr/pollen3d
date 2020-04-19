@@ -8,6 +8,8 @@ endif()
 option(BUILD_UNIT_TESTS "Build unit tests" OFF)
 option(BUILD_EXAMPLES "Build examples" OFF)
 
+set(CONAN_CMAKE_SILENT_OUTPUT 1)
+
 set(GLOBAL_BINARY_DIR ${CMAKE_BINARY_DIR})
 set(GLOBAL_SOURCE_DIR ${CMAKE_SOURCE_DIR})
 
@@ -17,8 +19,3 @@ add_subdirectory(./app)
 if(BUILD_EXAMPLES)
     add_subdirectory(./examples)
 endif()
-
-if(BUILD_UNIT_TESTS)
-    add_subdirectory(./tests)
-endif()
-

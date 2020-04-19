@@ -1,4 +1,4 @@
-set(ImGui_DIR ${CMAKE_CURRENT_LIST_DIR}/../imgui)
+set(ImGui_DIR ${CMAKE_CURRENT_LIST_DIR}/imgui)
 set(ImGui_FOUND false)
 set(ImGui_LIBS "")
 
@@ -38,7 +38,9 @@ find_package(glad REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 
 set(ImGui_FOUND true)
-set(ImGui_LIBS ${OPENGL_LIBRARIES} ${glfw_LIBS})
+set(ImGui_LIBS ${OPENGL_LIBRARIES} ${glfw_LIBS} ${glad_LIBS})
+set(ImGui_INCLUDE_DIR ${OPENGL_INCLUDE_DIR} ${glfw_INCLUDE_DIR} ${glad_INCLUDE_DIR})
+
 add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 if (ImGui_FOUND)

@@ -1,8 +1,5 @@
 build*/
-3rdparty/glfw**/*.html
-3rdparty/glfw**/*.js
-3rdparty/glfw**/*.png
-3rdparty/glfw**/*.svg
+3rdparty_bin/
 *.txt.user*
 .vscode
 .vs

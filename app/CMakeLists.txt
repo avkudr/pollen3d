@@ -1,30 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
-project( pollen3d_app )
+project( pollen3d )
 
 set(CMAKE_CXX_STANDARD 17)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
-
-if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
-   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
-                  "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
-endif()
-
-include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
-
-conan_check()
-conan_add_remote(NAME bincrafters INDEX 1
-            URL https://api.bintray.com/conan/bincrafters/public-conan)
-conan_add_remote(NAME camposs INDEX 2
-            URL https://conan.campar.in.tum.de/api/conan/conan-camposs)
-
-conan_cmake_run(
-    CONANFILE ../conanfile.txt
-    BUILD missing
-    BASIC_SETUP)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "compiling in debug")
@@ -40,8 +21,17 @@ set(ASSETS_FONTS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/fonts CACHE STRING
 
 # ----- Looking for modules
 
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/cmake/)
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_MODULE_PATH})
+set(CMAKE_PREFIX_PATH 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin 
+    ${CMAKE_PREFIX_PATH}
+)
+
+set(CMAKE_MODULE_PATH 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin 
+    ${CMAKE_MODULE_PATH}
+)
 
 set(SOURCES_GUI "")
 
@@ -177,9 +167,10 @@ else()
 
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty)
-
-set(TARGET_LIBS ${TARGET_LIBS} ${ImGui_LIBS} ${CONAN_LIBS})
+set(TARGET_LIBS "")
+if(ImGui_FOUND)
+    set(TARGET_LIBS ${TARGET_LIBS} ${ImGui_LIBS})
+endif()
 if(Eigen_FOUND)
     set(TARGET_LIBS ${TARGET_LIBS} Eigen3::Eigen)
 endif()
@@ -197,8 +188,10 @@ endif()
 add_executable( ${PROJECT_NAME} ./src/main_gui.cpp ${SOURCES} ${SOURCES_GUI} ${RES_FILES} ./src/pollen3d.rc)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_definitions(${PROJECT_NAME} PRIVATE P3D_API_IMPORT)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty)
+target_include_directories(${PROJECT_NAME} PUBLIC ${ImGui_INCLUDE_DIR})
 
-# ----- link p3d library
+# ----- link p3d library ----------------------------------------------------------------------------------
 
 set(P3D_LIB_NAME p3d)
 set(P3D_LIB_DIR ${GLOBAL_BINARY_DIR}/lib)
@@ -238,7 +231,7 @@ set_target_properties( ${PROJECT_NAME}
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../_datasets/brassica DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-execute_process(COMMAND ln -s /usr/local/bin/pollen3d_dir/pollen3d pollen3d)
+execute_process(COMMAND ln -sf /usr/local/bin/pollen3d_dir/pollen3d pollen3d)
 install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pollen3d DESTINATION /usr/local/bin/pollen3d_dir)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION /usr/local/bin/pollen3d_dir)
 install(FILES ${CMAKE_BINARY_DIR}/pollen3d DESTINATION /usr/local/bin/)

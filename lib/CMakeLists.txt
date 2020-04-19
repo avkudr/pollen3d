@@ -6,40 +6,13 @@ include ( CMakePackageConfigHelpers )
 #==============================================================================
 
 option (BUILD_SHARED_LIBS "Build p3d as a shared library" ON)
+option(USE_OPENMP "Use OpenMP" ON)
 
 #==============================================================================
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
-
-# To build shared libraries in Windows, we set CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS to TRUE.
-# See https://cmake.org/cmake/help/v3.4/variable/CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.html
-# See https://blog.kitware.com/create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
-# Download automatically, you can also just copy the conan.cmake file
-if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
-   message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-   file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
-                  "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
-endif()
-
-include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
-
-conan_check()
-conan_add_remote(NAME bincrafters INDEX 1
-            URL https://api.bintray.com/conan/bincrafters/public-conan)
-conan_add_remote(NAME camposs INDEX 2
-            URL https://conan.campar.in.tum.de/api/conan/conan-camposs)
-
-conan_cmake_run(
-    CONANFILE conanfile.txt
-    BUILD missing
-    BASIC_SETUP NO_OUTPUT_DIRS)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "compiling in debug")
@@ -49,66 +22,89 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "compiling in release")
 endif()
 
-option(USE_OPENMP "Use OpenMP" ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_MODULE_PATH})
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# s111et(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/)
-# s111et(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/)
+set(CMAKE_PREFIX_PATH 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin 
+    ${CMAKE_PREFIX_PATH}
+)
+
+set(CMAKE_MODULE_PATH 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin 
+    ${CMAKE_MODULE_PATH}
+)
 
 # ----- Sources ----------------------------------------------
 
 set(SOURCES
-    ./src/p3d/core.cpp
-    ./src/p3d/core.h
-    ./src/p3d/logger.cpp
-    ./src/p3d/logger.h
-    ./src/p3d/serialization.h
-    ./src/p3d/serialization.cpp
-    ./src/p3d/commands.cpp
-    ./src/p3d/commands.h
-    ./src/p3d/utils.cpp
-    ./src/p3d/utils.h
-    ./src/p3d/command_manager.h
-    ./src/p3d/command_manager.cpp
-    ./src/p3d/image/feature_extraction.cpp
-    ./src/p3d/image/feature_extraction.h
-    ./src/p3d/multiview/autocalib.cpp
-    ./src/p3d/multiview/autocalib.h
-    ./src/p3d/multiview/bundle_adjustment.cpp
-    ./src/p3d/multiview/bundle_adjustment.h
-    ./src/p3d/multiview/bundle_params.h
-    ./src/p3d/stereo/dense_matching.cpp
-    ./src/p3d/stereo/dense_matching.h
-    ./src/p3d/stereo/fundmat.cpp
-    ./src/p3d/stereo/fundmat.h
-    ./src/p3d/stereo/matching.cpp
-    ./src/p3d/stereo/matching.h
-    ./src/p3d/stereo/rectification.cpp
-    ./src/p3d/stereo/rectification.h
-    ./src/p3d/tasks.h
-    ./src/p3d/tasks.cpp
-    ./src/p3d/data/project_settings.cpp
-    ./src/p3d/data/project_settings.h
-    ./src/p3d/data/affine_camera.cpp
-    ./src/p3d/data/affine_camera.h
-    ./src/p3d/data/image.cpp
-    ./src/p3d/data/image.h
-    ./src/p3d/data/image_pair.cpp
-    ./src/p3d/data/image_pair.h
-    ./src/p3d/data/point_cloud_container.cpp
-    ./src/p3d/data/point_cloud_container.h
-    ./src/p3d/data/point_cloud.cpp
-    ./src/p3d/data/point_cloud.h
-    ./src/p3d/project.cpp
-    ./src/p3d/project.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/core.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/core.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/logger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/logger.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/serialization.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/serialization.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/commands.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/commands.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/utils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/command_manager.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/command_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/image/feature_extraction.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/image/feature_extraction.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/autocalib.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/autocalib.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/bundle_adjustment.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/bundle_adjustment.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/bundle_params.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/dense_matching.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/dense_matching.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/fundmat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/fundmat.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/matching.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/matching.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/rectification.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/rectification.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/tasks.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/tasks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/project_settings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/project_settings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/affine_camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/affine_camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/image.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/image.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/image_pair.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/image_pair.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/point_cloud_container.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/point_cloud_container.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/point_cloud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/point_cloud.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/project.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/project.h
 )
 
 set (p3d_lib p3d)
 add_library (${p3d_lib} ${SOURCES})
+target_compile_features(${p3d_lib} PRIVATE cxx_std_17)
 
-target_include_directories(${p3d_lib} SYSTEM PRIVATE ./../3rdparty)
-target_include_directories(${p3d_lib} SYSTEM PRIVATE ./src/)
+target_include_directories(${p3d_lib} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty)
+target_include_directories(${p3d_lib} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/)
+
+# ----- Threading--------------------------------------------
+
+if(USE_OPENMP)
+    find_package(OpenMP QUIET)
+    if (OPENMP_FOUND)
+        message( STATUS "OpenMP - FOUND" )
+        add_definitions(-DWITH_OPENMP)
+    else()
+        message( STATUS "OpenMP - not found" )
+    endif()
+endif()
 
 # ----- Add Eigen --------------------------------------------
 
@@ -154,8 +150,11 @@ endif()
 target_link_libraries(${p3d_lib}
     PUBLIC
         ${opencv_LIBS}
+        OpenMP::OpenMP_CXX
+        ${Eigen3_LIBS}
     PRIVATE
         ${NLopt_LIBS}
+        ${NLopt_SYSTEM_LIBS}
         ${ceres-solver_LIBS}
     )
 
@@ -166,6 +165,71 @@ else()
     message("shared: false")
 endif ()
 
+# ===== Tests ================================================
+
+if (BUILD_UNIT_TESTS)
+
+message("building tests: true")
+
+enable_testing()
+
+set(p3d_tests p3d_tests)
+add_executable(${p3d_tests} 
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/main_tests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_diamond.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_fundmat.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_meta.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_misc.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_paths.h
+    ${SOURCES}
+)
+target_compile_features(${p3d_tests} PRIVATE cxx_std_17)
+target_compile_definitions(${p3d_tests} PRIVATE P3D_IMAGES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../_datasets")
+
+find_package(gtest REQUIRED)
+if (gtest_FOUND)
+    message("google-test: found")
+else()
+    message(FATAL_ERROR "google-test: not found")
+endif()
+
+target_include_directories(${p3d_tests} 
+    PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/
+        ${gtest_INCLUDE_DIR}
+        ${NLopt_INCLUDE_DIR}
+        ${ceres-solver_INCLUDE_DIR}
+        ${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog
+        ${opencv_INCLUDE_DIR}
+        ${Eigen3_INCLUDE_DIR}
+)
+
+target_link_directories(${p3d_tests}
+    PUBLIC
+        ${gtest_LIB_DIRS}
+        ${ceres-solver_LIB_DIRS}
+)
+
+target_link_libraries(${p3d_tests}
+    PUBLIC
+        gtest
+        gtest_main
+        ${opencv_LIBS}
+        OpenMP::OpenMP_CXX
+        ${Eigen3_LIBS}
+    PRIVATE
+        ${NLopt_LIBS}
+        ${NLopt_SYSTEM_LIBS}
+        ceres-solver::ceres-solver
+)
+
+add_test(
+    NAME ${p3d_tests}
+    COMMAND ${p3d_tests}
+)
+
+endif(BUILD_UNIT_TESTS)
 
 # ===== Install ==============================================
 

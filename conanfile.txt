@@ -3,14 +3,21 @@ zlib/1.2.11@conan/stable
 glad/0.1.29@bincrafters/stable
 glfw/3.2.1@bincrafters/stable
 eigen/3.3.7@conan/stable
+nlopt/2.6.1
+ceres-solver/1.14.0
 opencv/3.4.8@camposs/stable
+gtest/1.8.1@bincrafters/stable
 
 [options]
+ceres-solver:use_glog=False
+ceres-solver:use_gflags=False
+gtest:build_gmock=False
+gtest:shared=True
 opencv:shared=True
 
 [generators]
 cmake_find_package
 
 [imports]
-bin, *.dll -> ./bin 
-lib, *.dylib* -> ./bin
+bin, *.dll -> . 
+lib, *.dylib* -> .

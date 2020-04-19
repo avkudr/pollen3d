@@ -14,10 +14,21 @@ the output should be similar to ```cmake version 3.13.4```
 the output should be similar to ```Conan version 1.23.0```
 * run the following commands in the terminal of your choice
 ```bash
+git clone --recursive https://github.com/avkudr/pollen3d
+cd pollen3d
+
+# install dependencies if needed
+mkdir 3rdparty_bin
+cd 3rdparty_bin
 conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+conan remote add camposs "https://conan.campar.in.tum.de/api/conan/conan-camposs"
+conan install .. -s build_type=Release --build=missing -s cppstd=17
+cd ..
+
 mkdir build && cd build
-cmake ..
-cmake --build . -j 4
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release -j 4
+./app/bin/pollen3d
 ```
 
 ## References

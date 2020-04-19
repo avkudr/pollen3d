@@ -134,34 +134,40 @@ Mat3 FundMatUtil::findAffineCeres(const std::vector<Vec2> &ptsX, const std::vect
     //Mat3 Fgs = findAffineGS(ptsX,ptsXt);
     //std::vector<double> params = {Fgs(0,2), Fgs(1,2), Fgs(2,0), Fgs(2,1), Fgs(2,2)};
     std::vector<double> params = {1.0,1.0,1.0,1.0,1.0};
+    Mat3 F;
+    F.setZero(3, 3);
 
-    Problem problem;
-    const int nbPts = static_cast<int>(ptsX.size());
+    try {
+        Problem problem;
+        const int nbPts = static_cast<int>(ptsX.size());
 
-    for (int i = 0; i < nbPts; ++i) {
-        CostFunction* cost_function =
-           new AutoDiffCostFunction<FundamentalMatrixResidual, 2, 5>(
-               new FundamentalMatrixResidual(ptsX[i], ptsXt[i]));
-        problem.AddResidualBlock(cost_function, new CauchyLoss(2.0), &params[0]);
+        for (int i = 0; i < nbPts; ++i) {
+            CostFunction *cost_function =
+                new AutoDiffCostFunction<FundamentalMatrixResidual, 2, 5>(
+                    new FundamentalMatrixResidual(ptsX[i], ptsXt[i]));
+            problem.AddResidualBlock(cost_function, new CauchyLoss(2.0), &params[0]);
+        }
+
+        Solver::Options options;
+        options.linear_solver_type = ceres::DENSE_QR;
+        options.minimizer_progress_to_stdout = false;
+
+        Solver::Summary summary;
+        Solve(options, &problem, &summary);
+        LOG_INFO("Ceres. Init: %.10e; final: %.10e", summary.initial_cost,
+                 summary.final_cost);
+        // printf("Ceres. Init: %.10e; final:
+        // %.10e\n",summary.initial_cost,summary.final_cost);
+        F(0, 2) = params[0];
+        F(1, 2) = params[1];
+        F(2, 0) = params[2];
+        F(2, 1) = params[3];
+        F(2, 2) = params[4];
+
+        F = F / F.norm();
+    } catch (...) {
     }
 
-    Solver::Options options;
-    options.linear_solver_type = ceres::DENSE_QR;
-    options.minimizer_progress_to_stdout = false;
-
-    Solver::Summary summary;
-    Solve(options, &problem, &summary);
-    LOG_INFO("Ceres. Init: %.10e; final: %.10e",summary.initial_cost,summary.final_cost);
-    //printf("Ceres. Init: %.10e; final: %.10e\n",summary.initial_cost,summary.final_cost);
-    Mat3 F;
-    F.setZero(3,3);
-    F(0,2) = params[0];
-    F(1,2) = params[1];
-    F(2,0) = params[2];
-    F(2,1) = params[3];
-    F(2,2) = params[4];
-
-    F = F / F.norm();
     return F;
 }
 
