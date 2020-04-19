@@ -33,6 +33,7 @@ public:
     void undoCommand() override;
 };
 
+void P3D_API executeCommand(Command *cmd);
 std::shared_ptr<CommandManager> P3D_API get();
 void P3D_API set(std::shared_ptr<CommandManager> cmdManager);
 // void P3D_API on(); // TODO

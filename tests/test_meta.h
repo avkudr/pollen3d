@@ -172,7 +172,7 @@ TEST(META, meta_serializeClass)
 
 #define SERIALIZATION_TEST(Type, X, Y)                          \
     {                                                           \
-        auto id = entt::resolve<Type>().id();           \
+        auto id = entt::resolve<Type>().id();                   \
         cv::FileStorage fs("test.xml", cv::FileStorage::WRITE); \
         fs << "node1"                                           \
            << "{";                                              \
@@ -183,7 +183,7 @@ TEST(META, meta_serializeClass)
     {                                                           \
         cv::FileStorage fs("test.xml", cv::FileStorage::READ);  \
         cv::FileNode node = fs["node1"];                        \
-        auto id = entt::resolve<Type>().id();           \
+        auto id = entt::resolve<Type>().id();                   \
         p3d::impl::_read<Type>(node, id, Y);                    \
         fs.release();                                           \
     }
@@ -394,7 +394,7 @@ TEST(COMMANDS, command_setProperty)
     A a;
     a.setValue(15);
     EXPECT_EQ(a.getValue(), 15);
-    p3d::cmder::get()->executeCommand(new CommandSetProperty(&a, __ID_PROP_INT, 254));
+    p3d::cmder::executeCommand(new CommandSetProperty(&a, __ID_PROP_INT, 254));
     EXPECT_EQ(a.getValue(), 254);
     p3d::cmder::get()->undoCommand();
     EXPECT_EQ(a.getValue(), 15);
@@ -410,7 +410,7 @@ TEST(COMMANDS, command_setPropertyEigenDyn)
     A a;
     a.setEigenMat(m);
     EXPECT_EQ(a.getEigenMat(), m);
-    p3d::cmder::get()->executeCommand(new CommandSetProperty(&a, __ID_PROP_EIGEN, m1));
+    p3d::cmder::executeCommand(new CommandSetProperty(&a, __ID_PROP_EIGEN, m1));
     EXPECT_EQ(a.getEigenMat(), m1);
     p3d::cmder::get()->undoCommand();
     EXPECT_EQ(a.getEigenMat(), m);
@@ -426,7 +426,7 @@ TEST(COMMANDS, command_setPropertyGroup)
     grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 21));
     grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 22));
     grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 23));
-    p3d::cmder::get()->executeCommand(grp);
+    p3d::cmder::executeCommand(grp);
     EXPECT_EQ(a.getValue(), 23);
     p3d::cmder::get()->undoCommand();
     EXPECT_EQ(a.getValue(), 15);
@@ -442,7 +442,7 @@ TEST(COMMANDS, command_setPropertyCV)
     a.setMatrixCV(B);
 
     EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(), B));
-    p3d::cmder::get()->executeCommand(
+    p3d::cmder::executeCommand(
         new CommandSetPropertyCV(&a, &A::setMatrixCV, &A::getMatrixCV, C));
     EXPECT_TRUE(utils::equalsCvMat(a.getMatrixCV(), C));
     p3d::cmder::get()->undoCommand();
@@ -455,9 +455,9 @@ TEST(COMMANDS, command_mergeNextCmd)
     a.setValue(15);
     a.setEigenMat(Mat(Mat3::Identity()));
 
-    p3d::cmder::get()->executeCommand(new CommandSetProperty(&a, __ID_PROP_INT, 254));
+    p3d::cmder::executeCommand(new CommandSetProperty(&a, __ID_PROP_INT, 254));
     p3d::cmder::get()->mergeNextCommand();
-    p3d::cmder::get()->executeCommand(
+    p3d::cmder::executeCommand(
         new CommandSetProperty(&a, __ID_PROP_EIGEN, Mat(Mat4::Zero())));
 
     EXPECT_EQ(a.getValue(), 254);
@@ -478,11 +478,11 @@ TEST(META, meta_setValue)
     data.set(s, 2.0 * 2.0);
     EXPECT_DOUBLE_EQ(data.get(s).cast<double>(), 4.0);  // ok
 
-    p3d::cmder::get()->executeCommand(new CommandSetProperty(&s, id, 0.001));
+    p3d::cmder::executeCommand(new CommandSetProperty(&s, id, 0.001));
     EXPECT_DOUBLE_EQ(data.get(s).cast<double>(), 0.001);
-    p3d::cmder::get()->executeCommand(new CommandSetProperty(&s, id, 2.0));
+    p3d::cmder::executeCommand(new CommandSetProperty(&s, id, 2.0));
     EXPECT_DOUBLE_EQ(data.get(s).cast<double>(), 2.0);
-    p3d::cmder::get()->executeCommand(new CommandSetProperty(&s, id, 2.0 * 2.0));
+    p3d::cmder::executeCommand(new CommandSetProperty(&s, id, 2.0 * 2.0));
     EXPECT_DOUBLE_EQ(data.get(s).cast<double>(), 4.0);
 }
 

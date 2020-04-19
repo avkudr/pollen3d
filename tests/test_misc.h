@@ -148,7 +148,7 @@ TEST(MISC, test_pointCloudCtnrCmds)
         auto& pcd = ctnr["random"];
         int nbPts = 10;
         Mat3Xf verts = Mat3Xf::Random(3, nbPts);
-        p3d::cmder::get()->executeCommand(new CommandSetProperty(
+        p3d::cmder::executeCommand(new CommandSetProperty(
             &pcd, P3D_ID_TYPE(p3dPointCloud_vertices), verts, true));
 
         EXPECT_EQ(pcd.nbPoints(), nbPts);
@@ -160,8 +160,7 @@ TEST(MISC, test_pointCloudCtnrCmds)
 
         auto label = "hello";
         Mat3Xf verts2 = Mat3Xf::Random(3, 23);
-        p3d::cmder::get()->executeCommand(
-            new CommandPointCloudAdd(&ctnr, label, verts2));
+        p3d::cmder::executeCommand(new CommandPointCloudAdd(&ctnr, label, verts2));
 
         EXPECT_TRUE(ctnr.contains(label));
         EXPECT_EQ(ctnr[label].getVertices(), verts2);
@@ -172,8 +171,7 @@ TEST(MISC, test_pointCloudCtnrCmds)
 
         ctnr[label].setVertices(verts2);
         size = ctnr.size();
-        p3d::cmder::get()->executeCommand(
-            new CommandPointCloudDelete(&ctnr, label));
+        p3d::cmder::executeCommand(new CommandPointCloudDelete(&ctnr, label));
 
         EXPECT_TRUE(!ctnr.contains(label));
         EXPECT_EQ(ctnr.size(), size - 1);

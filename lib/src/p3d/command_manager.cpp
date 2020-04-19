@@ -11,6 +11,7 @@ void LibCommandManager::executeCommand(p3d::Command *cmd)
     if (cmd->isValid()) {
         cmd->execute();
 
+        if (m_commandStack.empty()) m_mergeNextCommand = false;
         if (m_mergeNextCommand) {
             CommandGroup *newGroup = new CommandGroup();
             newGroup->add(m_commandStack.back());
@@ -43,9 +44,12 @@ std::shared_ptr<CommandManager> get()
 
 void set(std::shared_ptr<CommandManager> cmdManager)
 {
-    if (cmdManager)
-        p3d::cmder::_cmdManager = cmdManager;
+    if (cmdManager) p3d::cmder::_cmdManager = cmdManager;
 }
 
+void executeCommand(Command *cmd)
+{
+    if (p3d::cmder::_cmdManager) p3d::cmder::_cmdManager->executeCommand(cmd);
+}
 
 } // namespace p3d::cmder

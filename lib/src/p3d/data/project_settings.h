@@ -18,8 +18,8 @@ struct P3D_API ProjectSettings : Serializable<ProjectSettings> {
 
     ~ProjectSettings() {}
 
-    bool sharedFeatExtractionPars{true};
-    bool sharedMatchingPars{true};
+    int sharedFeatExtractionPars{1};
+    int sharedMatchingPars{1};
 
     static constexpr const char* className() { return "ProjectSettings"; }
     static constexpr P3D_ID_TYPE alias() { return entt::hashed_string{className()}; }

@@ -214,6 +214,8 @@ public:
 
     virtual ~Serializable() {}
 
+    auto resolve() { return entt::resolve<T>(); }
+
     virtual bool operator==(const T& i) const
     {
         T *  lhs = dynamic_cast<T *>(const_cast<Serializable<T> *>(this));

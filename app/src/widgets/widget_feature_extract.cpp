@@ -1,6 +1,7 @@
 #include "widget_feature_extract.h"
 
 #include "p3d/core.h"
+#include "p3d/data/project_settings.h"
 #include "p3d/image/feature_extraction.h"
 #include "p3d/project.h"
 #include "p3d/tasks.h"
@@ -63,16 +64,16 @@ void WidgetFeatureExtract::drawImpl(p3d::Project& data)
         }
         ImGuiC::HelpMarker("Detector response threshold to accept point");
 
-        bool globalSetting = false;
-        // p3d::getSetting(p3dSetting_shaderMatchingPars).cast<bool>();
-        if (ImGui::Checkbox("shared parameters##matching", &globalSetting))
-        {
-            if (globalSetting == true)
-            {
-                //p3d::copyImageProperty(data, p3dImage_featExtractionPars, m_currentItemIdx);
+        bool globalSetting =
+            p3d::getSetting(data, p3dSetting_sharedFeatExtractionPars).cast<int>() > 0;
+        if (ImGui::Checkbox("shared parameters##matching", &globalSetting)) {
+            if (globalSetting == true) {
+                p3d::copyImageProperty(data, P3D_ID_TYPE(p3dImage_featExtractionPars),
+                                       m_currentItemIdx);
                 p3d::mergeNextCommand();
             }
-            //p3d::setSetting(p3dSetting_sharedFeatExtractionPars, globalSetting);
+            int s = globalSetting ? 1 : 0;
+            p3d::setSetting(data, p3dSetting_sharedFeatExtractionPars, s);
         }
 
         if (ImGui::Button(P3D_ICON_RUN " Extract features")) run = true;

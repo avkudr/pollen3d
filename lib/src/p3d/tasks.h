@@ -51,10 +51,8 @@ void P3D_API deletePointCloud(Project &data, const char *lbl);
 
 // ***** Settings
 
-// const ProjectSettings &settings() const { return m_settings; }
-// entt::meta_any getSetting(const p3dSetting &name);
-// void setSetting(const p3dSetting &name, const entt::meta_any &value);
-// void setSettings(const ProjectSettings &settings) { m_settings = settings; }
+entt::meta_any getSetting(Project &project, const p3dSetting &name);
+void setSetting(Project &project, const p3dSetting &name, const entt::meta_any &value);
 
 // ***** Misc
 
@@ -62,6 +60,9 @@ void P3D_API setImageProperty(Project &             data,
                               const P3D_ID_TYPE &   propId,
                               const entt::meta_any &value,
                               std::vector<int>      imPairsIds = {});
+
+void P3D_API copyImageProperty(Project &data, const P3D_ID_TYPE &propId, int from,
+                               const std::vector<int> &to = {});
 
 void P3D_API setImagePairProperty(Project &data, const P3D_ID_TYPE &propId,
                                   const entt::meta_any &value,

@@ -13,7 +13,8 @@ int ProjectSettings::initMeta()
             .alias(alias())
             .data<&ProjectSettings::sharedFeatExtractionPars>(
                 P3D_ID_TYPE(p3dSetting_sharedFeatExtractionPars))
-            .data<&ProjectSettings::sharedMatchingPars>(P3D_ID_TYPE(p3dSetting_sharedMatchingPars));
+            .data<&ProjectSettings::sharedMatchingPars>(
+                P3D_ID_TYPE(p3dSetting_sharedMatchingPars));
 
         SERIALIZED_ADD_READ_WRITE(ProjectSettings);
     }
