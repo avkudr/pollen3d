@@ -231,8 +231,36 @@ set_target_properties( ${PROJECT_NAME}
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../_datasets/brassica DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-execute_process(COMMAND ln -sf /usr/local/bin/pollen3d_dir/pollen3d pollen3d)
-install(PROGRAMS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pollen3d DESTINATION /usr/local/bin/pollen3d_dir)
+file(WRITE ${CMAKE_BINARY_DIR}/tmp_/pollen3d_script
+    "#!/bin/sh\n"
+    "export LD_LIBRARY_PATH=/usr/local/bin/pollen3d_dir:\$LD_LIBRARY_PATH\n"
+    "/usr/local/bin/pollen3d_dir/pollen3d\n"
+    )
+file(COPY ${CMAKE_BINARY_DIR}/tmp_/pollen3d_script DESTINATION ${CMAKE_BINARY_DIR}/ FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE)
+file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/tmp_/pollen3d_script)
+
+execute_process(COMMAND ln -sf /usr/local/bin/pollen3d_dir/pollen3d_script pollen3d)
+install(FILES ${CMAKE_BINARY_DIR}/pollen3d DESTINATION /usr/local/bin/)
+
+install(PROGRAMS ${CMAKE_BINARY_DIR}/pollen3d_script DESTINATION /usr/local/bin/pollen3d_dir 
+    PERMISSIONS 
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE 
+        GROUP_READ GROUP_WRITE GROUP_EXECUTE 
+        WORLD_READ WORLD_WRITE WORLD_EXECUTE
+)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/pollen3d DESTINATION /usr/local/bin/pollen3d_dir)
+install(FILES ${P3D_LIB_DIR}/libp3d.so DESTINATION /usr/local/bin/pollen3d_dir)
+
+# ===============================================================================================
+
+file(GLOB opencv_so "${opencv_LIB_DIRS}/*.so.3.4")
+install(FILES ${opencv_so} DESTINATION /usr/local/bin/pollen3d_dir)
+
+install( TARGETS ${PROJECT_NAME} RUNTIME DESTINATION /usr/local/bin/pollen3d_dir )
+set_target_properties( ${PROJECT_NAME} PROPERTIES INSTALL_RPATH "/usr/local/bin/pollen3d_dir" )
+
+# ===============================================================================================
+
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION /usr/local/bin/pollen3d_dir)
 install(FILES ${CMAKE_BINARY_DIR}/pollen3d DESTINATION /usr/local/bin/)
 
@@ -241,7 +269,7 @@ install(FILES ${CMAKE_BINARY_DIR}/pollen3d DESTINATION /usr/local/bin/)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 
-    string(TIMESTAMP DATETIME_NOW %Y%m%d%H%M UTC)
+    string(TIMESTAMP DATETIME_NOW %Y-%m-%d UTC)
 
     if(NOT DEFINED ARCH)
 
@@ -270,9 +298,9 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${ARCH})
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
     SET(CPACK_PACKAGE_VENDOR "AVK")
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "3D recostruction in Scanning Electron Microscope (SEM)")
-    set(CPACK_PACKAGE_DESCRIPTION "3D recostruction in Scanning Electron Microscope (SEM)")
-    set(CPACK_PACKAGE_CONTACT "Andrey Kudryavtsev, andrey.kudryavtsev at gmail.com")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "3D reconstruction in Scanning Electron Microscope (SEM)")
+    set(CPACK_PACKAGE_DESCRIPTION "3D reconstruction in Scanning Electron Microscope (SEM)")
+    set(CPACK_PACKAGE_CONTACT "Andrey Kudryavtsev, andrey.kudryavtsev.24 at gmail.com")
 
     set(PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}")
 
