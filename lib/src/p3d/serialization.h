@@ -59,7 +59,6 @@ static void _read(cv::FileNode& node, P3D_ID_TYPE& id, Type& v)
     }
     node[name] >> t;
     v = t;
-    std::cout << "_read(cv::FileNode& node: " << id << "| " << t << std::endl;
 }
 
 template <typename Type>

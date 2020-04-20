@@ -22,7 +22,7 @@ mkdir 3rdparty_bin
 cd 3rdparty_bin
 conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan remote add camposs "https://conan.campar.in.tum.de/api/conan/conan-camposs"
-conan install .. -s build_type=Release --build=missing -s cppstd=17
+conan install .. -s build_type=Release --build=missing -s compiler.libcxx=libstdc++11
 cd ..
 
 mkdir build && cd build
