@@ -149,8 +149,8 @@ TEST(MISC, test_pointCloudCtnrCmds)
         auto& pcd = ctnr["random"];
         int nbPts = 10;
         Mat3Xf verts = Mat3Xf::Random(3, nbPts);
-        p3d::cmder::executeCommand(new CommandSetProperty(
-            &pcd, P3D_ID_TYPE(p3dPointCloud_vertices), verts, true));
+        p3d::cmder::executeCommand(new CommandSetProperty{
+            &pcd, P3D_ID_TYPE(p3dPointCloud_vertices), verts, true});
 
         EXPECT_EQ(pcd.nbPoints(), nbPts);
         EXPECT_EQ(ctnr["random"].nbPoints(), nbPts);

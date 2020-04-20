@@ -1,7 +1,5 @@
 #include "viewer3d_opengl.h"
 
-#include <filesystem>
-
 #include "p3d/logger.h"
 
 #include "pcd_view_opengl.h"

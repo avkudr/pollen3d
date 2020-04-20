@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 project( p3d )
 
+# message("Your C++ compiler supports these C++ features:")
+# foreach(i ${CMAKE_CXX_COMPILE_FEATURES})
+#   message("${i}")
+# endforeach()
+
 include ( CMakePackageConfigHelpers )
 
 #==============================================================================
@@ -207,8 +212,7 @@ target_include_directories(${p3d_tests}
 
 target_link_libraries(${p3d_tests}
     PUBLIC
-        gtest
-        gtest_main
+        ${gtest_LIBS}
         ${opencv_LIBS}
         OpenMP::OpenMP_CXX
         ${Eigen3_LIBS}

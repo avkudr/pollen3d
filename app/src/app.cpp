@@ -1,6 +1,5 @@
 #include "app.h"
 
-#include <filesystem>
 #include <future>
 
 #include "../assets/fonts/IconsFontAwesome5.h"

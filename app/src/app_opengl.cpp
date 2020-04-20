@@ -1,7 +1,5 @@
 #include "app_opengl.h"
 
-#include <filesystem>
-
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 

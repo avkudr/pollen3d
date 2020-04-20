@@ -198,7 +198,8 @@ set(P3D_LIB_DIR ${GLOBAL_BINARY_DIR}/lib)
 set(P3D_INCLUDE_DIR ${GLOBAL_SOURCE_DIR}/lib/src)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${P3D_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TARGET_LIBS} ${P3D_LIB_DIR}/${P3D_LIB_NAME} )
+link_directories(${P3D_LIB_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TARGET_LIBS} ${P3D_LIB_NAME} )
 
 set(P3D_LIB_POSTFIX "")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

@@ -194,7 +194,7 @@ bool p3d::matchFeatures(Project &data, std::vector<int> imPairsIds)
             continue;
         }
 
-        auto cmd = new CommandSetProperty(imPair, p3dImagePair_matches, matchesPair);
+        auto cmd = new CommandSetProperty{imPair, p3dImagePair_matches, matchesPair};
 
 #pragma omp critical
         {
@@ -240,9 +240,11 @@ bool p3d::findFundamentalMatrix(Project &data, std::vector<int> imPairsIds)
         double theta1 = angles.first;
         double theta2 = angles.second;
 
-        auto cmd1 = new CommandSetProperty(data.imagePair(i), p3dImagePair_fundMat, F);
-        auto cmd2 = new CommandSetProperty(data.imagePair(i), p3dImagePair_Theta1, theta1);
-        auto cmd3 = new CommandSetProperty(data.imagePair(i), p3dImagePair_Theta2, theta2);
+        auto cmd1 = new CommandSetProperty{data.imagePair(i), p3dImagePair_fundMat, F};
+        auto cmd2 =
+            new CommandSetProperty{data.imagePair(i), p3dImagePair_Theta1, theta1};
+        auto cmd3 =
+            new CommandSetProperty{data.imagePair(i), p3dImagePair_Theta2, theta2};
 #pragma omp critical
         {
             groupCmd->add(cmd1);
@@ -321,16 +323,16 @@ bool p3d::rectifyImagePairs(Project &data, std::vector<int> imPairsIds)
         //        imPair->setRectifiedImageL(rectif.imLrect);
         //        imPair->setRectifiedImageR(rectif.imRrect);
 
-        auto cmd1 = new CommandSetProperty(
-            imPair, p3dImagePair_rectifyingTransformLeft, rectif.Tl);
-        auto cmd2 = new CommandSetProperty(
-            imPair, p3dImagePair_rectifyingTransformRight, rectif.Tr);
-        auto cmd3 = new CommandSetPropertyCV(
-            imPair, &ImagePair::setRectifiedImageL,
-            &ImagePair::getRectifiedImageL, rectif.imLrect);
-        auto cmd4 = new CommandSetPropertyCV(
-            imPair, &ImagePair::setRectifiedImageR,
-            &ImagePair::getRectifiedImageR, rectif.imRrect);
+        auto cmd1 = new CommandSetProperty{imPair, p3dImagePair_rectifyingTransformLeft,
+                                           rectif.Tl};
+        auto cmd2 = new CommandSetProperty{imPair, p3dImagePair_rectifyingTransformRight,
+                                           rectif.Tr};
+        auto cmd3 =
+            new CommandSetPropertyCV{imPair, &ImagePair::setRectifiedImageL,
+                                     &ImagePair::getRectifiedImageL, rectif.imLrect};
+        auto cmd4 =
+            new CommandSetPropertyCV{imPair, &ImagePair::setRectifiedImageR,
+                                     &ImagePair::getRectifiedImageR, rectif.imRrect};
 
 #pragma omp critical
         {
@@ -384,9 +386,9 @@ bool p3d::findDisparityMap(Project &data, std::vector<int> imPairsIds)
             continue;
         }
 
-        auto cmd = new CommandSetPropertyCV(
-            data.imagePair(i), &ImagePair::setDisparityMap,
-            &ImagePair::getDisparityMap, disparityMap);
+        auto cmd =
+            new CommandSetPropertyCV{data.imagePair(i), &ImagePair::setDisparityMap,
+                                     &ImagePair::getDisparityMap, disparityMap};
 
 #pragma omp critical
         {
@@ -433,9 +435,8 @@ void p3d::filterDisparityBilateral(Project &data, std::vector<int> imPairsIds)
             continue;
         }
 
-        auto cmd =
-            new CommandSetPropertyCV(imPair, &ImagePair::setDisparityMap,
-                                     &ImagePair::getDisparityMap, mFiltered);
+        auto cmd = new CommandSetPropertyCV{imPair, &ImagePair::setDisparityMap,
+                                            &ImagePair::getDisparityMap, mFiltered};
 #pragma omp critical
         {
             groupCmd->add(cmd);
@@ -493,7 +494,7 @@ void p3d::findMeasurementMatrixFull(Project &data)
     }
     //data.setMeasurementMatrixFull(Wfull);
     p3d::cmder::executeCommand(
-        new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_measMatFull), Wfull));
+        new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMatFull), Wfull});
     LOG_OK("Full measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
 }
 
@@ -516,7 +517,7 @@ void p3d::findMeasurementMatrix(Project &data)
 
     //data.setMeasurementMatrix(W);
     p3d::cmder::executeCommand(
-        new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_measMat), W));
+        new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMat), W});
     LOG_OK("Measurement matrix: %ix%i", W.rows(), W.cols());
 }
 
@@ -629,7 +630,6 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
     CommandGroup *groupCmd = new CommandGroup();
-
 #ifdef WITH_OPENMP
     omp_set_num_threads(
         std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
@@ -696,10 +696,10 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
         {
             if (data.pointCloudCtnr().contains(newPcd)) {
                 auto &pcd = data.pointCloudCtnr()[newPcd];
-                groupCmd->add(new CommandSetProperty(
-                    &pcd, p3dPointCloud_vertices, result));
-                groupCmd->add(new CommandSetProperty(&pcd, p3dPointCloud_colors,
-                                                     colorsMat));
+                groupCmd->add(
+                    new CommandSetProperty{&pcd, p3dPointCloud_vertices, result});
+                groupCmd->add(
+                    new CommandSetProperty{&pcd, p3dPointCloud_colors, colorsMat});
             } else {
                 groupCmd->add(new CommandPointCloudAdd(
                     &data.pointCloudCtnr(), newPcd, result, colorsMat));
@@ -805,7 +805,7 @@ void p3d::triangulateDenseDev(Project &data)
     utils::convert(pts3D, result);
 
     //    p3d::cmder::executeCommand(
-    //        new CommandSetProperty(&data, P3D_ID_TYPE(p3dProject_pts3DDense),
+    //        new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_pts3DDense),
     //        result, true));
 
     LOG_OK("Triangulated %i points", pts3D.size());
@@ -917,7 +917,7 @@ entt::meta_any p3d::getSetting(Project &project, const p3dSetting &name)
 void p3d::setSetting(Project &project, const p3dSetting &id, const entt::meta_any &value)
 {
     auto s = project.settings();
-    p3d::cmder::executeCommand(new CommandSetProperty(s, P3D_ID_TYPE(id), value));
+    p3d::cmder::executeCommand(new CommandSetProperty{s, P3D_ID_TYPE(id), value});
 }
 
 void p3d::setImageProperty(Project &data, const P3D_ID_TYPE &propId,
@@ -934,7 +934,7 @@ void p3d::setImageProperty(Project &data, const P3D_ID_TYPE &propId,
         auto im = data.image(i);
         if (!im) continue;
 
-        group->add(new CommandSetProperty(im, propId, value));
+        group->add(new CommandSetProperty{im, propId, value});
     }
 
     if (group->empty())
@@ -957,7 +957,7 @@ void p3d::setImagePairProperty(Project &data, const P3D_ID_TYPE &propId,
         auto imPair = data.imagePair(i);
         if (!imPair) continue;
 
-        group->add(new CommandSetProperty(imPair, propId, value));
+        group->add(new CommandSetProperty{imPair, propId, value});
     }
 
     if (group->empty())
@@ -993,7 +993,7 @@ void p3d::copyImageProperty(Project &projectData, const P3D_ID_TYPE &propId, int
         auto imPair = projectData.image(idx);
         if (imPair == nullptr) continue;
 
-        groupCmd->add(new CommandSetProperty(imPair, propId, setting));
+        groupCmd->add(new CommandSetProperty{imPair, propId, setting});
     }
 
     if (groupCmd->empty())
@@ -1034,7 +1034,7 @@ void p3d::copyImagePairProperty(Project &projectData, const P3D_ID_TYPE &propId,
         auto imPair = projectData.imagePair(idx);
         if (imPair == nullptr) continue;
 
-        groupCmd->add(new CommandSetProperty(imPair, propId, setting));
+        groupCmd->add(new CommandSetProperty{imPair, propId, setting});
     }
 
     if (groupCmd->empty())
