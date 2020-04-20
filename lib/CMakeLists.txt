@@ -205,12 +205,6 @@ target_include_directories(${p3d_tests}
         ${Eigen3_INCLUDE_DIR}
 )
 
-target_link_directories(${p3d_tests}
-    PUBLIC
-        ${gtest_LIB_DIRS}
-        ${ceres-solver_LIB_DIRS}
-)
-
 target_link_libraries(${p3d_tests}
     PUBLIC
         gtest

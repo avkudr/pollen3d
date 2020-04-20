@@ -41,7 +41,7 @@ set(ImGui_FOUND true)
 set(ImGui_LIBS ${OPENGL_LIBRARIES} ${glfw_LIBS} ${glad_LIBS})
 set(ImGui_INCLUDE_DIR ${OPENGL_INCLUDE_DIR} ${glfw_INCLUDE_DIR} ${glad_INCLUDE_DIR})
 
-add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_GLAD)
+add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 if (ImGui_FOUND)
     set(SOURCES_GUI
@@ -52,7 +52,7 @@ if (ImGui_FOUND)
         ${ImGui_DIR}/examples/imgui_impl_opengl3.cpp
         )
     set(POLLEN3D_OPENGL ON)
-    add_compile_definitions(POLLEN3D_OPENGL)
+    add_definitions(-DPOLLEN3D_OPENGL)
 else()
     message("Can't find any ImGui backend")
 endif()
