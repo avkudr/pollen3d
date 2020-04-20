@@ -60,6 +60,7 @@ public:
 
 protected:
     virtual void setWindowTitleImpl(std::string str) = 0;
+    void saveProject();
 
     void _drawMenuBar(int width);
     void _drawControls();

@@ -196,6 +196,16 @@ void Application::draw(int width, int height)
     ImGui::Render();
 }
 
+void Application::saveProject()
+{
+    std::string path = m_projectData.getProjectPath();
+    if (path == "") path = saveProjectDialog();
+    if (path != "") {
+        auto f = [&](const std::string &path) { p3d::saveProject(&m_projectData, path); };
+        HeavyTask::run(f, path);
+    }
+}
+
 void Application::_drawMenuBar(int width)
 {
     static bool showImGuiMetrics = false;
@@ -207,8 +217,7 @@ void Application::_drawMenuBar(int width)
     ImGui::Begin("##tab-widget", nullptr,
                  ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar |
-                     ImGuiWindowFlags_MenuBar |
-                     ImGuiWindowFlags_NoBringToFrontOnFocus);
+                     ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     if (ImGui::BeginMenuBar()) {
         //        if (ImGui::BeginMenu("File")) {
@@ -262,17 +271,7 @@ void Application::_drawMenuBar(int width)
         m_currentTabForce = Tab_Image;
     }
     ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_SAVE " Save", buttonRect)) {
-        std::string path = m_projectData.getProjectPath();
-        if (path == "") path = saveProjectDialog();
-        if (path != "") {
-            auto f = [&](const std::string &path) {
-                p3d::saveProject(&m_projectData, path);
-                _resetAppState();
-            };
-            HeavyTask::run(f, path);
-        }
-    }
+    if (ImGui::Button(ICON_FA_SAVE " Save", buttonRect)) { saveProject(); }
     ImGui::SameLine();
     if (ImGui::Button("Save as...", buttonRect)) {
         auto file = saveProjectDialog();
@@ -1444,11 +1443,7 @@ void Application::_processKeyboardInput()
     ImGuiIO &io = ImGui::GetIO();
     if (io.KeyCtrl) {
         if (ImGui::IsKeyPressed('s') || ImGui::IsKeyPressed('S')) {
-            std::string path = m_projectData.getProjectPath();
-            if (path == "") path = saveProjectDialog();
-            if (path != "") {
-                HeavyTask::run([&]() { p3d::saveProject(&m_projectData, path); });
-            }
+            saveProject();
         } else if (ImGui::IsKeyPressed('t') || ImGui::IsKeyPressed('T')) {
             m_showConsole = !m_showConsole;
         } else if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
