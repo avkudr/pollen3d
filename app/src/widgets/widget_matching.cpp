@@ -64,16 +64,21 @@ void WidgetMatching::drawImpl(Project& data)
             needsUpdate = true;
         }
 
-        bool globalSetting = false;
-        // p3d::getSetting(p3dSetting_shaderMatchingPars).cast<bool>();
+        // ***** are setting shared?
+
+        const auto propID = p3dSetting_sharedMatchingPars;
+        bool globalSetting = p3d::getSetting(data, propID).cast<int>() > 0;
         if (ImGui::Checkbox("shared parameters##matching", &globalSetting)) {
             if (globalSetting == true) {
                 p3d::copyImagePairProperty(data, p3dImagePair_matchingPars,
-                                                             m_currentItemIdx);
+                                           m_currentItemIdx);
                 p3d::mergeNextCommand();
             }
-            //p3d::setSetting(p3dSetting_sharedMatchingPars, globalSetting);
+            int s = globalSetting ? 1 : 0;
+            p3d::setSetting(data, propID, s);
         }
+
+        // ***** smth changed?
 
         if (needsUpdate) {
             std::vector<int> pairsToUpdate = {};

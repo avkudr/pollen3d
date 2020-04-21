@@ -19,19 +19,18 @@ void ImGuiC::PopDisabled()
     ImGui::PopStyleVar();
 }
 
-
-void ImGuiC::ItemCircle(const char *label, const ImVec2 & pt, float radius, const ImU32 & color32)
+void ImGuiC::ItemCircle(const char *label, const ImVec2 &pt, float radius,
+                        const ImU32 &color32)
 {
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    const float size = radius*1.5f;
+    ImGuiWindow *window = ImGui::GetCurrentWindow();
+    const float size = radius * 1.5f;
     const ImRect leftCircle(pt.x - size, pt.y - size, pt.x + size, pt.y + size);
     ImGui::ItemSize(leftCircle, 0);
     const ImGuiID id = window->GetID(label);
     ImGui::ItemAdd(leftCircle, id);
 
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
     draw_list->AddCircle(pt, radius, color32, 6, 2);
-
 }
 
 void ImGuiC::HelpMarker(const char *desc, bool sameLine)
@@ -39,8 +38,7 @@ void ImGuiC::HelpMarker(const char *desc, bool sameLine)
     if (sameLine) ImGui::SameLine();
     ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
     ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered())
-    {
+    if (ImGui::IsItemHovered()) {
         ImGui::BeginTooltip();
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
         ImGui::TextUnformatted(desc);
@@ -80,13 +78,13 @@ bool ImGuiC::Collapsing(const char *label, bool *btnRun, bool *btnRunAll)
         auto LastItemRectMaxx = window->DC.LastItemRect.Max.x;
         float button_y = window->DC.LastItemRect.Min.y;
 
-        float button1_x = ImMax(
-            LastItemRectMinx,
-            LastItemRectMaxx - g.Style.FramePadding.x * 2.0f - button_size);
+        float button1_x =
+            ImMax(LastItemRectMinx,
+                  LastItemRectMaxx - g.Style.FramePadding.x * 2.0f - button_size);
 
-        float button2_x = ImMax(
-            LastItemRectMinx, LastItemRectMaxx - g.Style.FramePadding.x * 3.0f -
-                                  2.0f * button_size);
+        float button2_x =
+            ImMax(LastItemRectMinx,
+                  LastItemRectMaxx - g.Style.FramePadding.x * 3.0f - 2.0f * button_size);
         if (btnRun) {
             float button_x = btnRunAll ? button2_x : button1_x;
             if (RunButton(window->GetID((void *)((intptr_t)id + 1)),
@@ -122,8 +120,8 @@ bool ImGuiC::RunButton(ImGuiID id, const ImVec2 &pos,
     // Alt,Right,Validate sequence close a window. (this isn't the regular
     // behavior of buttons, but it doesn't affect the user much because
     // navigation tends to keep items visible).
-    const ImRect bb(pos, pos + ImVec2(g.FontSize, g.FontSize) +
-                             g.Style.FramePadding * 2.0f);
+    const ImRect bb(pos,
+                    pos + ImVec2(g.FontSize, g.FontSize) + g.Style.FramePadding * 2.0f);
     bool is_clipped = !ItemAdd(bb, id);
 
     bool hovered, held;
@@ -131,15 +129,13 @@ bool ImGuiC::RunButton(ImGuiID id, const ImVec2 &pos,
     if (is_clipped) return pressed;
 
     // Render
-    ImU32 col =
-        GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
+    ImU32 col = GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
     ImVec2 center = bb.GetCenter();
     auto radius = ImMax(2.0f, g.FontSize * 0.5f + 1.0f);
     if (hovered) {
         window->DrawList->AddCircleFilled(center, radius, col, 12);
         if (icon == P3D_ICON_RUN) {
-            ImGui::SetTooltip(
-                "Run the task for current item (image, pair, etc.)");
+            ImGui::SetTooltip("Run the task for current item (image, pair, etc.)");
         } else if (icon == P3D_ICON_RUNALL) {
             ImGui::SetTooltip("Run the task for all items (images, pairs)");
         }
@@ -148,8 +144,7 @@ bool ImGuiC::RunButton(ImGuiID id, const ImVec2 &pos,
     float fontScale = 0.8;
     float cross_extent = g.FontSize * 0.5f * 0.7071f - 1.0f;
     ImU32 cross_col = GetColorU32(ImGuiCol_Text);
-    center += ImVec2(1.0 - g.FontSize * fontScale * 0.5f,
-                     -g.FontSize * fontScale * 0.5f);
+    center += ImVec2(1.0 - g.FontSize * fontScale * 0.5f, -g.FontSize * fontScale * 0.5f);
     auto font = ImGui::GetFont();
     window->DrawList->AddText(font, g.FontSize * 0.8, center, cross_col, icon,
                               icon + strlen(icon));
@@ -159,6 +154,7 @@ bool ImGuiC::RunButton(ImGuiID id, const ImVec2 &pos,
 void ImGuiC::HoveredTooltip(const char *desc)
 {
     ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.8);
     if (ImGui::IsItemHovered()) {
         ImGui::BeginTooltip();
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -166,6 +162,7 @@ void ImGuiC::HoveredTooltip(const char *desc)
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
     }
+    ImGui::PopStyleVar();
     ImGui::PopItemFlag();
 }
 
