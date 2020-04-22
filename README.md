@@ -1,4 +1,4 @@
-# ![pollen3d Logo](assets/pollen3d_icon64.png) pollen3d
+# ![pollen3d Logo](app/assets/pollen3d_icon64.png) pollen3d
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
@@ -20,9 +20,12 @@ cd pollen3d
 # install dependencies if needed
 mkdir 3rdparty_bin
 cd 3rdparty_bin
-conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+conan remote add bincrafters "https://api.bintray.com/conan/bincrafters/public-conan"
 conan remote add camposs "https://conan.campar.in.tum.de/api/conan/conan-camposs"
+#unix
 conan install .. -s build_type=Release --build=missing -s compiler.libcxx=libstdc++11
+#windows
+conan install .. -s build_type=Release --build=missing -s compiler.cppstd=14
 cd ..
 
 mkdir build && cd build

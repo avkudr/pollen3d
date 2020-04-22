@@ -221,12 +221,28 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD        # Adds a post-build 
 
 # ===========================================================================================================
 
-set_target_properties( ${PROJECT_NAME}
-    PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin
-)
+if ( MSVC )
+    set_target_properties( ${p3d_lib} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib )
+    set_target_properties( ${p3d_lib} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/lib )
+    set_target_properties( ${p3d_lib} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/lib )
+    set_target_properties( ${p3d_lib} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib )
+    set_target_properties( ${p3d_lib} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/lib )
+    set_target_properties( ${p3d_lib} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/lib )
+    set_target_properties( ${p3d_lib} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin )
+    set_target_properties( ${p3d_lib} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}/bin )
+    set_target_properties( ${p3d_lib} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR}/bin )
+    # etc for the other available configuration types (MinSizeRel, RelWithDebInfo)
+endif ( MSVC )
+
+# ==== copy files needed for execution =======================================================================
+
+if (MSVC)
+file(GLOB pollen3d_deps_dlls "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin/*.dll")
+file(COPY ${pollen3d_deps_dlls} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+elseif(APPLE)
+file(GLOB pollen3d_deps_dlls "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin/*.dylib")
+file(COPY ${pollen3d_deps_dlls} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
+endif()
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../_datasets/brassica DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
