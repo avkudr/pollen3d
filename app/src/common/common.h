@@ -37,7 +37,7 @@ static std::string openProjectDialog()
     std::string ext = "*" + std::string(P3D_PROJECT_EXTENSION);
     char const *lFilterPatterns[] = {ext.c_str()};
 
-    lTheOpenFileName = tinyfd_openFileDialog("Load images...", "", 1,
+    lTheOpenFileName = tinyfd_openFileDialog("Open project...", "", 1,
                                              lFilterPatterns, nullptr, 0);
     if (!lTheOpenFileName) return "";
 
