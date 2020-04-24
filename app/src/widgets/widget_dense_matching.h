@@ -8,7 +8,7 @@
 class WidgetDenseMatching : public Widget
 {
 public:
-    WidgetDenseMatching() {}
+    WidgetDenseMatching(AppState * appState) : Widget(appState) {}
 
 private:
     void drawImpl(p3d::Project& data) override;

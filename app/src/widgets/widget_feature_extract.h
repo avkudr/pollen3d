@@ -8,7 +8,7 @@
 class WidgetFeatureExtract : public Widget
 {
 public:
-    WidgetFeatureExtract() {}
+    WidgetFeatureExtract(AppState * appState) : Widget(appState){}
 
 private:
     void drawImpl(p3d::Project& data) override;

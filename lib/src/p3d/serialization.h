@@ -157,9 +157,10 @@ static void _readEigen(cv::FileNode& node, P3D_ID_TYPE& id, Eigen::Matrix<Type, 
     cv::Mat temp;
     if (node[name].empty()) return;
     node[name] >> temp;
-    Eigen::Matrix<Type, SizeX, SizeY> out;
+    Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> out;
     if (temp.empty()) return;
     out.setZero(temp.rows, temp.cols);
+
     cv::cv2eigen(temp, out);
     mat = out;
 }
@@ -193,10 +194,14 @@ static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE& id, std::vector<Eigen
     for (auto it = n.begin(); it != n.end(); ++it) {
         cv::Mat t;
         (*it)["M"] >> t;
-        Eigen::Matrix<Type, SizeX, SizeY> a;
-        a.setZero();
-        cv::cv2eigen(t, a);
-        temp.emplace_back(a);
+        Eigen::Matrix<Type, SizeX, SizeY> b;
+        b.setZero();
+        if (!t.empty()) {
+            Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> a;
+            cv::cv2eigen(t, a);
+            b = a;
+        }
+        temp.emplace_back(b);
     }
     out = temp;
 }

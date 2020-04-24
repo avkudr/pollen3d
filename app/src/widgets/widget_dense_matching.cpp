@@ -4,15 +4,18 @@
 #include "p3d/project.h"
 #include "p3d/tasks.h"
 
+#include "../common/app_state.h"
 #include "../common/common.h"
 #include "../common/imgui_custom.h"
+#include "../widgets/heavy_task.h"
 
 using namespace p3d;
 
 void WidgetDenseMatching::drawImpl(Project& data)
 {
     bool disabled = false;
-    auto imPair = data.imagePair(m_currentItemIdx);
+    int currentPair = m_appState ? m_appState->itemIdx() : 0;
+    auto imPair = data.imagePair(currentPair);
     if (imPair == nullptr)
         disabled = true;
     else if (!imPair->isRectified())
@@ -85,11 +88,13 @@ void WidgetDenseMatching::drawImpl(Project& data)
         if (ImGui::Button("Dense match")) run = true;
         ImGui::SameLine();
         if (ImGui::Button("ALL##densematch")) runAll = true;
-        ImGui::Separator();
 
         bool disableButtons = disabled || !imPair->hasDisparityMap();
         if (disableButtons) ImGuiC::PushDisabled();
 
+#ifdef POLLEN3D_DEBUG
+/*
+        ImGui::Separator();
         ImGui::Text("Bilateral filter: ");
         {
             auto bilateralD = denseMatchingPars.bilateralD;
@@ -137,8 +142,6 @@ void WidgetDenseMatching::drawImpl(Project& data)
         ImGui::SameLine();
         if (ImGui::Button("ALL##bilateral")) runBilateralAll = true;
 
-#ifdef POLLEN3D_DEBUG
-/*
         ImGui::Separator();
         ImGui::Text("Speckles filter: ");
         {
@@ -180,7 +183,7 @@ void WidgetDenseMatching::drawImpl(Project& data)
         bool globalSetting = false;
         if (needsUpdate) {
             std::vector<int> pairsToUpdate = {};
-            if (!globalSetting) pairsToUpdate = {m_currentItemIdx};
+            if (!globalSetting) pairsToUpdate = {currentPair };
             p3d::setImagePairProperty(data, p3dImagePair_denseMatchingPars,
                                       denseMatchingPars, pairsToUpdate);
         }
@@ -191,17 +194,30 @@ void WidgetDenseMatching::drawImpl(Project& data)
 
     if (disabled) ImGuiC::PopDisabled();
 
-    m_tasks.clear();
-    if (run)
-        m_tasks.insert("run");
-    else if (runAll)
-        m_tasks.insert("run_all");
-    else if (runBilateral)
-        m_tasks.insert("run_bilateral");
-    else if (runBilateralAll)
-        m_tasks.insert("run_bilateral_all");
-    else if (runFilterSpeckles)
-        m_tasks.insert("run_filter_speckles");
-    else if (runFilterSpecklesAll)
-        m_tasks.insert("run_filter_speckles_all");
+    auto fDisp = [&](const std::vector<int> &imIds = {}) {
+        bool success = p3d::findDisparityMap(data, imIds);
+        if (success && m_appState) {
+            m_appState->setSection(Section_DisparityMap);
+            m_appState->setTextureNeedsUpdate(true);
+        }
+    };
+
+    auto fBilateral = [&](const std::vector<int> &imIds = {}) {
+        p3d::filterDisparityBilateral(data, imIds);
+        m_appState->setTextureNeedsUpdate(true);
+    };
+
+    auto fSpeckles = [&](const std::vector<int> &imIds = {}) {
+        p3d::filterDisparitySpeckles(data, imIds);
+        m_appState->setTextureNeedsUpdate(true);
+    };
+
+    const std::vector<int> imgs = {currentPair };
+
+    if      (run) {                  HeavyTask::run(fDisp,imgs); }
+    else if (runAll) {               HeavyTask::run(fDisp); }
+    else if (runBilateral) {         HeavyTask::run(fBilateral,imgs); }
+    else if (runBilateralAll) {      HeavyTask::run(fBilateral); }
+    else if (runFilterSpeckles) {    HeavyTask::run(fSpeckles,imgs); }
+    else if (runFilterSpecklesAll) { HeavyTask::run(fSpeckles); }
 }

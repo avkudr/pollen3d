@@ -30,12 +30,10 @@ Application::Application()
     m_widgetLogger = std::make_shared<WidgetLogger>();
     p3d::logger::set(m_widgetLogger);
 
-    m_widgetFeat = std::make_unique<WidgetFeatureExtract>();
-    m_widgetMatching = std::make_unique<WidgetMatching>();
-    m_widgetDenseMatching = std::make_unique<WidgetDenseMatching>();
+    m_widgetFeat = std::make_unique<WidgetFeatureExtract>(&m_state);
+    m_widgetMatching = std::make_unique<WidgetMatching>(&m_state);
+    m_widgetDenseMatching = std::make_unique<WidgetDenseMatching>(&m_state);
     LOG_OK("Welcome to pollen3d!");
-
-    m_execPath = utils::getExecPath();
 }
 
 void Application::initImGui()
@@ -50,7 +48,7 @@ void Application::initImGui()
     std::string font = "SourceSansPro-Regular.ttf";
     std::string fontMono = "UbuntuMono-R.ttf";
 
-    std::string pathToFonts = m_execPath + "/assets/fonts/";
+    std::string pathToFonts = utils::getExecPath() + "/assets/fonts/";
     io.Fonts->AddFontFromFileTTF(std::string(pathToFonts + font).c_str(),
                                  18.0f);
 
@@ -190,9 +188,9 @@ void Application::draw(int width, int height)
     // **** subroutine for async execution of heavy tasks
     HeavyTask::draw(m_fontMonoSmall);
 
-    _processKeyboardInput();
-
     ImGui::Render();
+
+    _processKeyboardInput();
 }
 
 void Application::saveProject()
@@ -262,7 +260,7 @@ void Application::_drawMenuBar(int width)
         if (!files.empty()) {
             auto f = [&](const std::vector<std::string> &files) {
                 p3d::loadImages(m_projectData, files);
-                if (!m_projectData.empty()) m_currentImage = 0;
+                if (!m_projectData.empty()) m_state.setItemIdx(0);
                 _resetAppState();
             };
             HeavyTask::run(f, files);
@@ -325,21 +323,21 @@ void Application::_drawMenuBar(int width)
     ImGui::Dummy(ImVec2(20, buttonH));
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_IMAGE "", buttonSquare)) {
-        if (m_currentTab != Tab_Image) _resetAppState();
+        if (m_state.isTab(Tab_Image)) _resetAppState();
         m_currentTabForce = Tab_Image;
     }
     ImGuiC::HoveredTooltip("Set current view: image");
 
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_IMAGES "", buttonSquare)) {
-        if (m_currentTab != Tab_Stereo) _resetAppState();
+        if (m_state.isTab(Tab_Stereo)) _resetAppState();
         m_currentTabForce = Tab_Stereo;
     }
     ImGuiC::HoveredTooltip("Set current view: image pairs");
     ImGui::SameLine();
 
     if (ImGui::Button(ICON_FA_LAYER_GROUP "", buttonSquare)) {
-        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
+        if (!m_state.isTab({Tab_Multiview, Tab_PointCloud}))
             _resetAppState();
         m_currentTabForce = Tab_Multiview;
     }
@@ -347,7 +345,7 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
 
     if (ImGui::Button(ICON_FA_CLOUD "", buttonSquare)) {
-        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
+        if (!m_state.isTab({Tab_Multiview, Tab_PointCloud}))
             _resetAppState();
         m_currentTabForce = Tab_PointCloud;
     }
@@ -377,7 +375,7 @@ void Application::_drawMenuBar(int width)
 
         auto f = [&, imPaths]() {
             p3d::loadImages(m_projectData, imPaths);
-            if (!m_projectData.empty()) m_currentImage = 0;
+            if (!m_projectData.empty()) m_state.setItemIdx(0);
             _resetAppState();
         };
         HeavyTask::run(f);
@@ -387,7 +385,7 @@ void Application::_drawMenuBar(int width)
         auto f = [&]() {
             p3d::openProject(&m_projectData,
                              "test_project" + std::string(P3D_PROJECT_EXTENSION));
-            m_currentImage = 0;
+            m_state.setItemIdx(0);
             _resetAppState();
         };
         HeavyTask::run(f);
@@ -397,7 +395,7 @@ void Application::_drawMenuBar(int width)
         auto f = [&]() {
             p3d::openProject(&m_projectData,
                              "test_project2" + std::string(P3D_PROJECT_EXTENSION));
-            m_currentImage = 0;
+            m_state.setItemIdx(0);
             _resetAppState();
         };
         HeavyTask::run(f);
@@ -407,7 +405,7 @@ void Application::_drawMenuBar(int width)
         auto f = [&]() {
             p3d::openProject(&m_projectData,
                              "test_project3" + std::string(P3D_PROJECT_EXTENSION));
-            m_currentImage = 0;
+            m_state.setItemIdx(0);
             _resetAppState();
         };
         HeavyTask::run(f);
@@ -464,7 +462,7 @@ void Application::_drawControls()
 
     ImGui::SameLine();
     const char *tabName = "";
-    switch (m_currentTab) {
+    switch (m_state.tab()) {
     case Tab_Image:
         tabName = "image";
         break;
@@ -496,25 +494,13 @@ void Application::_drawTab_Image()
 
         // ***** Feature extraction (widget)
 
-        if (m_widgetFeat) {
-            m_widgetFeat->draw(m_projectData, m_currentImage);
-
-            if (m_widgetFeat->isRequested("run"))
-            {
-                auto f = [&]() { p3d::extractFeatures(m_projectData, {m_currentImage}); };
-                HeavyTask::run(f);
-            }
-            if (m_widgetFeat->isRequested("run_all"))
-            {
-                auto f = [&]() { p3d::extractFeatures(m_projectData); };
-                HeavyTask::run(f);
-            }
-        }
+        if (m_widgetFeat)
+            m_widgetFeat->draw(m_projectData);
 
         ImGui::EndTabItem();
 
-        if (!isOneOf(m_currentTab, {Tab_General, Tab_Image})) _resetAppState();
-        m_currentTab = Tab_Image;
+        if (!m_state.isTab({Tab_General, Tab_Image})) _resetAppState();
+        m_state.setTab(Tab_Image);
     }
 }
 
@@ -530,26 +516,13 @@ void Application::_drawTab_Stereo()
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
             bool disabled = false;
-            ImagePair *imPair = m_projectData.imagePair(m_currentImage);
+            ImagePair *imPair = m_projectData.imagePair(m_state.itemIdx());
             if (!imPair) disabled = true;
 
             // ***** Matching (widget)
 
-            if (m_widgetMatching) {
-                m_widgetMatching->draw(m_projectData, m_currentImage);
-
-                auto f = [&](const std::vector<int> &imIds) {
-                    bool success = p3d::matchFeatures(m_projectData, imIds);
-                    if (success) {
-                        m_currentSection = Section_Matches;
-                        m_textureNeedsUpdate = true;
-                    }
-                };
-
-                if (m_widgetMatching->isRequested("run"))
-                    HeavyTask::run(f, std::vector<int>({m_currentImage}));
-                if (m_widgetMatching->isRequested("run_all")) HeavyTask::run(f, std::vector<int>());
-            }
+            if (m_widgetMatching)
+                m_widgetMatching->draw(m_projectData);
 
             // ***** Epipolar geometry
 
@@ -573,12 +546,12 @@ void Application::_drawTab_Stereo()
                 auto f = [&](const std::vector<int> &imIds) {
                     bool success = p3d::findFundamentalMatrix(m_projectData, imIds);
                     if (success) {
-                        m_currentSection = Section_Epilines;
-                        m_textureNeedsUpdate = true;
+                        m_state.setSection(Section_Epilines);
+                        m_state.setTextureNeedsUpdate(true);
                     }
                 };
 
-                if (run) HeavyTask::run(f, std::vector<int>({m_currentImage}));
+                if (run) HeavyTask::run(f, std::vector<int>({m_state.itemIdx()}));
                 if (runAll) HeavyTask::run(f, std::vector<int>());
             }
 
@@ -607,67 +580,27 @@ void Application::_drawTab_Stereo()
                 auto f = [&](const std::vector<int> &imIds) {
                     bool success = p3d::rectifyImagePairs(m_projectData, imIds);
                     if (success) {
-                        m_currentSection = Section_Rectified;
-                        m_textureNeedsUpdate = true;
+                        m_state.setSection(Section_Rectified);
+                        m_state.setTextureNeedsUpdate(true);
                     }
                 };
 
-                if (run) HeavyTask::run(f, std::vector<int>({m_currentImage}));
+                if (run) HeavyTask::run(f, std::vector<int>({m_state.itemIdx()}));
                 if (runAll) HeavyTask::run(f, std::vector<int>());
             }
 
             // ***** Dense matching (widget)
 
-            if (m_widgetDenseMatching) {
-                m_widgetDenseMatching->draw(m_projectData, m_currentImage);
+            if (m_widgetDenseMatching)
+                m_widgetDenseMatching->draw(m_projectData);
 
-                auto fDisp = [&](const std::vector<int> &imIds) {
-                    bool success = p3d::findDisparityMap(m_projectData, imIds);
-                    if (success) {
-                        m_currentSection = Section_DisparityMap;
-                        m_textureNeedsUpdate = true;
-                    }
-                };
-
-                const auto &run = m_widgetDenseMatching->isRequested("run");
-                const auto &runall = m_widgetDenseMatching->isRequested("run_all");
-                if (run) HeavyTask::run(fDisp, std::vector<int>({m_currentImage}));
-                if (runall) HeavyTask::run(fDisp, std::vector<int>());
-
-                if (m_widgetDenseMatching->isRequested("run_bilateral")) {
-                    HeavyTask::run([&]() {
-                        p3d::filterDisparityBilateral(m_projectData, {m_currentImage});
-                        m_textureNeedsUpdate = true;
-                    });
-                }
-                if (m_widgetDenseMatching->isRequested("run_bilateral_all")) {
-                    auto f = [&]() {
-                        p3d::filterDisparityBilateral(m_projectData);
-                        m_textureNeedsUpdate = true;
-                    };
-                    HeavyTask::run(f);
-                }
-                if (m_widgetDenseMatching->isRequested("run_filter_speckles")) {
-                    HeavyTask::run([&]() {
-                        p3d::filterDisparitySpeckles(m_projectData, {m_currentImage});
-                        m_textureNeedsUpdate = true;
-                    });
-                }
-                if (m_widgetDenseMatching->isRequested(
-                        "run_filter_speckles_all")) {
-                    HeavyTask::run([&]() {
-                        p3d::filterDisparitySpeckles(m_projectData);
-                        m_textureNeedsUpdate = true;
-                    });
-                }
-            }
             ImGui::EndChild();
         }
 
         ImGui::EndTabItem();
 
-        if (m_currentTab != Tab_Stereo) _resetAppState();
-        m_currentTab = Tab_Stereo;
+        if (!m_state.isTab(Tab_Stereo)) _resetAppState();
+        m_state.setTab(Tab_Stereo);
     }
 }
 
@@ -723,7 +656,7 @@ void Application::_drawTab_Multiview()
                 if (run)
                     HeavyTask::run([&]() {
                         p3d::autocalibrate(m_projectData);
-                        m_viewer3dNeedsUpdate = true;
+                        m_state.setViewer3dNeedsUpdateFull(true);
                     });
             }
 
@@ -742,7 +675,7 @@ void Application::_drawTab_Multiview()
                     if (ImGui::Button("Triangulate dense (stereo)")) {
                         auto f = [&](int imPairIdx) {
                             p3d::triangulateDenseStereo(m_projectData, {imPairIdx});
-                            m_viewer3dNeedsUpdate = true;
+                            m_state.setViewer3dNeedsUpdateFull(true);
                         };
                         HeavyTask::run(f, imPairIdx);
                     }
@@ -750,21 +683,21 @@ void Application::_drawTab_Multiview()
                     if (ImGui::Button("ALL")) {
                         HeavyTask::run([&]() {
                             p3d::triangulateDenseStereo(m_projectData, {});
-                            m_viewer3dNeedsUpdate = true;
+                            m_state.setViewer3dNeedsUpdateFull(true);
                         });
                     }
 #ifdef POLLEN3D_DEBUG
                     if (ImGui::Button("Triangulate dense (multi-view)")) {
                         HeavyTask::run([&]() {
                             p3d::triangulateDenseDev(m_projectData);
-                            m_viewer3dNeedsUpdate = true;
+                            m_state.setViewer3dNeedsUpdateFull(true);
                         });
                     }
 
                     if (ImGui::Button("Triangulate dense (dev)")) {
                         HeavyTask::run([&]() {
                             p3d::triangulateDenseDev(m_projectData);
-                            m_viewer3dNeedsUpdate = true;
+                            m_state.setViewer3dNeedsUpdateFull(true);
                         });
                     }
 #endif
@@ -773,7 +706,7 @@ void Application::_drawTab_Multiview()
                 if (run)
                     HeavyTask::run([&]() {
                         p3d::triangulateSparse(m_projectData);
-                        m_viewer3dNeedsUpdate = true;
+                        m_state.setViewer3dNeedsUpdateFull(true);
                     });
             }
 
@@ -790,7 +723,7 @@ void Application::_drawTab_Multiview()
                 if (run)
                     HeavyTask::run([&]() {
                         p3d::bundleAdjustment(m_projectData);
-                        m_viewer3dNeedsUpdate = true;
+                        m_state.setViewer3dNeedsUpdateFull(true);
                     });
             }
 
@@ -817,9 +750,9 @@ void Application::_drawTab_Multiview()
 
         ImGui::EndTabItem();
 
-        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
+        if (!m_state.isTab({Tab_Multiview, Tab_PointCloud}))
             _resetAppState();
-        m_currentTab = Tab_Multiview;
+        m_state.setTab(Tab_Multiview);
     }
 }
 
@@ -834,7 +767,7 @@ void Application::_drawTab_PointCloud()
     if (ImGui::BeginTabItem(ICON_FA_CLOUD "", nullptr, flags)) {
         if (ImGui::BeginChild("")) {
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
-            if (ImGui::CollapsingHeader("Export", m_collapsingHeaderFlags)) {
+            if (ImGui::CollapsingHeader("Export")) {
                 std::vector<std::string> list =
                     m_projectData.getPointCloudCtnr().getAllLabels();
                 std::vector<const char *> listC;
@@ -869,17 +802,18 @@ void Application::_drawTab_PointCloud()
         }
         ImGui::EndTabItem();
 
-        if (!isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}))
+        if (!m_state.isTab({Tab_Multiview, Tab_PointCloud}))
             _resetAppState();
-        m_currentTab = Tab_PointCloud;
+        m_state.setTab(Tab_PointCloud);
     }
 }
 
 void Application::_drawData()
 {
-    if (m_currentTab == Tab_General || m_currentTab == Tab_Image) {
-        if (m_currentImage >= m_projectData.nbImages()) {
-            m_currentImage = 0;
+    int currentItem = m_state.itemIdx();
+    if (m_state.isTab({Tab_General,Tab_Image})) {
+        if (m_state.itemIdx() >= m_projectData.nbImages()) {
+            m_state.setItemIdx(0);
             _resetAppState();
         }
 
@@ -889,11 +823,11 @@ void Application::_drawData()
                 if (!imPtr) continue;
 
                 std::string entry = ICON_FA_IMAGE " " + imPtr->name();
-                if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
-                    if (m_currentImage != n) {
-                        m_currentImage = n;
-                        m_currentSection = Section_Default;
-                        m_textureNeedsUpdate = true;
+                if (ImGui::Selectable(entry.c_str(), currentItem == n)) {
+                    if (m_state.itemIdx() != n) {
+                        m_state.setItemIdx(n);
+                        m_state.setSection(Section_Default);
+                        m_state.setTextureNeedsUpdate(true);
                         LOG_DBG("Selection changed: %i", n);
                     }
                 }
@@ -903,10 +837,10 @@ void Application::_drawData()
         return;
     }
 
-    if (m_currentTab == Tab_Stereo) {
-        if (m_currentImage >= m_projectData.nbImagePairs()) {
-            m_currentImage = 0;
-            m_textureNeedsUpdate = true;
+    if (m_state.isTab(Tab_Stereo)) {
+        if (m_state.itemIdx() >= m_projectData.nbImagePairs()) {
+            m_state.setItemIdx(0);
+            m_state.setTextureNeedsUpdate(true);
         }
 
         if (ImGui::TreeNodeEx("Image pairs:", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -918,14 +852,14 @@ void Application::_drawData()
 
                 std::string entry =
                     ICON_FA_IMAGES " " + imL->name() + " <> " + imR->name();
-                if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
-                    if (m_currentImage != n ||
-                        !isOneOf(m_currentSection, {Section_Matches, Section_Epilines})) {
-                        m_currentImage = n;
-                        m_currentSection = Section_Matches;
-                        m_textureNeedsUpdate = true;
+                if (ImGui::Selectable(entry.c_str(), m_state.itemIdx() == n)) {
+                    if (m_state.itemIdx() != n ||
+                        !m_state.isSection({Section_Matches, Section_Epilines})) {
+                        m_state.setItemIdx(n);
+                        m_state.setSection(Section_Matches);
+                        m_state.setTextureNeedsUpdate(true);
                         LOG_DBG("Selection changed: %i", n);
-                        LOG_DBG(" - section: %i", m_currentSection);
+                        LOG_DBG(" - section: %i", m_state.section());
                     }
                 }
             }
@@ -943,14 +877,14 @@ void Application::_drawData()
 
                 std::string entry = ICON_FA_ALIGN_CENTER " " + imL->name() +
                                     " <> " + imR->name();
-                if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
-                    if (m_currentImage != n ||
-                        m_currentSection != Section_Rectified) {
-                        m_currentImage = n;
-                        m_currentSection = Section_Rectified;
-                        m_textureNeedsUpdate = true;
+                if (ImGui::Selectable(entry.c_str(), m_state.itemIdx() == n)) {
+                    if (m_state.itemIdx() != n ||
+                        !m_state.isSection(Section_Rectified)) {
+                        m_state.setItemIdx(n);
+                        m_state.setSection(Section_Rectified);
+                        m_state.setTextureNeedsUpdate(true);
                         LOG_DBG("Selection changed: %i", n);
-                        LOG_DBG(" - section: %i", m_currentSection);
+                        LOG_DBG(" - section: %i", m_state.section());
                     }
                 }
             }
@@ -968,14 +902,14 @@ void Application::_drawData()
 
                 std::string entry = ICON_FA_ALIGN_CENTER " " + imL->name() +
                                     " <> " + imR->name();
-                if (ImGui::Selectable(entry.c_str(), m_currentImage == n)) {
-                    if (m_currentImage != n ||
-                        m_currentSection != Section_DisparityMap) {
-                        m_currentImage = n;
-                        m_currentSection = Section_DisparityMap;
-                        m_textureNeedsUpdate = true;
+                if (ImGui::Selectable(entry.c_str(), m_state.itemIdx() == n)) {
+                    if (m_state.itemIdx() != n ||
+                        !m_state.isSection(Section_DisparityMap)) {
+                        m_state.setItemIdx(n);
+                        m_state.setSection(Section_DisparityMap);
+                        m_state.setTextureNeedsUpdate(true);
                         LOG_DBG("Selection changed: %i", n);
-                        LOG_DBG(" - section: %i", m_currentSection);
+                        LOG_DBG(" - section: %i", m_state.section());
                     }
                 }
             }
@@ -984,7 +918,7 @@ void Application::_drawData()
         return;
     }
 
-    if (m_currentTab == Tab_Multiview || m_currentTab == Tab_PointCloud) {
+    if (m_state.isTab({Tab_Multiview,Tab_PointCloud})) {
         if (ImGui::TreeNodeEx("Point clouds:",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
             auto &pcds = m_projectData.pointCloudCtnr();
@@ -998,6 +932,7 @@ void Application::_drawData()
                 w - g.Style.FramePadding.x * 3.0f - 2.0f * button_size;
             ImGuiWindow *window = ImGui::GetCurrentWindow();
 
+            int deletePcd = -1;
             for (auto &pcd : pcds) {
                 std::string lblstr = pcd.getLabel();
                 const char *lbl = lblstr.c_str();
@@ -1015,7 +950,7 @@ void Application::_drawData()
                                       ImVec2(button2_x, button_y),
                                       P3D_ICON_VISIBLE)) {
                     pcd.setVisible(!visible);
-                    m_viewer3dNeedsUpdateVisibility = true;
+                    m_state.setViewer3dNeedsUpdateVisibility(true);
                 }
                 if (!visible) ImGui::PopStyleVar();
 
@@ -1037,7 +972,7 @@ void Application::_drawData()
 
                     if (ImGui::Button("OK", ImVec2(120, 0))) {
                         p3d::deletePointCloud(m_projectData, lbl);
-                        m_viewer3dNeedsUpdate = true;
+                        m_state.setViewer3dNeedsUpdateFull(true);
                         ImGui::CloseCurrentPopup();
                     }
                     ImGui::SetItemDefaultFocus();
@@ -1046,6 +981,7 @@ void Application::_drawData()
                         ImGui::CloseCurrentPopup();
                     }
                     ImGui::EndPopup();
+                    break;
                 }
             }
             ImGui::PopStyleVar();
@@ -1059,8 +995,8 @@ void Application::_drawProperties()
 {
     ImGui::Columns(2, "mycolumns3", true);  // 2 cols with border
 
-    if (m_currentTab == Tab_General || m_currentTab == Tab_Image) {
-        auto im = m_projectData.image(m_currentImage);
+    if (m_state.isTab({Tab_General,Tab_Image})) {
+        auto im = m_projectData.image(m_state.itemIdx());
         if (!im) return;
 
         drawProperty_basic(im->getPath().c_str(), "path", "%s");
@@ -1076,8 +1012,8 @@ void Application::_drawProperties()
         return;
     }
 
-    if (m_currentTab == Tab_Stereo) {
-        auto imPair = m_projectData.imagePair(m_currentImage);
+    if (m_state.isTab(Tab_Stereo)) {
+        auto imPair = m_projectData.imagePair(m_state.itemIdx());
         if (!imPair) return;
 
         if (imPair->hasMatches())
@@ -1101,7 +1037,7 @@ void Application::_drawProperties()
         return;
     }
 
-    if (m_currentTab == Tab_Multiview) {
+    if (m_state.isTab(Tab_Multiview)) {
         const auto &Wfull = m_projectData.getMeasurementMatrixFull();
         if (Wfull.rows() > 0 && Wfull.cols() > 0)
             drawProperty_matrix(Wfull, "Wf", "Full measurement matrix");
@@ -1236,11 +1172,11 @@ void Application::_drawCentral()
     float width = ImGui::GetWindowContentRegionMax().x;
     float height = ImGui::GetWindowContentRegionMax().y;
 
-    if (isOneOf(m_currentTab, {Tab_Multiview, Tab_PointCloud}) &&
+    if (m_state.isTab({Tab_Multiview, Tab_PointCloud}) &&
         m_viewer3D != nullptr) {
         m_viewer3D->setSize(width, height);
 
-        if (m_viewer3dNeedsUpdate) {
+        if (m_state.viewer3dNeedsUpdateFull()) {
             m_viewer3D->init();
             m_viewer3D->deletePointCloudsAll();
             auto &pcds = m_projectData.getPointCloudCtnr();
@@ -1251,17 +1187,17 @@ void Application::_drawCentral()
                 LOG_DBG("Adding point cloud: %s (%i)", pcd.getLabel().c_str(),
                         pcd.getVertices().cols());
             }
-            m_viewer3dNeedsUpdate = false;
-            m_viewer3dNeedsUpdateVisibility = false;
+            m_state.setViewer3dNeedsUpdateFull(false);
+            m_state.setViewer3dNeedsUpdateVisibility(false);
         }
 
-        if (m_viewer3dNeedsUpdateVisibility) {
+        if (m_state.viewer3dNeedsUpdateVisibility()) {
             const auto &pcds = m_projectData.getPointCloudCtnr();
             for (const auto &pcd : pcds) {
                 m_viewer3D->setPointCloudVisible(pcd.getLabel(),
                                                  pcd.isVisible());
             }
-            m_viewer3dNeedsUpdateVisibility = false;
+            m_state.setViewer3dNeedsUpdateVisibility(false);
         }
 
         ImGui::PushFont(m_fontMonoSmall);
@@ -1270,7 +1206,7 @@ void Application::_drawCentral()
         return;
     }
 
-    if (isOneOf(m_currentTab, {Tab_General, Tab_Image, Tab_Stereo})) {
+    if (m_state.isTab({Tab_General, Tab_Image, Tab_Stereo})) {
         static bool showFeatures = true;
         static bool showAnimated = false;
         int controlBottomBarHeight = 35;
@@ -1281,15 +1217,15 @@ void Application::_drawCentral()
         static float featuresSize = 2.5f;
         static ImVec4 color = COLOR_GREEN;
 
-        if (m_textureNeedsUpdate) {
+        if (m_state.textureNeedsUpdate()) {
             cv::Mat matToBind;
-            if (m_currentTab == Tab_General || m_currentTab == Tab_Image) {
-                auto imPtr = m_projectData.image(m_currentImage);
+            if (m_state.isTab({Tab_General,Tab_Image})) {
+                auto imPtr = m_projectData.image(m_state.itemIdx());
                 if (imPtr) matToBind = imPtr->cvMat();
-            } else if (m_currentTab == Tab_Stereo) {
-                auto imPair = m_projectData.imagePair(m_currentImage);
+            } else if (m_state.isTab(Tab_Stereo)) {
+                auto imPair = m_projectData.imagePair(m_state.itemIdx());
                 if (imPair && imPair->isValid()) {
-                    if (isOneOf(m_currentSection, {Section_Matches, Section_Epilines})) {
+                    if (m_state.isSection({Section_Matches, Section_Epilines})) {
                         auto imIdxL = imPair->imL();
                         auto imIdxR = imPair->imR();
                         auto imL = m_projectData.image(imIdxL);
@@ -1299,13 +1235,13 @@ void Application::_drawCentral()
                             matToBind = utils::concatenateCvMat(
                                 {imL->cvMat(), imR->cvMat()},
                                 utils::CONCAT_HORIZONTAL);
-                    } else if (m_currentSection == Section_Rectified) {
+                    } else if (m_state.isSection(Section_Rectified)) {
                         const auto &imL = imPair->getRectifiedImageL();
                         const auto &imR = imPair->getRectifiedImageR();
                         if (!imL.empty() && !imR.empty())
                             matToBind = utils::concatenateCvMat(
                                 {imL, imR}, utils::CONCAT_HORIZONTAL);
-                    } else if (m_currentSection == Section_DisparityMap) {
+                    } else if (m_state.isSection(Section_DisparityMap)) {
                         auto disp = imPair->getDisparityMap();
                         DenseMatchingUtil::getDispForPlot(disp, matToBind);
                     }
@@ -1318,7 +1254,7 @@ void Application::_drawCentral()
                 m_textureHeight = 0;
                 m_textureWidth = 0;
             }
-            m_textureNeedsUpdate = false;
+            m_state.setTextureNeedsUpdate(false);
         }
 
         if (isTextureReady()) {
@@ -1350,18 +1286,18 @@ void Application::_drawCentral()
             const float posX = winPos.x + imStartX;
             const float posY = winPos.y + imStartY;
 
-            if (isOneOf(m_currentTab, {Tab_General, Tab_Image})) {
+            if (m_state.isTab({Tab_General, Tab_Image})) {
                 if (showFeatures)
                     _showFeatures(ImVec2(posX, posY), ImVec2(newW, newH), color,
                                   featuresSize);
-            } else if (m_currentTab == Tab_Stereo) {
-                if (m_currentSection == Section_Matches) {
+            } else if (m_state.isTab(Tab_Stereo)) {
+                if (m_state.isSection(Section_Matches)) {
                     _showMatches(ImVec2(posX, posY), ImVec2(newW, newH), color, lineWidth,
                                  skipEvery);
-                } else if (m_currentSection == Section_Epilines) {
+                } else if (m_state.isSection(Section_Epilines)) {
                     _showEpilines(ImVec2(posX, posY), ImVec2(newW, newH), color,
                                   lineWidth, skipEvery);
-                } else if (m_currentSection == Section_Rectified) {
+                } else if (m_state.isSection(Section_Rectified)) {
                     // just draw a horizontal line to judge the quality of
                     // rectification
                     if (ImGui::IsItemHovered()) {
@@ -1385,7 +1321,7 @@ void Application::_drawCentral()
         ImGui::SliderFloat("##image-opacity", &imageOpacity, 0.0f, 1.0f,
                            "opacity:%.2f");
         ImGui::SameLine();
-        if (isOneOf(m_currentTab, {Tab_General, Tab_Image})) {
+        if (m_state.isTab({Tab_General, Tab_Image})) {
             ImGui::Text("--");
             ImGui::SameLine();
             ImGui::Checkbox("Show features", &showFeatures);
@@ -1394,11 +1330,11 @@ void Application::_drawCentral()
             ImGui::SameLine();
             ImGui::SliderFloat("##feature-size", &featuresSize, 1.0f, 15.0f,
                                "feat_size:%.1f");
-        } else if (m_currentTab == Tab_Stereo) {
-            if (isOneOf(m_currentSection, {Section_Matches, Section_Epilines})) {
+        } else if (m_state.isTab(Tab_Stereo)) {
+            if (m_state.isSection({Section_Matches, Section_Epilines})) {
                 const int SHOW_MATCHES = 0;
                 const int SHOW_EPILINES = 1;
-                int display = m_currentSection == Section_Matches ? 0 : 1;
+                int display = m_state.isSection(Section_Matches) ? 0 : 1;
 
                 ImGui::Text("--");
                 ImGui::SameLine();
@@ -1406,7 +1342,7 @@ void Application::_drawCentral()
                 ImGui::SameLine();
                 ImGui::RadioButton("epilines", &display, 1);
 
-                m_currentSection = display == 0 ? Section_Matches : Section_Epilines;
+                m_state.setSection(display == 0 ? Section_Matches : Section_Epilines);
             }
             ImGui::SameLine();
             const char *sliderText =
@@ -1417,9 +1353,7 @@ void Application::_drawCentral()
             ImGui::SliderFloat("##lineWidth", &lineWidth, 1.0f, 5.0f,
                                "line width");
         }
-        if (isOneOf(
-                m_currentTab,
-                {Tab_General, Tab_Image}) /* || (display == SHOW_MATCHES)*/) {
+        if (m_state.isTab({Tab_General, Tab_Image}) /* || (display == SHOW_MATCHES)*/) {
             ImGui::SameLine();
             ImGui::ColorEdit4(
                 "color of features##3", (float *)&color,
@@ -1446,8 +1380,8 @@ void Application::_processKeyboardInput()
         } else if (ImGui::IsKeyPressed('t') || ImGui::IsKeyPressed('T')) {
             m_showConsole = !m_showConsole;
         } else if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
-            m_textureNeedsUpdate = true;
-            m_viewer3dNeedsUpdate = true;
+            m_state.setTextureNeedsUpdate(true);
+            m_state.setViewer3dNeedsUpdateFull(true);
             p3d::undo();
         } else if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
         }
@@ -1456,28 +1390,28 @@ void Application::_processKeyboardInput()
 
     if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
         LOG_DBG("Up pressed");
-        if (!isOneOf(m_currentTab, {Tab_General, Tab_Image, Tab_Stereo}))
+        if (!m_state.isTab({Tab_General, Tab_Image, Tab_Stereo}))
             return;
 
         int modulo = m_projectData.nbImages();
-        if (m_currentTab == Tab_Stereo) modulo = m_projectData.nbImagePairs();
+        if (m_state.isTab(Tab_Stereo)) modulo = m_projectData.nbImagePairs();
         if (modulo > 0) {
-            m_currentImage = (m_currentImage - 1 + modulo) % modulo;
-            m_textureNeedsUpdate = true;
+            m_state.setItemIdx((m_state.itemIdx() - 1 + modulo) % modulo);
+            m_state.setTextureNeedsUpdate(true);
         }
 
     } else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
         LOG_DBG("Down pressed");
 
-        if (!isOneOf(m_currentTab, {Tab_General, Tab_Image, Tab_Stereo}))
+        if (!m_state.isTab({Tab_General, Tab_Image, Tab_Stereo}))
             return;
 
         int modulo = m_projectData.nbImages();
-        if (m_currentTab == Tab_Stereo) modulo = m_projectData.nbImagePairs();
+        if (m_state.isTab(Tab_Stereo)) modulo = m_projectData.nbImagePairs();
 
         if (modulo > 0) {
-            m_currentImage = (m_currentImage + 1) % modulo;
-            m_textureNeedsUpdate = true;
+            m_state.setItemIdx((m_state.itemIdx() + 1) % modulo);
+            m_state.setTextureNeedsUpdate(true);
         }
     }
 }
@@ -1485,7 +1419,7 @@ void Application::_processKeyboardInput()
 void Application::_showFeatures(const ImVec2 &pos, const ImVec2 &size,
                                 const ImVec4 &col, float featuresSize)
 {
-    auto im = m_projectData.image(m_currentImage);
+    auto im = m_projectData.image(m_state.itemIdx());
     if (im && im->hasFeatures()) {
         const auto &keyPts = im->getKeyPoints();
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
@@ -1507,9 +1441,9 @@ void Application::_showEpilines(const ImVec2 &pos, const ImVec2 &size,
                                 int skipEvery)
 {
     std::vector<Vec2> ptsL, ptsR;
-    m_projectData.getPairwiseMatches(m_currentImage, ptsL, ptsR);
+    m_projectData.getPairwiseMatches(m_state.itemIdx(), ptsL, ptsR);
 
-    auto imPair = m_projectData.imagePair(m_currentImage);
+    auto imPair = m_projectData.imagePair(m_state.itemIdx());
     if (ptsL.empty() || ptsR.empty()) return;
 
     auto imL = m_projectData.image(imPair->imL());
@@ -1622,9 +1556,9 @@ void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size,
                                int skipEvery)
 {
     std::vector<Vec2> ptsL, ptsR;
-    m_projectData.getPairwiseMatches(m_currentImage, ptsL, ptsR);
+    m_projectData.getPairwiseMatches(m_state.itemIdx(), ptsL, ptsR);
 
-    auto imPair = m_projectData.imagePair(m_currentImage);
+    auto imPair = m_projectData.imagePair(m_state.itemIdx());
     if (ptsL.empty() || ptsR.empty()) return;
 
     auto imL = m_projectData.image(imPair->imL());

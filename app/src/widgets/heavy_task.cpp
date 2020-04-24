@@ -3,12 +3,15 @@
 #include <future>
 #include <vector>
 
+#include "p3d/logger.h"
+
 std::future<void> HeavyTask::impl::heavyAsyncTask;
 bool              HeavyTask::impl::startedHeavyCalculus = false;
 
 void HeavyTask::draw(ImFont *monofont)
 {
-    if (impl::startedHeavyCalculus)
+    bool heavyCalcStarted = impl::startedHeavyCalculus;
+    if (heavyCalcStarted)
     {
         static unsigned int             counter = 0;
         static std::vector<std::string> chars{"[    ]",
@@ -28,7 +31,14 @@ void HeavyTask::draw(ImFont *monofont)
                                               "[==  ]",
                                               "[=   ]"};
 
-        if (impl::heavyAsyncTask.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+        bool heavyCalcInProgress = false;
+        try {
+            heavyCalcInProgress = impl::heavyAsyncTask.wait_for(std::chrono::seconds(0)) != std::future_status::ready;
+        } catch (const std::future_error& e) {
+            LOG_ERR("Caught a future_error with code %i: %s", e.code(), e.what());
+        }
+
+        if (heavyCalcInProgress)
         {
             counter++;
             ImGui::SetNextWindowSize(ImVec2(400, 200));
@@ -53,6 +63,7 @@ void HeavyTask::draw(ImFont *monofont)
         {
             impl::heavyAsyncTask.get();
             impl::startedHeavyCalculus = false;
+            LOG_DBG("heavy_task: done");
             ImGui::CloseCurrentPopup();
         }
     }

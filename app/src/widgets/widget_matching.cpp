@@ -4,15 +4,18 @@
 #include "p3d/project.h"
 #include "p3d/tasks.h"
 
+#include "../common/app_state.h"
 #include "../common/common.h"
 #include "../common/imgui_custom.h"
+#include "../widgets/heavy_task.h"
 
 using namespace p3d;
 
 void WidgetMatching::drawImpl(Project& data)
 {
     bool disabled = false;
-    auto imPair = data.imagePair(m_currentItemIdx);
+    int currentPair = m_appState ? m_appState->itemIdx() : 0;
+    auto imPair = data.imagePair(currentPair);
     if (imPair == nullptr) disabled = true;
     if (!disabled) {
         const auto& iL = data.getImage(imPair->imL());
@@ -27,8 +30,8 @@ void WidgetMatching::drawImpl(Project& data)
 
     if (ImGuiC::Collapsing("Matching", &run, &runAll)) {
         bool disableButtons = disabled;
-        auto imL = data.imagePairL(m_currentItemIdx);
-        auto imR = data.imagePairR(m_currentItemIdx);
+        auto imL = data.imagePairL(currentPair);
+        auto imR = data.imagePairR(currentPair);
         disableButtons = !((imL != nullptr) && imL->hasFeatures());
         disableButtons = !((imR != nullptr) && imR->hasFeatures());
 
@@ -71,7 +74,7 @@ void WidgetMatching::drawImpl(Project& data)
         if (ImGui::Checkbox("shared parameters##matching", &globalSetting)) {
             if (globalSetting == true) {
                 p3d::copyImagePairProperty(data, p3dImagePair_matchingPars,
-                                           m_currentItemIdx);
+                                           currentPair);
                 p3d::mergeNextCommand();
             }
             int s = globalSetting ? 1 : 0;
@@ -82,7 +85,7 @@ void WidgetMatching::drawImpl(Project& data)
 
         if (needsUpdate) {
             std::vector<int> pairsToUpdate = {};
-            if (!globalSetting) pairsToUpdate = {m_currentItemIdx};
+            if (!globalSetting) pairsToUpdate = {currentPair};
             p3d::setImagePairProperty(data, p3dImagePair_matchingPars,
                                                         matchingPars, pairsToUpdate);
         }
@@ -90,18 +93,27 @@ void WidgetMatching::drawImpl(Project& data)
         // **** tasks
 
         ImGui::Separator();
-        if (ImGui::Button(P3D_ICON_RUN " Match features")) run = true;
+        run |= ImGui::Button(P3D_ICON_RUN " Match features");
         ImGui::SameLine();
-        if (ImGui::Button(P3D_ICON_RUNALL " ALL##matching")) runAll = true;
+        runAll |= ImGui::Button(P3D_ICON_RUNALL " ALL##matching");
         ImGuiC::EndSubGroup();
         if (disableButtons) ImGuiC::PopDisabled();
     }
 
     if (disabled) ImGuiC::PopDisabled();
 
-    m_tasks.clear();
-    if (run)
-        m_tasks.insert("run");
-    else if (runAll)
-        m_tasks.insert("run_all");
+    auto f = [&](const std::vector<int> & imgs = {}) {
+        bool success = p3d::matchFeatures(data, imgs);
+        if (success && m_appState) {
+            m_appState->setSection(Section_Matches);
+            m_appState->setTextureNeedsUpdate(true);
+        }
+    };
+
+    if (run) {
+        const std::vector<int> imgs = {currentPair};
+        HeavyTask::run(f,imgs);
+    } else if (runAll) {
+        HeavyTask::run(f);
+    }
 }

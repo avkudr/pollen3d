@@ -5,25 +5,24 @@
 #include "p3d/core.h"
 #include "p3d/project.h"
 
+class AppState;
+
 class Widget
 {
 public:
+    Widget(AppState * appState) : m_appState(appState)
+    {
+        m_appState = appState;
+    }
     virtual ~Widget() {}
 
-    void draw(p3d::Project& data, int currentItem = 0)
+    void draw(p3d::Project& data)
     {
-        m_currentItemIdx = currentItem;
         drawImpl(data);
-    }
-
-    bool isRequested(const std::string& task) const
-    {
-        return m_tasks.count(task) > 0;
     }
 
 protected:
     virtual void drawImpl(p3d::Project& data) = 0;
 
-    int m_currentItemIdx{0};
-    std::set<std::string> m_tasks;
+    AppState * m_appState{nullptr};
 };

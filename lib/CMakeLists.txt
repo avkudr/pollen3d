@@ -240,6 +240,14 @@ add_test(
     COMMAND ${p3d_tests}
 )
 
+if (MSVC)
+file(GLOB pollen3d_deps_dlls "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin/*.dll")
+file(COPY ${pollen3d_deps_dlls} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+elseif(APPLE)
+file(GLOB pollen3d_deps_dlls "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin/*.dylib")
+file(COPY ${pollen3d_deps_dlls} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
 endif(BUILD_UNIT_TESTS)
 
 # ===== Install ==============================================

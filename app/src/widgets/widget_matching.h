@@ -8,7 +8,7 @@
 class WidgetMatching : public Widget
 {
 public:
-    WidgetMatching() {}
+    WidgetMatching(AppState * appState) : Widget(appState) {}
 
 private:
     void drawImpl(p3d::Project& data) override;

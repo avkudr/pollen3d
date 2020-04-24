@@ -7,14 +7,17 @@
 #include "p3d/tasks.h"
 
 #include "../common/common.h"
+#include "../common/app_state.h"
 #include "../common/imgui_custom.h"
+#include "../widgets/heavy_task.h"
 
 using namespace p3d;
 
 void WidgetFeatureExtract::drawImpl(p3d::Project& data)
 {
     bool disabled = false;
-    auto image = data.image(m_currentItemIdx);
+    int currentImage = m_appState ? m_appState->itemIdx() : 0;
+    auto image = data.image(currentImage);
     if (image == nullptr) disabled = true;
 
     if (disabled) ImGuiC::PushDisabled();
@@ -73,23 +76,24 @@ void WidgetFeatureExtract::drawImpl(p3d::Project& data)
         if (ImGui::Checkbox("shared parameters##featextraction", &globalSetting)) {
             if (globalSetting == true) {
                 p3d::copyImageProperty(data, P3D_ID_TYPE(p3dImage_featExtractionPars),
-                                       m_currentItemIdx);
+                                       currentImage);
                 p3d::mergeNextCommand();
             }
             int s = globalSetting ? 1 : 0;
             p3d::setSetting(data, propID, s);
         }
 
-        if (ImGui::Button(P3D_ICON_RUN " Extract features")) run = true;
+
+        run |= ImGui::Button(P3D_ICON_RUN " Extract features");
         ImGui::SameLine();
-        if (ImGui::Button(P3D_ICON_RUNALL " ALL##extract_features")) runAll = true;
+        runAll |= ImGui::Button(P3D_ICON_RUNALL " ALL##extract_features");
 
         // ***** smth changed?
 
         if (needsUpdate)
         {
             std::vector<int> imgsToUpdate = {};
-            if (!globalSetting) imgsToUpdate = {m_currentItemIdx};
+            if (!globalSetting) imgsToUpdate = {currentImage};
 
             p3d::setImageProperty(data,
                                   p3dImage_featExtractionPars,
@@ -104,7 +108,14 @@ void WidgetFeatureExtract::drawImpl(p3d::Project& data)
         ImGuiC::PopDisabled();
     }
 
-    m_tasks.clear();
-    if (run) m_tasks.insert("run");
-    if (runAll) m_tasks.insert("run_all");
+    auto f = [&data](const std::vector<int> & imgs = {}) {
+        p3d::extractFeatures(data,imgs);
+    };
+
+    if (run) {
+        std::vector<int> imgs = {currentImage};
+        HeavyTask::run(f,imgs);
+    } else if (runAll) {
+        HeavyTask::run(f);
+    }
 }

@@ -112,6 +112,8 @@ set(SOURCES_GUI
     ./src/common/imgui_custom.cpp
     ./src/common/imgui_custom.h
     ./src/common/palette.h
+    ./src/common/app_state.h
+    ./src/common/app_state.cpp
     ./src/widgets/plots.cpp
     ./src/widgets/plots.h
     ./src/widgets/widget_console.cpp

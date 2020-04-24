@@ -12,6 +12,7 @@
 #include "p3d/data/project_settings.h"
 #include "p3d/logger.h"
 
+#include "common/app_state.h"
 #include "viewer3d/viewer3d.h"
 #include "widgets/widget.h"
 #include "widgets/widget_console.h"
@@ -87,19 +88,9 @@ protected:
     void _resetAppState()
     {
         setWindowTitle(m_projectData.getProjectPath());
-        m_currentSection = Section_Default;
-        m_viewer3dNeedsUpdate = true;
-        m_textureNeedsUpdate = true;
+        m_state.reset();
+        m_state.setSection(Section_Default);
     }
-
-    enum Tab {
-        Tab_General = 0,
-        Tab_Image,
-        Tab_Stereo,
-        Tab_Multiview,
-        Tab_PointCloud,
-        Tab_COUNT
-    };
 
     template <typename T>
     inline bool isOneOf(const T &v, const std::vector<T> &vec)
@@ -110,19 +101,7 @@ protected:
         return false;
     }
 
-    int m_currentTab = -1;
     int m_currentTabForce = -1;
-    int m_currentImage = -1;
-
-    enum Section_ {
-        Section_Default = 0,
-        Section_Matches = Section_Default,
-        Section_Epilines,
-        Section_Rectified,
-        Section_DisparityMap,
-    };
-
-    int m_currentSection = Section_Default;
 
     bool m_showConsole{true};
 
@@ -130,7 +109,6 @@ protected:
     int m_width = 1600;
     int m_height = 1000;
     int m_heightTabSection = 70;
-    ImGuiTreeNodeFlags m_collapsingHeaderFlags = ImGuiTreeNodeFlags_None;
     bool m_dockingNeedsReset = true;
 
     ImFont *m_fontMonoSmall = nullptr;
@@ -141,9 +119,6 @@ protected:
     int m_textureWidth = 0;
     int m_textureHeight = 0;
     int m_textureScale = 1.0f;
-    int m_textureNeedsUpdate = false;
-    int m_viewer3dNeedsUpdate = false;
-    int m_viewer3dNeedsUpdateVisibility = false;
 
     std::shared_ptr<WidgetLogger> m_widgetLogger{nullptr};
     std::unique_ptr<Viewer3D> m_viewer3D{nullptr};
@@ -151,8 +126,6 @@ protected:
     std::unique_ptr<Widget> m_widgetMatching{nullptr};
     std::unique_ptr<Widget> m_widgetDenseMatching{nullptr};
 
-    bool m_initialised = false;
-    std::string m_execPath = "";
-
     p3d::Project m_projectData;
+    AppState m_state;
 };

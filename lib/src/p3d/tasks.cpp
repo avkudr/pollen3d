@@ -631,25 +631,34 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
 
     CommandGroup *groupCmd = new CommandGroup();
 #ifdef WITH_OPENMP
-    omp_set_num_threads(
+        omp_set_num_threads(
         std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
 #pragma omp parallel for
 #endif
     for (int idx = 0; idx < imPairsIds.size(); idx++) {
         auto pairIdx = imPairsIds[idx];
         auto imPair = data.imagePair(pairIdx);
-        if (!imPair) continue;
-        if (!imPair->hasDisparityMap()) continue;
+        if (!imPair) {
+            LOG_ERR("pair %i error", pairIdx);
+            continue;
+        }
+        if (!imPair->hasDisparityMap()) {
+            LOG_ERR("pair %i has no disparity map", pairIdx);
+            continue;
+        }
 
         auto rho = imPair->getRho();
-        if (utils::floatEq(rho, 0.0)) continue;
+        if (utils::floatEq(rho, 0.0)) {
+            LOG_ERR("pair %i has no rho angle (or equals zero)", pairIdx);
+            continue;
+        }
 
         float cosRho = std::cos(rho);
         float sinRho = std::sin(rho);
 
         auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
         if (dispValues.type() != CV_32F) {
-            LOG_ERR("Disparity map type must be CV_32F");
+            LOG_ERR("pair %i, disparity map type must be CV_32F", pairIdx);
             continue;
         }
         dispValues = dispValues / 16.0;
