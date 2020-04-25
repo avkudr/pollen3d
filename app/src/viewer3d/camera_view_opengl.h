@@ -19,24 +19,25 @@ using namespace gl;
 #include <memory>
 #include <vector>
 
+#include "camera_view.h"
+
 class ShaderOpenGL;
 
-class GridOpenGL
+/** @brief CameraView, point cloud view, is the class responsible for the rendering
+ * of one point cloud
+ *
+ */
+
+class CameraViewOpenGL : public CameraView
 {
 public:
-    GridOpenGL(const int gridSquareSize) : m_gridSquareSize(gridSquareSize)
-    {
-        init();
-    }
-    ~GridOpenGL() {}
+    CameraViewOpenGL() {}
+    virtual ~CameraViewOpenGL() {}
 
-    void init();
-    void draw(std::shared_ptr<ShaderOpenGL> shader = nullptr);
+    virtual void init(const p3d::Mat3& R, const p3d::Vec2& t) override;
+    virtual void draw(std::shared_ptr<ShaderOpenGL> shader = nullptr, int idx = 0) override;
 
-private:
-    GLuint vao{0}, vbo{0}, ibo{0};
-    GLuint length;
-
-    int m_gridSquareSize{100};
-    std::vector<float> m_color{0.33f, 0.33f, 0.33f, 0.5f};
+protected:
+    GLuint vao{0};
+    std::vector<GLuint> indices;  // Vec4uint
 };

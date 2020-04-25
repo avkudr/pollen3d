@@ -656,7 +656,7 @@ void Application::_drawTab_Multiview()
                 if (run)
                     HeavyTask::run([&]() {
                         p3d::autocalibrate(m_projectData);
-                        m_state.setViewer3dNeedsUpdateFull(true);
+                        m_state.setViewer3dNeedsUpdateCameras(true);
                     });
             }
 
@@ -933,7 +933,8 @@ void Application::_drawData()
             ImGuiWindow *window = ImGui::GetCurrentWindow();
 
             int deletePcd = -1;
-            for (auto &pcd : pcds) {
+            for (auto it = pcds.begin(); it != pcds.end(); it++) {
+                auto &pcd = *it;
                 std::string lblstr = pcd.getLabel();
                 const char *lbl = lblstr.c_str();
 
@@ -1187,8 +1188,10 @@ void Application::_drawCentral()
                 LOG_DBG("Adding point cloud: %s (%i)", pcd.getLabel().c_str(),
                         pcd.getVertices().cols());
             }
+
             m_state.setViewer3dNeedsUpdateFull(false);
             m_state.setViewer3dNeedsUpdateVisibility(false);
+            m_state.setViewer3dNeedsUpdateCameras(true);
         }
 
         if (m_state.viewer3dNeedsUpdateVisibility()) {
@@ -1198,6 +1201,18 @@ void Application::_drawCentral()
                                                  pcd.isVisible());
             }
             m_state.setViewer3dNeedsUpdateVisibility(false);
+        }
+
+        if (m_state.viewer3dNeedsUpdateCameras()) {
+            m_viewer3D->deleteCamerasAll();
+            std::vector<Mat3> R;
+            std::vector<Vec2> t;
+            m_projectData.getCamerasExtrinsics(&R,&t);
+            for (int c = 0; c < R.size(); c++) {
+                m_viewer3D->addCamera(R[c],t[c]);
+                LOG_DBG("Adding camera");
+            }
+            m_state.setViewer3dNeedsUpdateCameras(false);
         }
 
         ImGui::PushFont(m_fontMonoSmall);

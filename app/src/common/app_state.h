@@ -27,15 +27,18 @@ public:
         m_updateTexture = true;
         m_updateViewer3DFull = true;
         m_updateViewer3DVisibility = true;
+        m_updateViewer3DCameras = true;
     }
 
     bool textureNeedsUpdate() const { return m_updateTexture; }
     bool viewer3dNeedsUpdateFull() const { return m_updateViewer3DFull; }
     bool viewer3dNeedsUpdateVisibility() const { return m_updateViewer3DVisibility; }
+    bool viewer3dNeedsUpdateCameras() const { return m_updateViewer3DCameras; }
 
     void setTextureNeedsUpdate(bool v) { m_updateTexture = v; }
     void setViewer3dNeedsUpdateFull(bool v) { m_updateViewer3DFull = v; }
     void setViewer3dNeedsUpdateVisibility(bool v) { m_updateViewer3DVisibility = v; }
+    void setViewer3dNeedsUpdateCameras(bool v) { m_updateViewer3DCameras = v; }
 
     // ***** current section
 
@@ -70,6 +73,7 @@ private:
     bool m_updateTexture{false};
     bool m_updateViewer3DFull{false};
     bool m_updateViewer3DVisibility{false};
+    bool m_updateViewer3DCameras{false};
 
     int m_currentSection{Section_Default};
     int m_currentTab{Tab_Image};

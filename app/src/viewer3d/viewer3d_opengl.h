@@ -38,6 +38,8 @@ public:
     void addPointCloud(const std::string& label, const p3d::Mat3Xf& pcd,
                        const p3d::Mat3Xf& colors = {}) override;
 
+    void addCamera(const p3d::Mat3 &R, const p3d::Vec2 &t) override;
+
 private:
     unsigned int m_fbo{0};
     unsigned int m_Tvbo{0}, m_Tvao{0};

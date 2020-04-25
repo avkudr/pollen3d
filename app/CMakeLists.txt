@@ -138,6 +138,9 @@ set(SOURCES_GUI
     ./src/viewer3d/pcd_view.h
     ./src/viewer3d/pcd_view_opengl.cpp
     ./src/viewer3d/pcd_view_opengl.h
+    ./src/viewer3d/camera_view.h
+    ./src/viewer3d/camera_view_opengl.h
+    ./src/viewer3d/camera_view_opengl.cpp
     ./src/viewer3d/shader_opengl.h
     ./src/viewer3d/viewer3d.cpp
     ./src/viewer3d/viewer3d.h

@@ -191,6 +191,13 @@ void Project::getCamerasRotations(std::vector<Mat3> *R) const
     }
 }
 
+void Project::getCamerasExtrinsics(std::vector<Mat3> *R, std::vector<Vec2> *t) const
+{
+    std::vector<Vec3> dummy;
+    getCamerasRotations(R);
+    getCamerasExtrinsics(&dummy,t);
+}
+
 void Project::getCamerasExtrinsics(std::vector<Vec3> *Rvec, std::vector<Vec2> *t) const
 {
     if (nbImages() == 0) return;

@@ -3,6 +3,7 @@
 #include "p3d/logger.h"
 
 #include "pcd_view_opengl.h"
+#include "camera_view_opengl.h"
 
 using namespace p3d;
 
@@ -228,6 +229,14 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
         }
     }
 
+    if (m_showCameras) {
+        for (auto c = 0; c < m_cameras.size(); c++) {
+            const auto & cam = m_cameras[c];
+            if (cam)
+                cam->draw(m_shader, c);
+        }
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     GLuint *tId = (GLuint *)m_textureId;
@@ -235,20 +244,6 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
         ImGui::Image(reinterpret_cast<ImTextureID>(*tId), ImVec2(width, height),
                      ImVec2(0, 0), ImVec2(1, 1));
     }
-    ImGui::SetCursorPos(ImVec2(15, 35));
-    ImGui::BeginGroup();
-    ImGui::Text("<G> to set the grid %s", m_showGrid ? "off" : "on");
-    ImGui::Text("<R> to reset view");
-    ImGui::Text("<Alt + Wheel> to change point size");
-
-    ImGui::Checkbox("true colors", &m_pcdTrueColors);
-    if (!m_pcdTrueColors) {
-        ImGui::SameLine();
-        ImGui::ColorEdit4(
-            "point cloud color##pcd_color", m_pcdColor.data(),
-            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-    }
-    ImGui::EndGroup();
 
     //    painter.drawText(10,15,"Press M to on/off the mesh");
 
@@ -275,4 +270,10 @@ void Viewer3DOpenGL::addPointCloud(const std::string &label, const Mat3Xf &pcd,
 {
     if (pcd.cols() == 0) return;
     m_pcd.insert({label, std::make_unique<PCDViewOpenGL>(pcd, colors)});
+}
+
+void Viewer3DOpenGL::addCamera(const Mat3 &R, const Vec2 &t)
+{
+    m_cameras.emplace_back(std::make_unique<CameraViewOpenGL>());
+    m_cameras.back()->init(R,t);
 }

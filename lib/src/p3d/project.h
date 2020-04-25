@@ -92,6 +92,7 @@ public:
     void setCamerasIntrinsics(std::vector<Vec3> &cam);
 
     void getCamerasRotations(std::vector<Mat3> *R) const;
+    void getCamerasExtrinsics(std::vector<Mat3> *R, std::vector<Vec2> *t) const;
     void getCamerasExtrinsics(std::vector<Vec3> *Rvec, std::vector<Vec2> *t) const;
     void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t);
 

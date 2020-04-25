@@ -5,9 +5,11 @@
 #include "imgui.h"
 
 #include "p3d/core.h"
+#include "p3d/logger.h"
 
 #include "eyecamera.h"
 #include "pcd_view.h"
+#include "camera_view.h"
 
 class Viewer3D {
 public:
@@ -52,6 +54,12 @@ public:
     void setPointCloudVisible(const std::string& label, bool visible);
     void deletePointCloudsAll() { m_pcd.clear(); }
 
+    void addCamera(const p3d::Mat34& camera) { LOG_ERR("[void addCamera(const p3d::Mat34& camera)] not implemented"); }
+    virtual void addCamera(const p3d::Mat3 &R, const p3d::Vec2 &t) = 0;
+
+    void deleteCamerasAll() { m_cameras.clear(); }
+
+
 protected:
     void * m_textureId = nullptr;
 
@@ -71,10 +79,15 @@ protected:
     float m_pointSize{2.0f};
     std::array<float, 4> m_pcdColor{0.9f, 0.9f, 0.9f, 1.0f};
 
+    // ***** cameras
+
+    std::vector<std::unique_ptr<CameraView>> m_cameras;
+
     // ***** Visuals
 
     bool m_showGrid{true};
     bool m_showAxis{true};
+    bool m_showCameras{true};
 
     float m_gridSquareSize = 200.0f;
     float m_gridNbSquares  = 10;

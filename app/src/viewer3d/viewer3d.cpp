@@ -57,7 +57,7 @@ void Viewer3D::draw(int width, int height)
         }
 
         if (ImGui::IsKeyPressed('A')) m_showAxis = !m_showAxis;
-
+        if (ImGui::IsKeyPressed('C')) m_showCameras = !m_showCameras;
         if (ImGui::IsKeyPressed('G')) m_showGrid = !m_showGrid;
 
         if (ImGui::IsKeyPressed('R')) {
@@ -67,6 +67,22 @@ void Viewer3D::draw(int width, int height)
     }
 
     drawImpl(width, height);
+
+    ImGui::SetCursorPos(ImVec2(15, 35));
+    ImGui::BeginGroup();
+    ImGui::Text("<G> to set the grid %s", m_showGrid ? "off" : "on");
+    ImGui::Text("<C> to show/hide cameras");
+    ImGui::Text("<R> to reset view");
+    ImGui::Text("<Alt + Wheel> to change point size");
+
+    ImGui::Checkbox("true colors", &m_pcdTrueColors);
+    if (!m_pcdTrueColors) {
+        ImGui::SameLine();
+        ImGui::ColorEdit4(
+            "point cloud color##pcd_color", m_pcdColor.data(),
+            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+    }
+    ImGui::EndGroup();
 }
 
 void Viewer3D::rotateWorld(float dx, float dy)
