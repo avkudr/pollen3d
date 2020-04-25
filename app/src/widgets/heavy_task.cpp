@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "p3d/logger.h"
+#include "p3d/tasks.h"
 
 std::future<void> HeavyTask::impl::heavyAsyncTask;
 bool              HeavyTask::impl::startedHeavyCalculus = false;
@@ -42,20 +43,43 @@ void HeavyTask::draw(ImFont *monofont)
         {
             counter++;
             ImGui::SetNextWindowSize(ImVec2(400, 200));
-            ImGui::OpenPopup("pollen3d");
-            if (ImGui::BeginPopupModal("pollen3d",
+            ImGui::OpenPopup("Please wait...##popup");
+            if (ImGui::BeginPopupModal("Please wait...##popup",
                                        nullptr,
                                        ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoResize
                                            | ImGuiWindowFlags_NoSavedSettings))
             {
-                ImGui::SetCursorPos(ImVec2(135, 90));
-                ImGui::Text("Please wait");
-                ImGui::SameLine();
+
+                ImGui::Dummy(ImVec2(20.0,20.0));
+
+                auto taskName = p3d::task::name();
+                if (taskName.empty()) {
+                    auto textSize = ImGui::CalcTextSize("Please wait");
+                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - textSize.x) * 0.5f);
+                    ImGui::Text("Please wait");
+                } else {
+                    auto textSize = ImGui::CalcTextSize(taskName.c_str());
+                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - textSize.x) * 0.5f);
+                    ImGui::Text("%s", taskName.c_str());
+                }
+
+                ImGui::Dummy(ImVec2(20.0,10.0));
 
                 if (monofont) ImGui::PushFont(monofont);
                 char temp = (counter / 4) & 0x0F;
+                auto textSize = ImGui::CalcTextSize("[====]");
+                ImGui::SetCursorPosX((ImGui::GetWindowSize().x - textSize.x) * 0.5f);
                 ImGui::Text("%s", chars[temp].c_str());
                 if (monofont) ImGui::PopFont();
+
+                bool isProgressTask = p3d::task::total() > 0.0;
+                if (isProgressTask) {
+                    ImGui::Dummy(ImVec2(20.0,20.0));
+                    char buf[32];
+                    sprintf(buf, "%i%%", int(100 * p3d::task::progressPercent()));
+                    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - 260.0f) * 0.5f);
+                    ImGui::ProgressBar(p3d::task::progressPercent(), ImVec2(260.0f,0.0f), buf);
+                }
 
                 ImGui::EndPopup();
             }
@@ -63,7 +87,7 @@ void HeavyTask::draw(ImFont *monofont)
         {
             impl::heavyAsyncTask.get();
             impl::startedHeavyCalculus = false;
-            LOG_DBG("heavy_task: done");
+            p3d::task::reset();
             ImGui::CloseCurrentPopup();
         }
     }

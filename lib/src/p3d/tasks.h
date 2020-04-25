@@ -6,8 +6,19 @@
 #include "p3d/data/project_settings.h"
 #include "p3d/project.h"
 
+
 namespace p3d
 {
+
+namespace task {
+
+int total();
+int progress();
+float progressPercent();
+std::string name();
+void reset();
+
+}
 // ***** Undo manager
 
 void P3D_API undo();

@@ -23,8 +23,45 @@
 
 using namespace p3d;
 
+namespace p3d::task {
+int total_{0};
+int progress_{0};
+std::string name_{""};
+
+void reset()
+{
+    total_ = 0;
+    progress_ = 0;
+    name_ = "";
+}
+
+int total()
+{
+    return total_;
+}
+
+int progress()
+{
+    return progress_;
+}
+
+std::string name()
+{
+    return name_;
+}
+
+float progressPercent()
+{
+    if (total_ == 0) return 1.0f;
+    return float(progress_) / float(total_);
+}
+
+} // namespace p3d::task
+
 void p3d::loadImages(Project &list, const std::vector<std::string> &imPaths)
 {
+    p3d::task::name_ = "Loading images";
+
     if (imPaths.empty()) {
         LOG_ERR("Image list is empty");
         return;
@@ -49,10 +86,12 @@ void p3d::loadImages(Project &list, const std::vector<std::string> &imPaths)
     LOG_WARN("No Undo functionnality");
 
     list.setImageList(imgs);
+    p3d::task::reset();
 }
 
 void p3d::saveProject(Project *data, std::string path)
 {
+    p3d::task::name_ = "Saving project";
     if (!data) return;
     if (path == "") {
         LOG_ERR("Can't save the project to empty path");
@@ -71,6 +110,8 @@ void p3d::saveProject(Project *data, std::string path)
     } else {
         LOG_ERR("Can't write to %s", path.c_str());
     }
+
+    p3d::task::reset();
 }
 
 void p3d::closeProject(Project *data)
@@ -80,6 +121,8 @@ void p3d::closeProject(Project *data)
 
 void p3d::openProject(Project *data, std::string path)
 {
+    p3d::task::name_ = "Opening project";
+
     if (!data) return;
     if (path == "") return;
     if (!utils::endsWith(path, P3D_PROJECT_EXTENSION)) return;
@@ -102,6 +145,8 @@ void p3d::openProject(Project *data, std::string path)
     } catch (...) {
         LOG_ERR("Unknown error");
     }
+
+    p3d::task::reset();
 }
 
 bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
@@ -111,6 +156,10 @@ bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
         for (int i = 0; i < data.nbImages(); ++i) imIds.push_back(i);
 
     auto nbImgs = static_cast<int>(imIds.size());
+
+    p3d::task::name_ = "Feature extraction";
+    p3d::task::total_ = nbImgs;
+    p3d::task::progress_ = 0;
 
 #ifdef WITH_OPENMP
     omp_set_num_threads(std::min(nbImgs, utils::nbAvailableThreads()));
@@ -141,6 +190,11 @@ bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
             im->setKeyPoints(kpts);
             im->setDescriptors(desc);
             LOG_OK("%s: extracted %i features", im->name().c_str(), int(kpts.size()));
+
+#pragma omp critical
+            {
+                p3d::task::progress_++;
+            }
         } catch (...)
         {
             LOG_ERR("Image %i, feature extraction failed", i);
@@ -148,6 +202,7 @@ bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
     }
 
     LOG_WARN("no undo functionnality");
+    p3d::task::reset();
     return true;
 }
 
@@ -158,6 +213,10 @@ bool p3d::matchFeatures(Project &data, std::vector<int> imPairsIds)
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
     int nbPairs = imPairsIds.size();
+
+    p3d::task::name_ = "Matching";
+    p3d::task::total_ = nbPairs;
+    p3d::task::progress_ = 0;
 
     CommandGroup *groupCmd = new CommandGroup();
 
@@ -198,6 +257,7 @@ bool p3d::matchFeatures(Project &data, std::vector<int> imPairsIds)
 
 #pragma omp critical
         {
+            p3d::task::progress_++;
             groupCmd->add(cmd);
             LOG_OK("Pair %i, matched %i features", imPairsIds[i], matchesPair.size());
             if (!cmd->isValid())
@@ -211,6 +271,7 @@ bool p3d::matchFeatures(Project &data, std::vector<int> imPairsIds)
     } else
         p3d::cmder::executeCommand(groupCmd);
 
+    p3d::task::reset();
     return true;
 }
 
@@ -219,6 +280,10 @@ bool p3d::findFundamentalMatrix(Project &data, std::vector<int> imPairsIds)
     if (data.nbImagePairs() == 0) return false;
     if (imPairsIds.empty())
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
+
+    p3d::task::name_ = "Epipolar geometry";
+    p3d::task::total_ = imPairsIds.size();
+    p3d::task::progress_ = 0;
 
     CommandGroup *groupCmd = new CommandGroup();
 
@@ -247,6 +312,8 @@ bool p3d::findFundamentalMatrix(Project &data, std::vector<int> imPairsIds)
             new CommandSetProperty{data.imagePair(i), p3dImagePair_Theta2, theta2};
 #pragma omp critical
         {
+            p3d::task::progress_++;
+
             groupCmd->add(cmd1);
             groupCmd->add(cmd2);
             groupCmd->add(cmd3);
@@ -264,6 +331,7 @@ bool p3d::findFundamentalMatrix(Project &data, std::vector<int> imPairsIds)
     } else
         p3d::cmder::executeCommand(groupCmd);
 
+    p3d::task::reset();
     return true;
 }
 
@@ -361,6 +429,10 @@ bool p3d::findDisparityMap(Project &data, std::vector<int> imPairsIds)
     if (imPairsIds.empty())
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
+    p3d::task::name_ = "Dense matching";
+    p3d::task::total_ = imPairsIds.size();
+    p3d::task::progress_ = 0;
+
     CommandGroup *groupCmd = new CommandGroup();
 
 #ifdef WITH_OPENMP
@@ -392,6 +464,7 @@ bool p3d::findDisparityMap(Project &data, std::vector<int> imPairsIds)
 
 #pragma omp critical
         {
+            p3d::task::progress_++;
             groupCmd->add(cmd);
             LOG_OK("Pair %i, estimated disparity", i);
         }
@@ -403,6 +476,7 @@ bool p3d::findDisparityMap(Project &data, std::vector<int> imPairsIds)
     } else
         p3d::cmder::executeCommand(groupCmd);
 
+    p3d::task::reset();
     return true;
 }
 
@@ -630,11 +704,7 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
         for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
 
     CommandGroup *groupCmd = new CommandGroup();
-#ifdef WITH_OPENMP
-        omp_set_num_threads(
-        std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
-#pragma omp parallel for
-#endif
+
     for (int idx = 0; idx < imPairsIds.size(); idx++) {
         auto pairIdx = imPairsIds[idx];
         auto imPair = data.imagePair(pairIdx);
@@ -672,7 +742,15 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
 
         if (I.type() != CV_8UC3) LOG_DBG("Rectified image has wrong type: %i", I.type());
 
+        p3d::task::name_ = "Trianulation, pair " + std::to_string(pairIdx);
+        p3d::task::total_ = dispValues.cols;
+        p3d::task::progress_ = 0;
+
         for (int u = 0; u < dispValues.cols; ++u) {
+#ifdef WITH_OPENMP
+        omp_set_num_threads(utils::nbAvailableThreads());
+#pragma omp parallel for
+#endif
             for (int v = 0; v < dispValues.rows; ++v) {
                 const float d = dispValues.at<float>(v, u);
                 if (d * 0.0 != 0.0) continue;  // check for NaN
@@ -686,7 +764,11 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
 
                 //            #pragma omp critical
                 cv::Vec3b c = I.at<cv::Vec3b>(v, u);
-                if (c != cv::Vec3b(0, 0, 0)) {
+                if (c == cv::Vec3b(0, 0, 0)) continue;
+
+                #pragma omp critical
+                {
+                    p3d::task::progress_ = u;
                     pts3D.emplace_back(Vec3f(q1x - P(0, 3), q1y - P(1, 3), q1z));
                     colors.emplace_back(
                         Vec3f(c.val[0] / 255.f, c.val[1] / 255.f, c.val[2] / 255.f));
@@ -701,22 +783,20 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
 
         std::string newPcd = "densePair" + std::to_string(pairIdx);
 
-#pragma omp critical
-        {
-            if (data.pointCloudCtnr().contains(newPcd)) {
-                auto &pcd = data.pointCloudCtnr()[newPcd];
-                groupCmd->add(
-                    new CommandSetProperty{&pcd, p3dPointCloud_vertices, result});
-                groupCmd->add(
-                    new CommandSetProperty{&pcd, p3dPointCloud_colors, colorsMat});
-            } else {
-                groupCmd->add(new CommandPointCloudAdd(
-                    &data.pointCloudCtnr(), newPcd, result, colorsMat));
-            }
-            LOG_OK("Triangulated (stereo) %i points", result.cols());
+        if (data.pointCloudCtnr().contains(newPcd)) {
+            auto &pcd = data.pointCloudCtnr()[newPcd];
+            groupCmd->add(
+                new CommandSetProperty{&pcd, p3dPointCloud_vertices, result});
+            groupCmd->add(
+                new CommandSetProperty{&pcd, p3dPointCloud_colors, colorsMat});
+        } else {
+            groupCmd->add(new CommandPointCloudAdd(
+                &data.pointCloudCtnr(), newPcd, result, colorsMat));
         }
+        LOG_OK("Triangulated (stereo) %i points", result.cols());
     }
 
+    p3d::task::reset();
     if (groupCmd->empty())
         delete groupCmd;
     else
