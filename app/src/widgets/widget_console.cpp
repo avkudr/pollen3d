@@ -53,6 +53,7 @@ void WidgetLogger::render(ImGuiWindowFlags flags)
         // search result would make it possible (and would be recommended if you
         // want to search through tens of thousands of entries)
 
+        const std::lock_guard<std::mutex> lock(m_mutex);
         while (Lines.size() > 150) Lines.pop_front();
         ImGuiListClipper clipper;
         clipper.Begin(Lines.size());

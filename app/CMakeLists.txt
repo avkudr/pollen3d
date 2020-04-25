@@ -87,8 +87,7 @@ endif()
 # ----- Add file dialogs --------------------------------------------
 
 set(FILE_DIALOG_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/tinyfiledialogs/tinyfiledialogs.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/tinyfiledialogs/tinyfiledialogs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/portable-file-dialogs/portable-file-dialogs.h
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/)
 
@@ -109,6 +108,7 @@ set(SOURCES_GUI
     ./src/common
     ./src/main_gui.cpp
     ./src/common/common.h
+    ./src/common/common.cpp
     ./src/common/imgui_custom.cpp
     ./src/common/imgui_custom.h
     ./src/common/palette.h

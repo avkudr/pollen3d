@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include <mutex>
+
 #include "p3d/logger.h"
 
 struct LogEntry {
@@ -30,11 +32,18 @@ public:
     ~WidgetLogger() {}
     void render(ImGuiWindowFlags flags = 0);
 
-    void setFont(ImFont* f) { font = f; }
-    void addEntry(const LogEntry&& e) { Lines.push_back(e); }
+    void setFont(ImFont* f) {
+        const std::lock_guard<std::mutex> lock(m_mutex);
+        font = f;
+    }
+    void addEntry(const LogEntry&& e) {
+        const std::lock_guard<std::mutex> lock(m_mutex);
+        Lines.push_back(e);
+    }
 
     void print(const char* __restrict format, ...) override
     {
+        const std::lock_guard<std::mutex> lock(m_mutex);
         int final_n, n = static_cast<int>(strlen(format)) * 2;
         /* Reserve two times as much as the length of the fmt_str */
         std::unique_ptr<char[]> formatted;
@@ -58,6 +67,7 @@ public:
 private:
     void clear()
     {
+        const std::lock_guard<std::mutex> lock(m_mutex);
         Buf.clear();
         Lines.clear();
         // Lines.push_back(LogEntry("Hello"));
@@ -73,4 +83,6 @@ private:
 
     bool AutoScroll = true;  // Keep scrolling if already at the bottom
     bool m_separateWindow = false;
+
+    std::mutex m_mutex;
 };
