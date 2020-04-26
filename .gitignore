@@ -1,6 +1,6 @@
 build*/
-3rdparty_bin/
 *.txt.user*
+3rdparty_*/
 .vscode
 .vs
 *.DS_Store

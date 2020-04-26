@@ -34,13 +34,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_PREFIX_PATH 
     ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin 
+    ${GLOBAL_3RDPARTY_BIN}
     ${CMAKE_PREFIX_PATH}
 )
 
 set(CMAKE_MODULE_PATH 
     ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin 
+    ${GLOBAL_3RDPARTY_BIN}
     ${CMAKE_MODULE_PATH}
 )
 
@@ -241,10 +241,10 @@ add_test(
 )
 
 if (MSVC)
-file(GLOB pollen3d_deps_dlls "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin/*.dll")
+file(GLOB pollen3d_deps_dlls "${GLOBAL_3RDPARTY_BIN}/*.dll")
 file(COPY ${pollen3d_deps_dlls} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 elseif(APPLE)
-file(GLOB pollen3d_deps_dlls "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin/*.dylib")
+file(GLOB pollen3d_deps_dlls "${GLOBAL_3RDPARTY_BIN}/*.dylib")
 file(COPY ${pollen3d_deps_dlls} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 

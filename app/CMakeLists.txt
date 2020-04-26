@@ -23,13 +23,13 @@ set(ASSETS_FONTS_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/fonts CACHE STRING
 
 set(CMAKE_PREFIX_PATH 
     ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin 
+    ${GLOBAL_3RDPARTY_BIN}
     ${CMAKE_PREFIX_PATH}
 )
 
 set(CMAKE_MODULE_PATH 
     ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin 
+    ${GLOBAL_3RDPARTY_BIN}
     ${CMAKE_MODULE_PATH}
 )
 
@@ -240,10 +240,10 @@ set_target_properties( ${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEA
 # ==== copy files needed for execution =======================================================================
 
 if (MSVC)
-file(GLOB pollen3d_deps_dlls "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin/*.dll")
+file(GLOB pollen3d_deps_dlls "${GLOBAL_3RDPARTY_BIN}/*.dll")
 file(COPY ${pollen3d_deps_dlls} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 elseif(APPLE)
-file(GLOB pollen3d_deps_dlls "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty_bin/*.dylib")
+file(GLOB pollen3d_deps_dlls "${GLOBAL_3RDPARTY_BIN}/*.dylib")
 file(COPY ${pollen3d_deps_dlls} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 endif()
 

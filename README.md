@@ -18,14 +18,14 @@ git clone --recursive https://github.com/avkudr/pollen3d
 cd pollen3d
 
 # install dependencies if needed
-mkdir 3rdparty_bin
-cd 3rdparty_bin
+mkdir 3rdparty_release
+cd 3rdparty_release
 conan remote add bincrafters "https://api.bintray.com/conan/bincrafters/public-conan"
 conan remote add camposs "https://conan.campar.in.tum.de/api/conan/conan-camposs"
 #unix
 conan install .. -s build_type=Release --build=missing -s compiler.libcxx=libstdc++11
 #windows
-conan install .. -s build_type=Release --build=missing -s compiler.cppstd=14
+conan install .. -s build_type=Release --build=missing -s compiler.cppstd=14 -s compiler.version=15
 cd ..
 
 mkdir build && cd build
