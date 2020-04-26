@@ -29,9 +29,9 @@ void P3D_API mergeNextCommand();
 
 void P3D_API loadImages(Project &data, const std::vector<std::string> &imPaths);
 
-void P3D_API saveProject(Project *data, std::string path = "");
-void P3D_API closeProject(Project *data);
-void P3D_API openProject(Project *data, std::string path = "");
+void P3D_API saveProject(Project &data, std::string path = "");
+void P3D_API closeProject(Project &data);
+void P3D_API openProject(Project &data, std::string path = "");
 
 // ***** Image
 
@@ -50,7 +50,7 @@ void P3D_API filterDisparitySpeckles(Project &data, std::vector<int> imPairsIds 
 
 void P3D_API findMeasurementMatrixFull(Project &data);
 void P3D_API findMeasurementMatrix(Project &data);
-void P3D_API autocalibrate(Project &data);
+bool P3D_API autocalibrate(Project &data, std::vector<int> camIds = {});
 void P3D_API triangulateSparse(Project &data);
 void P3D_API triangulateDenseStereo(Project &data, std::vector<int> imPairsIds = {});
 void P3D_API triangulateDenseMultiview(Project &data);

@@ -152,6 +152,7 @@ else()
     message(FATAL_ERROR "ceres-solver: not found")
 endif()
 
+message(dfdsfsdj ${ceres-solver_LIBS})
 target_link_libraries(${p3d_lib}
     PUBLIC
         ${opencv_LIBS}

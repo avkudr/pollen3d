@@ -370,10 +370,10 @@ TEST(META, meta_serializeProject)
     Project data1;
     std::string path = "test" + std::string(P3D_PROJECT_EXTENSION);
     data1.setProjectPath(path);
-    p3d::saveProject(&data1, path);
+    p3d::saveProject(data1, path);
 
     Project data2;
-    p3d::openProject(&data2, path);
+    p3d::openProject(data2, path);
 
     entt::resolve<Project>().data([&](entt::meta_data data) {
         EXPECT_EQ(data.get(data1).operator bool(), data.get(data2).operator bool());  // both exist

@@ -89,21 +89,20 @@ void p3d::loadImages(Project &list, const std::vector<std::string> &imPaths)
     p3d::task::reset();
 }
 
-void p3d::saveProject(Project *data, std::string path)
+void p3d::saveProject(Project &data, std::string path)
 {
     p3d::task::name_ = "Saving project";
-    if (!data) return;
     if (path == "") {
         LOG_ERR("Can't save the project to empty path");
         return;
     }
 
-    data->setProjectPath(path);
+    data.setProjectPath(path);
     cv::FileStorage fs(path, cv::FileStorage::WRITE);
     if (fs.isOpened()) {
         fs << "Project"
            << "{";
-        data->write(fs);
+        data.write(fs);
         fs << "}";
         LOG_OK("Project %s succesfully saved", path.c_str());
         fs.release();
@@ -114,16 +113,15 @@ void p3d::saveProject(Project *data, std::string path)
     p3d::task::reset();
 }
 
-void p3d::closeProject(Project *data)
+void p3d::closeProject(Project &data)
 {
-    if (data) *data = Project();
+    data = Project();
 }
 
-void p3d::openProject(Project *data, std::string path)
+void p3d::openProject(Project &data, std::string path)
 {
     p3d::task::name_ = "Opening project";
 
-    if (!data) return;
     if (path == "") return;
     if (!utils::endsWith(path, P3D_PROJECT_EXTENSION)) return;
 
@@ -134,7 +132,7 @@ void p3d::openProject(Project *data, std::string path)
     try {
         cv::FileStorage fs(path, cv::FileStorage::READ);
         if (fs.isOpened()) {
-            data->read(fs["Project"]);
+            data.read(fs["Project"]);
             LOG_OK("Done");
             fs.fs.release();
         } else {
@@ -595,26 +593,54 @@ void p3d::findMeasurementMatrix(Project &data)
     LOG_OK("Measurement matrix: %ix%i", W.rows(), W.cols());
 }
 
-void p3d::autocalibrate(Project &data)
+bool p3d::autocalibrate(Project &data, std::vector<int> camIds)
 {
-    auto W = data.getMeasurementMatrix();
+    if (camIds.empty()) {
+        for (int i = 0; i < data.nbImages(); i++) camIds.emplace_back(i);
+    }
+
+    int nbImgs = camIds.size();
+    if (nbImgs < 3) {
+        LOG_ERR("autocalibration needs at least 3 images");
+        return false;
+    }
+
+    auto W = data.getMeasurementMatrixFull();
     if (W.cols() == 0 || W.rows() == 0) {
         LOG_ERR("Meas mat should be estimated before autocalibration");
-        return;
+        return false;
+    }
+
+    std::vector<int> selectedCols;
+    Mat Wfsub;
+    utils::findFullSubMeasurementMatrix(W,Wfsub,camIds,&selectedCols);
+    if (Wfsub.cols() == 0 || Wfsub.rows() == 0) {
+        LOG_ERR("findFullSubMeasurementMatrix failed");
+        return false;
     }
 
     Mat2X slopes;
-    slopes.setZero(2, data.nbImages());
-    for (auto i = 0; i < data.nbImagePairs(); ++i) {
-        slopes(0, i + 1) = data.imagePair(i)->getTheta1();
-        slopes(1, i + 1) = data.imagePair(i)->getTheta2();
+    slopes.setZero(2, nbImgs);
+    for (auto i = 0; i < nbImgs - 1; ++i) {
+        auto imPair = data.imagePair(camIds[i]);
+        if (imPair->imL() != camIds[i]) {
+            LOG_ERR("Pair doesn't correspond to the index");
+            return -1;
+        }
+        if (imPair->imR() != camIds[i+1]) {
+            LOG_ERR("Pair doesn't correspond to the index");
+            return -1;
+        }
+
+        slopes(0, i + 1) = data.imagePair(camIds[i])->getTheta1();
+        slopes(1, i + 1) = data.imagePair(camIds[i])->getTheta2();
     }
 
-    AutoCalibrator autocalib(data.nbImages());
+    AutoCalibrator autocalib(nbImgs);
 
     autocalib.setMaxTime(60);
 
-    autocalib.setMeasurementMatrix(W);
+    autocalib.setMeasurementMatrix(Wfsub);
     autocalib.setSlopeAngles(slopes);
     autocalib.run();
 
@@ -625,20 +651,40 @@ void p3d::autocalibrate(Project &data)
               << utils::concatenateMat(autocalib.getCameraMatrices()).format(CleanFmt) << std::endl;
 
     AffineCamera c(autocalib.getCalibrationMatrix());
-    auto tvec = autocalib.getTranslations();
 
-    for (auto i = 0; i < data.nbImages(); ++i) {
+    auto tvec = autocalib.getTranslations();
+    auto ti = data.getImage(camIds[0]).getTranslation();
+    bool correctForTranslation1stCam = (ti.norm() > 1e-2);
+    if (correctForTranslation1stCam) {
+        std::vector<Vec2> x;
+        auto P = autocalib.getCameraMatrices();
+        for (int i = 0; i < P.size(); i++) x.push_back(tvec[i]);
+        Vec4 X = utils::triangulate(x,P);
+        X /= X.w();
+        X(0) -= tvec[0](0) - ti(0);
+        X(1) -= tvec[0](1) - ti(1);
+        for (int i = 0; i < P.size(); i++) {
+            Vec3 q = P[i] * X;
+            q = q / q(2);
+            tvec[i](0) = q(0);
+            tvec[i](1) = q(1);
+        }
+    }
+
+    for (auto n = 0; n < nbImgs; ++n) {
+        const auto i = camIds[n];
         AffineCamera c;
         data.image(i)->setCamera(c);
-        data.image(i)->setTranslation(tvec[i]);
+        data.image(i)->setTranslation(tvec[n]);
     }
 
     auto rotRad = autocalib.getRotationAngles();
     // first line of rotRad is [0,0,0]
-    for (auto i = 0; i < data.nbImagePairs(); ++i) {
-        data.imagePair(i)->setTheta1(rotRad(i + 1, 0));
-        data.imagePair(i)->setRho(rotRad(i + 1, 1));
-        data.imagePair(i)->setTheta2(rotRad(i + 1, 2));
+    for (auto n = 0; n < nbImgs - 1; ++n) {
+        const auto i = camIds[n];
+        data.imagePair(i)->setTheta1(rotRad(n + 1, 0));
+        data.imagePair(i)->setRho(rotRad(n + 1, 1));
+        data.imagePair(i)->setTheta2(rotRad(n + 1, 2));
     }
 
     auto rot = utils::rad2deg(rotRad);

@@ -58,12 +58,13 @@ void WidgetFeatureExtract::drawImpl(p3d::Project& data)
 
         ImGui::InputFloat("threshold",
                           &threshold,
-                          0.0002f,
+                          0.0001f,
                           0.0f,
                           "%0.5f",
                           ImGuiInputTextFlags_CharsScientific);
         if (ImGui::IsItemEdited())
         {
+            threshold = std::max(0.0f,threshold);
             featExtractionPars.threshold = threshold;
             needsUpdate                  = true;
         }

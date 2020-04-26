@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 #include "p3d/core.h"
 #include "p3d/data/affine_camera.h"
 #include "p3d/multiview/bundle_params.h"

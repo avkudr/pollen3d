@@ -9,7 +9,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef _OPENMP
+#ifdef WITH_OPENMP
 #include <omp.h>
 #endif
 
@@ -394,4 +394,72 @@ std::string utils::getExecPath()
     }
 #endif
     return ".";
+}
+
+void utils::findFullSubMeasurementMatrix(const Mat &W, Mat &Wfsub, std::vector<int> camIds, std::vector<int> *selectedCols)
+{
+    Wfsub = Mat();
+    if (W.cols() == 0 || W.rows() == 0) {
+        LOG_ERR("Full measurement matrix can't be empty");
+        return;
+    }
+
+    if (W.rows() % 3 != 0) {
+        LOG_ERR("Measurement matrix must have 3*nbCams rows");
+        return;
+    }
+
+    int nbImgsTotal = W.rows() / 3;
+    if (nbImgsTotal < 2) return;
+
+    if (camIds.empty()) {
+        for (int i = 0; i < nbImgsTotal; i++) camIds.emplace_back(i);
+    }
+
+    if (camIds.size() > nbImgsTotal) return;
+    if (camIds.size() < 2) return;
+
+    const int nbCams = camIds.size();
+
+    // same as measurement matrix but only for selected images
+    Mat Wsub{Mat::Zero(3*nbCams,W.cols())};
+    for (auto n = 0; n < camIds.size(); n++) {
+        int c = camIds[n];
+        Wsub.middleRows(3*n,3) = W.middleRows(3*c,3);
+    }
+
+    std::vector<int> selCols;
+    Wfsub.setZero(Wsub.rows(), 0);
+    for (auto c = 0; c < Wsub.cols(); ++c) {
+        if (std::abs(Wsub.col(c).prod()) > 1e-5) {  // there is no zeros in the column
+            Wfsub.conservativeResize(Eigen::NoChange, Wfsub.cols() + 1);
+            Wfsub.rightCols(1) = Wsub.col(c);
+            selCols.emplace_back(c);
+        }
+    }
+    if (selectedCols) *selectedCols = selCols;
+}
+
+std::vector<std::vector<int> > utils::generateBatches(int nbCams, int batchSize)
+{
+    std::vector<std::vector<int> > batches{};
+    if (batchSize < 3) return batches;
+    int overlap = 1;
+
+    int i = 0;
+    while (i < nbCams - 1) {
+        std::vector<int> batch;
+        if (i + batchSize - 1 < nbCams) {
+        } else {
+            i = nbCams - batchSize;
+        }
+
+        for (int c = 0; c < batchSize; c++)
+            batch.emplace_back(i+c);
+
+        batches.push_back(batch);
+
+        i += batchSize - overlap;
+    }
+    return batches;
 }

@@ -5,9 +5,6 @@
 
 int main()
 {
-    p3d::loggerStd();
-    // p3d::loggerOff();
-
     p3d::Project p;
 
     std::vector<std::string> imgs{

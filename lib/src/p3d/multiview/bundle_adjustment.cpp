@@ -85,6 +85,7 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
     auto lossFunction = new ceres::HuberLoss(16);
 
     for (auto ic = 0; ic < nbCams; ic++ ){
+        if (!params.isCamUsed(ic)) continue;
 
         problem.AddParameterBlock(&data.cam[ic][0],data.cam[ic].size());
         problem.AddParameterBlock(&data.R[ic][0],data.R[ic].size());
@@ -103,26 +104,29 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
                 problem.SetParameterization(&data.cam[ic][0], subset_parameterization);
             }
         }
-        if (params.isConst(p3dBundleParam_R,ic)) problem.SetParameterBlockConstant(&data.R[ic][0]);
-        if (params.isConst(p3dBundleParam_t,ic)) problem.SetParameterBlockConstant(&data.t[ic][0]);
+        if (params.isConst(p3dBundleParam_R,ic))
+            problem.SetParameterBlockConstant(&data.R[ic][0]);
+        if (params.isConst(p3dBundleParam_t,ic))
+            problem.SetParameterBlockConstant(&data.t[ic][0]);
 
-        for (auto p = 0; p < points3d.size(); p++){
+        for (auto p = 0; p < points3d.size(); p++)
+        {
+            if (W(3*ic+2,p) != 1) continue;
+            if (X(3,p) != 1) continue;
 
-            if (W(3*ic+2,p) == 1) {
-                Vec2 x1 = W.block(3*ic,p,2,1);
-                ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3> * cost_function =
-                        new ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3>(
-                            new BAFunctor_Affine(x1));
+            Vec2 x1 = W.block(3*ic,p,2,1);
+            ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3> * cost_function =
+                    new ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3>(
+                        new BAFunctor_Affine(x1));
 
-                problem.AddParameterBlock(&points3d[p][0],points3d[p].size());
-                if (params.isConstPts()) problem.SetParameterBlockConstant(&points3d[p][0]);
+            problem.AddParameterBlock(&points3d[p][0],points3d[p].size());
+            if (params.isConstPts()) problem.SetParameterBlockConstant(&points3d[p][0]);
 
-                problem.AddResidualBlock(cost_function, lossFunction,
-                                         &data.cam[ic][0],
-                                         &data.R[ic][0],
-                                         &data.t[ic][0],
-                                         &points3d[p][0]);
-            }
+            problem.AddResidualBlock(cost_function, lossFunction,
+                                     &data.cam[ic][0],
+                                     &data.R[ic][0],
+                                     &data.t[ic][0],
+                                     &points3d[p][0]);
         }
     }
 

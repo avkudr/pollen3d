@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 
 namespace p3d
 {
@@ -89,6 +90,16 @@ public:
         return varyingPars;
     }
 
+    bool isCamUsed(unsigned int c) {
+        if (m_usedCams.empty()) return true;
+        return (m_usedCams.count(c) > 0);
+    }
+    void setUsedCams(const std::vector<int> & cams) {
+        for (const auto & c : cams) {
+            if (c >= 0) m_usedCams.insert(c);
+        }
+    }
+
 private:
     void setParam(unsigned int param, std::vector<int> cams, bool isConst){
         if (cams.empty())
@@ -101,6 +112,8 @@ private:
     }
 
     std::vector<unsigned int> m_constCams{};
+    std::set<unsigned int> m_usedCams{};
+
     bool constPts3D{false};
 };
 }  // namespace p3d

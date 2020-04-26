@@ -198,7 +198,7 @@ void Application::saveProject()
     std::string path = m_projectData.getProjectPath();
     if (path == "") path = saveProjectDialog();
     if (path != "") {
-        auto f = [&](const std::string &path) { p3d::saveProject(&m_projectData, path); };
+        auto f = [&](const std::string &path) { p3d::saveProject(m_projectData, path); };
         HeavyTask::run(f, path);
     }
 }
@@ -273,7 +273,7 @@ void Application::_drawMenuBar(int width)
     if (ImGui::Button("Save as...", buttonRect)) {
         auto file = saveProjectDialog();
         if (file != "") {
-            p3d::saveProject(&m_projectData, file);
+            p3d::saveProject(m_projectData, file);
             _resetAppState();
         }
     }
@@ -283,7 +283,7 @@ void Application::_drawMenuBar(int width)
         if (file != "") {
             LOG_DBG("Open project: %s", file.c_str());
             auto f = [&, file]() {
-                p3d::openProject(&m_projectData, file);
+                p3d::openProject(m_projectData, file);
                 _resetAppState();
             };
             HeavyTask::run(f);
@@ -305,7 +305,7 @@ void Application::_drawMenuBar(int width)
 
         if (ImGui::Button("OK", ImVec2(120, 0))) {
             LOG_DBG("Close project");
-            p3d::closeProject(&m_projectData);
+            p3d::closeProject(m_projectData);
             _resetAppState();
             ImGui::CloseCurrentPopup();
         }
@@ -383,7 +383,7 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
     if (ImGui::Button("DBG_PROJ", buttonRect)) {
         auto f = [&]() {
-            p3d::openProject(&m_projectData,
+            p3d::openProject(m_projectData,
                              "test_project" + std::string(P3D_PROJECT_EXTENSION));
             m_state.setItemIdx(0);
             _resetAppState();
@@ -393,7 +393,7 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
     if (ImGui::Button("DBG_PROJ2", buttonRect)) {
         auto f = [&]() {
-            p3d::openProject(&m_projectData,
+            p3d::openProject(m_projectData,
                              "test_project2" + std::string(P3D_PROJECT_EXTENSION));
             m_state.setItemIdx(0);
             _resetAppState();
@@ -403,7 +403,7 @@ void Application::_drawMenuBar(int width)
     ImGui::SameLine();
     if (ImGui::Button("DBG_PROJ3", buttonRect)) {
         auto f = [&]() {
-            p3d::openProject(&m_projectData,
+            p3d::openProject(m_projectData,
                              "test_project3" + std::string(P3D_PROJECT_EXTENSION));
             m_state.setItemIdx(0);
             _resetAppState();

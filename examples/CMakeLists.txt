@@ -28,20 +28,41 @@ conan_cmake_run(
 
 # ----- Sources ----------------------------------------------
 
-add_executable(extract_features ./extract_features.cpp)
-target_compile_features(extract_features PUBLIC cxx_std_17)
-target_compile_definitions(extract_features PRIVATE P3D_API_IMPORT)
-target_include_directories(extract_features SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/)
-target_compile_definitions(extract_features PRIVATE P3D_IMAGES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../_datasets")
-
-# ----- add library
-
+set(P3D_LIB_NAME p3d)
 set(P3D_LIB_DIR ${GLOBAL_BINARY_DIR}/lib)
 set(P3D_INCLUDE_DIR ${GLOBAL_SOURCE_DIR}/lib/src)
+set(P3D_LIB_POSTFIX "")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(P3D_LIB_POSTFIX -debug)
+endif()
 
-target_include_directories(extract_features PRIVATE ${P3D_INCLUDE_DIR})
-target_link_directories(extract_features PRIVATE ${P3D_LIB_DIR} )
-target_link_libraries(extract_features PRIVATE p3d )
+if (WIN32)
+    set(FULL_PATH_P3D_LIB ${P3D_LIB_DIR}/${P3D_LIB_NAME}${P3D_LIB_POSTFIX}.dll)
+elseif(APPLE)
+    set(FULL_PATH_P3D_LIB ${P3D_LIB_DIR}/${P3D_LIB_NAME}${P3D_LIB_POSTFIX}.dylib)
+elseif(UNIX)
+    set(FULL_PATH_P3D_LIB ${P3D_LIB_DIR}/lib${P3D_LIB_NAME}${P3D_LIB_POSTFIX}.so)
+endif()
+
+function(add_p3d_example arg1)
+    add_executable(${arg1} ./${arg1}.cpp)
+    target_compile_features(${arg1} PUBLIC cxx_std_17)
+    target_compile_definitions(${arg1} PRIVATE P3D_API_IMPORT)
+    target_include_directories(${arg1} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/)
+    target_compile_definitions(${arg1} PRIVATE P3D_IMAGES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../_datasets")
+
+    # ----- add library
+
+    target_include_directories(${arg1} PRIVATE ${P3D_INCLUDE_DIR})
+    target_link_directories(${arg1} PRIVATE ${P3D_LIB_DIR} )
+    target_link_libraries(${arg1} PRIVATE p3d )
+
+    message(FULL_PATH_P3D_LIB: ${FULL_PATH_P3D_LIB})
+    add_custom_command(TARGET ${arg1} POST_BUILD        # Adds a post-build event to MyTest
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+            ${FULL_PATH_P3D_LIB}      # <--this is in-file
+            $<TARGET_FILE_DIR:${arg1}>)
+endfunction()
 
 file(GLOB p3d_LIBS "${P3D_LIB_DIR}/*.so")
 file(COPY ${p3d_LIBS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
@@ -50,3 +71,5 @@ file(COPY ${p3d_LIBS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 file(GLOB p3d_LIBS "${P3D_LIB_DIR}/*.dll")
 file(COPY ${p3d_LIBS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
+add_p3d_example(extract_features)
+add_p3d_example(reconstruction_batch)
