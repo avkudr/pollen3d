@@ -191,6 +191,14 @@ bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
 
 #pragma omp critical
             {
+                for (auto pair = 0; pair < data.nbImagePairs(); pair++) {
+                    if (!data.imagePair(pair)) continue;
+                    if (data.imagePair(pair)->imL() != i) continue;
+                    if (!data.imagePair(pair)->hasMatches()) continue;
+
+                    data.imagePair(pair)->deleteMatches();
+                    LOG_WARN("Pair %i: matches are no longer valid", pair);
+                }
                 p3d::task::progress_++;
             }
         } catch (...)

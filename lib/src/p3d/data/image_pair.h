@@ -61,6 +61,7 @@ public:
     const std::vector<Match> &getMatches() const { return m_matches; }
     void getMatchesAsMap(std::map<int, int> &map) const;
     void setMatches(const std::vector<Match> &matches) { m_matches = matches; }
+    void deleteMatches() { m_matches.clear(); }
 
     MatchingPars *matchingPars();
     const MatchingPars &getMatchingPars() const;
