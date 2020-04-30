@@ -104,9 +104,9 @@ public:
 
     // **** rotation parameters
 
-    void setTheta1(double a) { m_theta1 = a; }
+    void setTheta1(double a) { utils::wrapHalfPI(a); m_theta1 = a; }
     void setRho   (double a) { m_rho    = a; }
-    void setTheta2(double a) { m_theta2 = a; }
+    void setTheta2(double a) { utils::wrapHalfPI(a); m_theta2 = a; }
 
     bool  hasRrelative() { return !utils::floatEq(m_rho,0.0); }
     const Mat3 getRrelative() const;

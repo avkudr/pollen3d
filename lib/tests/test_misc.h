@@ -105,13 +105,9 @@ TEST(MISC, test_rotations)
         }
         {
             auto R1inv = utils::RfromEulerZYZt_inv(a, b, c);
-            EXPECT_TRUE(R1inv.isApprox(R1.inverse()));
+            EXPECT_TRUE(R1inv.isApprox(R1.transpose()));
         }
     }
-
-    //    EXPECT_EQ(table.rows(), 4);
-    //    EXPECT_EQ(table.cols(), 6);
-    //    EXPECT_EQ(table, tableTrue);
 }
 
 TEST(MISC, test_pointCloudCtnr)

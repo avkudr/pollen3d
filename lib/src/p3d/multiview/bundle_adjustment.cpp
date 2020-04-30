@@ -40,7 +40,7 @@ struct BAFunctor_Affine
         const auto& b = T(cam_R[1]);
         const auto& c = T(cam_R[2]);
 
-        Eigen::Matrix<T, 3, 3> R = utils::RfromEulerZYZt(a, b, c);
+        Eigen::Matrix<T, 3, 3> R = utils::RfromEulerZYX(a, b, c);
 
         A << cam_K[0] * cam_K[2], cam_K[1], T(0.0), cam_K[2];
 
@@ -82,39 +82,39 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
     }
 
     ceres::Problem problem;
-    auto lossFunction = new ceres::HuberLoss(16);
+    auto lossFunction = new ceres::HuberLoss(8);
 
-    for (auto ic = 0; ic < nbCams; ic++ ){
-        if (!params.isCamUsed(ic)) continue;
+    for (auto c = 0; c < nbCams; c++ ){
+        if (!params.isCamUsed(c)) continue;
 
-        problem.AddParameterBlock(&data.cam[ic][0],data.cam[ic].size());
-        problem.AddParameterBlock(&data.R[ic][0],data.R[ic].size());
-        problem.AddParameterBlock(&data.t[ic][0],data.t[ic].size());
+        problem.AddParameterBlock(&data.cam[c][0],data.cam[c].size());
+        problem.AddParameterBlock(&data.R[c][0],data.R[c].size());
+        problem.AddParameterBlock(&data.t[c][0],data.t[c].size());
 
-        if (params.isConst(p3dBundleParam_K,ic)) problem.SetParameterBlockConstant(&data.cam[ic][0]);
+        if (params.isConst(p3dBundleParam_K,c)) problem.SetParameterBlockConstant(&data.cam[c][0]);
         else{
             std::vector<int> constParams;
-            if (params.isConst(p3dBundleParam_Alpha,ic)) constParams.push_back(0);
-            if (params.isConst(p3dBundleParam_Skew,ic))  constParams.push_back(1);
-            if (params.isConst(p3dBundleParam_Focal,ic)) constParams.push_back(2);
+            if (params.isConst(p3dBundleParam_Alpha,c)) constParams.push_back(0);
+            if (params.isConst(p3dBundleParam_Skew,c))  constParams.push_back(1);
+            if (params.isConst(p3dBundleParam_Focal,c)) constParams.push_back(2);
 
             if (!constParams.empty()){
                 int nbIntrinsicPars = 3;
                 auto subset_parameterization = new ceres::SubsetParameterization(nbIntrinsicPars, constParams);
-                problem.SetParameterization(&data.cam[ic][0], subset_parameterization);
+                problem.SetParameterization(&data.cam[c][0], subset_parameterization);
             }
         }
-        if (params.isConst(p3dBundleParam_R,ic))
-            problem.SetParameterBlockConstant(&data.R[ic][0]);
-        if (params.isConst(p3dBundleParam_t,ic))
-            problem.SetParameterBlockConstant(&data.t[ic][0]);
+        if (params.isConst(p3dBundleParam_R,c))
+            problem.SetParameterBlockConstant(&data.R[c][0]);
+        if (params.isConst(p3dBundleParam_t,c))
+            problem.SetParameterBlockConstant(&data.t[c][0]);
 
         for (auto p = 0; p < points3d.size(); p++)
         {
-            if (W(3*ic+2,p) != 1) continue;
+            if (W(3*c+2,p) != 1) continue;
             if (X(3,p) != 1) continue;
 
-            Vec2 x1 = W.block(3*ic,p,2,1);
+            Vec2 x1 = W.block(3*c,p,2,1);
             ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3> * cost_function =
                     new ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3>(
                         new BAFunctor_Affine(x1));
@@ -123,9 +123,9 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
             if (params.isConstPts()) problem.SetParameterBlockConstant(&points3d[p][0]);
 
             problem.AddResidualBlock(cost_function, lossFunction,
-                                     &data.cam[ic][0],
-                                     &data.R[ic][0],
-                                     &data.t[ic][0],
+                                     &data.cam[c][0],
+                                     &data.R[c][0],
+                                     &data.t[c][0],
                                      &points3d[p][0]);
         }
     }
@@ -134,7 +134,7 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
     options.preconditioner_type = ceres::JACOBI;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
-    options.minimizer_progress_to_stdout = true;
+    options.minimizer_progress_to_stdout = false;
     options.use_explicit_schur_complement = true;
     options.num_threads = utils::nbAvailableThreads();
 
@@ -154,6 +154,7 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
     //std::cout << sReport << std::endl;
 
     for (auto p = 0; p < data.X.cols(); ++p){
-        data.X.col(p) << points3d[p][0], points3d[p][1], points3d[p][2], 1.0;
+        if (data.X(3,p) == 1)
+            data.X.col(p) << points3d[p][0], points3d[p][1], points3d[p][2], 1.0;
     }
 }

@@ -75,14 +75,6 @@ void AutoCalibrator::setMeasurementMatrix(const Mat &inW)
     }
 
     Win = inW;
-
-    m_tm.clear();
-
-    Mat Wmean;
-    computeWmean(Win, Wmean, m_tm);
-
-    utils::makeNonHomogenious(Wmean);
-    W = Wmean;
 }
 
 void AutoCalibrator::setSlopeAngles(const Mat2X &slopes)
@@ -104,6 +96,14 @@ void AutoCalibrator::setSlopeAngles(const Mat2X &slopes)
 void AutoCalibrator::run()
 {
     LOG_INFO("Autocalibration...");
+
+    m_tm.clear();
+
+    Mat Wmean;
+    computeWmean(Win, Wmean, m_tm);
+
+    utils::makeNonHomogenious(Wmean);
+    W = Wmean;
 
     m_iterCnt = 0;
     m_minf = INFINITY;
@@ -161,7 +161,7 @@ Mat2 AutoCalibrator::getCalibrationMatrixFromParamTable(
     return A;
 }
 
-double AutoCalibrator::distanceWminusMMW(const std::vector<double> &x)
+double AutoCalibrator:: distanceWminusMMW(const std::vector<double> &x)
 {
     const auto &nbCams = m_pars.nbCams();
     auto paramVarIdx = m_pars.getVaryingPairsCamParam();
@@ -277,9 +277,9 @@ Mat2 AutoCalibrator::getCalibrationMatrix() const
     return getCalibrationMatrixFromParamTable(paramResult);
 }
 
-Mat AutoCalibrator::getRotationAngles() const
+MatX3 AutoCalibrator::getRotationAngles() const
 {
-    return paramResult.middleCols(p3dBundleIdx_Theta1, 3);
+    return MatX3(paramResult.middleCols(p3dBundleIdx_Theta1, 3));
 }
 
 void AutoCalibrator::computeWmean(const Mat &W, Mat &Wmean,

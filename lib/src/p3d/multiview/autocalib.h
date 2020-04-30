@@ -41,7 +41,7 @@ public:
      */
     bool isInit() const
     {
-        return W.rows() == m_pars.nbCams() * 3 && W.cols() > 0;
+        return Win.rows() == m_pars.nbCams() * 3 && Win.cols() > 0;
     }
 
     // ***** setters and getters
@@ -130,7 +130,7 @@ public:
      * [        ...      ]
      * [t1_c, rho_c, t2_c] // ->camera c
      */
-    Mat getRotationAngles() const;
+    MatX3 getRotationAngles() const;
     // clang-format on
 
     /*! @brief Get the minimum found after the optimization */

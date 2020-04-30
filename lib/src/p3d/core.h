@@ -82,6 +82,7 @@ using Mat    = Eigen::MatrixXd;
 using Mati   = Eigen::Matrix<int,-1,-1>;
 using Mat2X  = Eigen::Matrix<double,2,-1>;
 using Mat3X  = Eigen::Matrix<double,3,-1>;
+using MatX3  = Eigen::Matrix<double,-1,3>;
 using Mat3Xf = Eigen::Matrix<float,3,-1>;
 using Mat4X  = Eigen::Matrix<double,4,-1>;
 using Vec    = Eigen::VectorXd;

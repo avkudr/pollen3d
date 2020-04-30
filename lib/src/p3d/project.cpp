@@ -100,6 +100,10 @@ void Project::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &ptsL,
     for (int i = 0; i < matches.size(); ++i) {
         const auto & idL = matches[i].iPtL;
         const auto & idR = matches[i].iPtR;
+
+        if (idL >= ptsLraw.size()) continue;
+        if (idR >= ptsRraw.size()) continue;
+
         ptsL.emplace_back(Vec2(ptsLraw[idL].pt.x,ptsLraw[idL].pt.y));
         ptsR.emplace_back(Vec2(ptsRraw[idR].pt.x,ptsRraw[idR].pt.y));
     }
@@ -181,13 +185,54 @@ void Project::getCamerasRotations(std::vector<Mat3> *R) const
     R->resize(nbImages());
     (*R)[0] = Mat3::Identity();
 
-    for (auto i = 0; i < nbImagePairs(); i++) {
+    for (auto i = 0; i < nbImages()-1; i++) {
         double t1 = m_imagesPairs[i].getTheta1();
         double rho = m_imagesPairs[i].getRho();
         double t2 = m_imagesPairs[i].getTheta2();
 
         (*R)[i + 1] = utils::RfromEulerZYZt_inv(t1, rho, t2);
         if (i != 0) (*R)[i + 1] = (*R)[i + 1] * (*R)[i];
+    }
+}
+
+std::vector<Vec3> Project::getCameraRotationsAbsolute() const
+{
+    std::vector<Mat3> R;
+    getCamerasRotations(&R);
+    std::vector<Vec3> vec;
+    vec.resize(R.size());
+
+    for (auto i = 0; i < static_cast<int>(R.size()); i++) {
+        double a,b,c;
+        utils::EulerZYXfromR(R[i], a, b, c);
+        vec[i] << a, b, c;
+    }
+    return vec;
+}
+
+void Project::setCameraRotationsAbsolute(const std::vector<Vec3> &abs, int N)
+{
+    if (nbImages() != abs.size()) return;
+    if (N == 0) N = abs.size();
+
+    std::vector<Mat3> Rarray(N);
+    for (auto i = 0; i < N; i++) {
+        const auto &a = abs[i][0];
+        const auto &b = abs[i][1];
+        const auto &c = abs[i][2];
+        Rarray[i] = utils::RfromEulerZYX(a,b,c);
+    }
+
+    for (auto i = 0; i < N - 1; i++){
+        Mat3 dR = Rarray[i+1] * Rarray[i].transpose();
+
+        double t1, rho, t2;
+        utils::EulerZYZtfromRinv(dR,t1,rho,t2);
+        utils::wrapHalfPI(t1);
+        utils::wrapHalfPI(t2);
+        m_imagesPairs[i].setTheta1(t1);
+        m_imagesPairs[i].setRho(rho);
+        m_imagesPairs[i].setTheta2(t2);
     }
 }
 
@@ -201,56 +246,81 @@ void Project::getCamerasExtrinsics(std::vector<Mat3> *R, std::vector<Vec2> *t) c
 void Project::getCamerasExtrinsics(std::vector<Vec3> *Rvec, std::vector<Vec2> *t) const
 {
     if (nbImages() == 0) return;
-
-    if (Rvec) {
-        std::vector<Mat3> Rarray(nbImages());
-        getCamerasRotations(&Rarray);
-
-        Rvec->resize(nbImages());
-        for (auto i = 0; i < nbImages(); i++){
-            const Mat3 & m = Rarray[i];
-            double a,b,c;
-            utils::EulerZYZtfromR(m, a, b, c);
-            (*Rvec)[i] << a, b, c;
-        }
-    }
-
-    if (t) {
-        t->resize(nbImages());
-        for (auto i = 0; i < nbImages(); i++)
-            (*t)[i] = m_images[i].getTranslation();
-    }
+    if (Rvec) *Rvec = getCameraRotationsAbsolute();
+    if (t) *t = getCameraTranslations();
 }
 
-void Project::setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t)
+void Project::setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t, int N)
 {
     if (t.size() != Rvec.size()) return;
     if (nbImages() != Rvec.size()) return;
 
-    std::vector<Mat3> Rarray(nbImages());
-    Rarray[0].setIdentity();
-    for (auto i = 0; i < nbImagePairs(); i++){
-        const auto &a = Rvec[i + 1][0];
-        const auto &b = Rvec[i + 1][1];
-        const auto &c = Rvec[i + 1][2];
-        Rarray[i+1] = utils::RfromEulerZYZt(a,b,c);
+   if (N == 0) N = Rvec.size();
+
+   setCameraRotationsAbsolute(Rvec,N);
+   setCameraTranslations(t);
+}
+
+std::vector<Vec3> Project::getCameraRotationsRelative() const
+{
+    std::vector<Vec3> rots;
+    rots.reserve(nbImages());
+    rots.emplace_back(Vec3(0,0,0));
+    for (int i = 0; i < nbImagePairs(); i++) {
+        Vec3 zyzt;
+        zyzt(0) = m_imagesPairs[i].getTheta1();
+        zyzt(1) = m_imagesPairs[i].getRho();
+        zyzt(2) = m_imagesPairs[i].getTheta2();
+        rots.emplace_back(zyzt);
+    }
+    return rots;
+}
+
+MatX3 Project::getCameraRotationsRelativeMat() const
+{
+    std::vector<Vec3> vec = getCameraRotationsRelative();
+    MatX3 zyzt;
+    zyzt.setZero(vec.size(),3);
+    for (int i = 0; i < vec.size(); i++)
+        zyzt.row(i) = vec[i].transpose();
+    return zyzt;
+}
+
+void Project::setCameraRotationsRelative(const MatX3 &zyzt)
+{
+    if (zyzt.rows() != nbImages()) {
+        LOG_ERR("Wrong number of elements in setCameraRotationsRelative");
+        return;
     }
 
-    std::vector<Mat3> R_(nbImagePairs());
-    for (auto i = 0; i < nbImagePairs(); i++){
-        Mat3 dR = Rarray[i].inverse() * Rarray[i+1];
+    for (int i = 0; i < nbImagePairs(); i++) {
+        m_imagesPairs[i].setTheta1(zyzt(i+1,0));
+        m_imagesPairs[i].setRho(zyzt(i+1,1));
+        m_imagesPairs[i].setTheta2(zyzt(i+1,2));
+    }
+}
 
-        double t1, rho, t2;
-        utils::EulerZYZtfromRinv(dR,t1,rho,t2);
-        utils::wrapHalfPI(t1);
-        utils::wrapHalfPI(t2);
-        m_imagesPairs[i].setTheta1(t1);
-        m_imagesPairs[i].setRho(rho);
-        m_imagesPairs[i].setTheta2(t2);
+std::vector<Vec2> Project::getCameraTranslations() const
+{
+    std::vector<Vec2> t;
+    t.resize(nbImages());
+
+    for (int i = 0; i < static_cast<int>(nbImages()); i++) {
+        t[i] = m_images[i].getTranslation();
+    }
+    return t;
+}
+
+void Project::setCameraTranslations(const std::vector<Vec2> &t)
+{
+    if (t.size() != nbImages()) {
+        LOG_ERR("Wrong number of elements in setTranslations");
+        return;
     }
 
-    for (auto i = 0; i < nbImages(); i++)
+    for (int i = 0; i < static_cast<int>(nbImages()); i++) {
         m_images[i].setTranslation(t[i]);
+    }
 }
 
 std::vector<Mat34> Project::getCameraMatrices() const

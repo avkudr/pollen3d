@@ -880,8 +880,8 @@ void p3d::triangulateDenseDev(Project &data)
         Mat3 Tl = data.imagePair(pairIdx)->getRectifyingTransformL();
         Mat3 Tr = data.imagePair(pairIdx)->getRectifyingTransformR();
 
-        Mat3 Tli = Tl.inverse();
-        Mat3 Tri = Tr.inverse();
+        Mat3 Tli = utils::inverseTransform(Tl);
+        Mat3 Tri = utils::inverseTransform(Tr);
 
         LOG_INFO("disp(%i)", dispValues.type());
 

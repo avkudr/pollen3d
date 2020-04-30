@@ -57,7 +57,6 @@ function(add_p3d_example arg1)
     target_link_directories(${arg1} PRIVATE ${P3D_LIB_DIR} )
     target_link_libraries(${arg1} PRIVATE p3d )
 
-    message(FULL_PATH_P3D_LIB: ${FULL_PATH_P3D_LIB})
     add_custom_command(TARGET ${arg1} POST_BUILD        # Adds a post-build event to MyTest
         COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
             ${FULL_PATH_P3D_LIB}      # <--this is in-file

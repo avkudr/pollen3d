@@ -13,10 +13,10 @@ int main(int argc, char **argv)
     p3d::logger::setStd();
     p3d::logger::off();
 
-#ifndef POLLEN3D_DEBUG
-    std::cout.setstate(std::ios_base::failbit);
-    std::cerr.setstate(std::ios_base::failbit);
-#endif
+//#ifndef POLLEN3D_DEBUG
+//    std::cout.setstate(std::ios_base::failbit);
+//    std::cerr.setstate(std::ios_base::failbit);
+//#endif
 
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

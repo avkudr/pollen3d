@@ -298,7 +298,9 @@ Vec4 utils::triangulate(const std::vector<Vec2> &x, const std::vector<Mat34> &Ps
     }
     Vec X_and_alphas;
     utils::nullspace(design, &X_and_alphas);
-    return Vec4(X_and_alphas.head(4));
+    Vec4 X = X_and_alphas.head(4);
+    X /= X.w();
+    return X;
 }
 
 void utils::EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2)
@@ -462,4 +464,79 @@ std::vector<std::vector<int> > utils::generateBatches(int nbCams, int batchSize)
         i += batchSize - overlap;
     }
     return batches;
+}
+
+void utils::convert(const Mat2X &src, std::vector<Vec2> &dst)
+{
+    dst.clear();
+    dst.reserve(src.cols());
+    for (int i = 0; i < src.cols(); i++) {
+        dst.emplace_back(src.col(i));
+    }
+}
+
+void utils::convert(const std::vector<double> &src, Vec &dst)
+{
+    dst.setZero(src.size());
+    for (int i = 0; i < src.size(); i++) {
+        dst(i) = src[i];
+    }
+}
+
+void utils::EulerZYXfromR(const Mat3 &R, double &rx, double &ry, double &rz)
+{
+    using T = double;
+    Eigen::Matrix<T, 3, 3> M = R.transpose();
+    for (const int i : {0,1,2}){
+        T s = M.col(i).norm();
+        M.col(i).array() /= s;
+    }
+
+    rx = (T) std::atan2 (M(1,2), M(2,2));
+
+    Eigen::Matrix<T, 3, 3> N;
+    N = Eigen::Matrix<T, 3, 3>(Eigen::AngleAxis<T>(-rx, Eigen::Matrix<T, 3, 1>::UnitX())).transpose() * M;
+
+    T cy =   (T) std::sqrt (N(0,0)*N(0,0) + N(0,1)*N(0,1));
+    ry = (T) std::atan2 (-N(0,2), cy);
+    rz = (T) std::atan2 (-N(1,0), N(1,1));
+}
+
+Vec utils::reprojectionError(const Mat &W, const Mat &P, const Mat4X &X, std::vector<int> selCams) {
+    Mat err = W - P * X;
+    int nbCams = W.rows() / 3;
+    int nbPts = W.cols();
+    if (selCams.empty()){
+        for (int p = 0; p < nbCams; ++p) selCams.push_back(p);
+    }
+
+    std::vector<double> errs;
+    for (int p = 0; p < nbPts; ++p) {
+        if (X(3,p) != 1) continue;
+
+        double meanErr = 0;
+        int nbCamsVis = 0;
+        for (int ic = 0; ic < selCams.size(); ++ic) {
+            int c = selCams[ic];
+            if (W(3*c+2,p) != 1) continue;
+
+            meanErr += err.block(3*c,p,2,1).norm();
+            nbCamsVis++;
+
+            errs.push_back(err.block(3*c,p,2,1).norm());
+        }
+
+        if (nbCamsVis == 0) continue;
+
+    }
+
+    Vec e;
+    utils::convert(errs,e);
+
+    std::cout << " **** " << std::endl;
+    std::cout << "mean reproj: " << e.mean() << std::endl;
+    std::cout << "mean reproj 0.5: " << 100.0f * (e.array() < 0.5).count() / float(errs.size()) << " %" << std::endl;
+    std::cout << "mean reproj 1.0: " << 100.0f * (e.array() < 1.0).count() / float(errs.size()) << " %" << std::endl;
+
+    return e;
 }

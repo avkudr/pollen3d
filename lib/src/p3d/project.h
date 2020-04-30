@@ -91,10 +91,21 @@ public:
     void getCamerasIntrinsics(std::vector<Vec3> *cam) const;
     void setCamerasIntrinsics(std::vector<Vec3> &cam);
 
-    void getCamerasRotations(std::vector<Mat3> *R) const;
     void getCamerasExtrinsics(std::vector<Mat3> *R, std::vector<Vec2> *t) const;
     void getCamerasExtrinsics(std::vector<Vec3> *Rvec, std::vector<Vec2> *t) const;
-    void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t);
+    void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t, int N = 0);
+
+    void getCamerasRotations(std::vector<Mat3> *R) const;
+
+    std::vector<Vec3> getCameraRotationsAbsolute() const;
+    void setCameraRotationsAbsolute(const std::vector<Vec3> & abs, int N = 0);
+
+    std::vector<Vec3> getCameraRotationsRelative() const;
+    MatX3 getCameraRotationsRelativeMat() const;
+    void setCameraRotationsRelative(const MatX3 & zyzt);
+
+    std::vector<Vec2> getCameraTranslations() const;
+    void setCameraTranslations(const std::vector<Vec2> & t);
 
     std::vector<Mat34> getCameraMatrices() const;
     Mat getCameraMatricesMat() const;

@@ -15,7 +15,37 @@ namespace p3d
 {
 namespace utils
 {
+
+class HideCout{
+public:
+    HideCout(){
+        out.clear();
+        coutbuf = std::cout.rdbuf(); //save old buf
+        cerrbuf = std::cerr.rdbuf(); //save old buf
+        clogbuf = std::clog.rdbuf(); //save old buf
+        std::cout.rdbuf(out.rdbuf()); //redirect std::cout
+        std::cerr.rdbuf(out.rdbuf()); //redirect std::cout
+        std::clog.rdbuf(out.rdbuf()); //redirect std::cout
+
+    }
+
+    ~HideCout(){
+        out.clear();
+        std::cout.rdbuf(coutbuf); //redirect std::cout back
+        std::cerr.rdbuf(cerrbuf); //redirect std::cout back
+        std::clog.rdbuf(clogbuf); //redirect std::cout back
+    }
+
+private:
+    std::ofstream out;
+    std::streambuf * coutbuf;
+    std::streambuf * cerrbuf;
+    std::streambuf * clogbuf;
+};
+
 void saveFileToMatlab(std::string fileName, cv::Mat a, std::string varName);
+
+Vec reprojectionError(const Mat & W, const Mat & P, const Mat4X & X, std::vector<int> selCams = {});
 
 template <typename T>
 static T rad2deg(const T &angRad)
@@ -52,10 +82,12 @@ enum {
 
 cv::Mat concatenateCvMat(const std::vector<cv::Mat> &matArray, int method = CONCAT_VERTICAL);
 
+void convert(const std::vector<double> &src, Vec &dst);
 void convert(const std::vector<Vec3f> &src, Mat3Xf &dst);
 void convert(const std::vector<Vec3> &src, Mat3Xf &dst);
 void convert(const std::vector<Vec3> &src, Mat4X &dst);
 void convert(const std::vector<Vec4> &src, Mat4X &dst);
+void convert(const Mat2X &src, std::vector<Vec2> &dst);
 
 std::string to_string(const std::vector<int> &v);
 
@@ -125,6 +157,70 @@ Eigen::Matrix<T, 3, 3> RfromEulerZYZt_inv(const T &theta1, const T &rho, const T
     return RfromEulerZYZt(theta2, -rho, theta1);
 }
 
+template <typename T>
+Eigen::Matrix<T, 3, 3> RfromEulerZYX(const T &rx, const T &ry, const T &rz)
+{
+    const auto cx = cos(rx);
+    const auto cy = cos(ry);
+    const auto cz = cos(rz);
+    const auto sx = sin(rx);
+    const auto sy = sin(ry);
+    const auto sz = sin(rz);
+
+    Eigen::Matrix<T, 3, 3> R;
+
+    // R = [  cy*cz   sy*sx*cz-sz*cx    sy*cx*cz+sz*sx
+    //        cy*sz   sy*sx*sz+cz*cx    sy*cx*sz-cz*sx
+    //          -sy            cy*sx             cy*cx]
+    //   = Rz(tz) * Ry(ty) * Rx(tx)
+
+    R(0, 0) = cy*cz;
+    R(0, 1) = sy*sx*cz - sz*cx;
+    R(0, 2) = sy*cx*cz + sz*sx;
+    R(1, 0) = cy*sz;
+    R(1, 1) = sy*sx*sz + cz*cx;
+    R(1, 2) = sy*cx*sz - cz*sx;
+    R(2, 0) = -sy;
+    R(2, 1) = cy*sx;
+    R(2, 2) = cy*cx;
+
+    return R;
+}
+
+template <typename T>
+Eigen::Matrix<T, 3, 3> RfromEulerXYZ(const T &rx, const T &ry, const T &rz)
+{
+    const auto cx = cos(rx);
+    const auto cy = cos(ry);
+    const auto cz = cos(rz);
+    const auto sx = sin(rx);
+    const auto sy = sin(ry);
+    const auto sz = sin(rz);
+
+    Eigen::Matrix<T, 3, 3> R;
+
+    // The rotation matrix R can be constructed as follows by
+    // ct = [cx cy cz] and st = [sx sy sz]
+    //
+    // R = [            cy*cz,           -cy*sz,     sy]
+    //     [ cx*sz + cz*sx*sy, cx*cz - sx*sy*sz, -cy*sx]
+    //     [ sx*sz - cx*cz*sy, cz*sx + cx*sy*sz,  cx*cy]
+    //   = Rx(tx) * Ry(ty) * Rz(tz)
+
+    R(0,0) = cy*cz;
+    R(0,1) = -cy*sz;
+    R(0,2) = sy;
+    R(1,0) = cx*sz + cz*sx*sy;
+    R(1,1) = cx*cz - sx*sy*sz;
+    R(1,2) = -cy*sx;
+    R(2,0) = sx*sz - cx*cz*sy;
+    R(2,1) = cz*sx + cx*sy*sz;
+    R(2,2) = cx*cy;
+
+    return R;
+}
+
+void EulerZYXfromR(const Mat3 &R, double &rx, double &ry, double &rz);
 void EulerZYZtfromR(const Mat3 &R, double &t1, double &rho, double &t2);
 void EulerZYZtfromRinv(const Mat3 &R, double &t1, double &rho, double &t2);
 
