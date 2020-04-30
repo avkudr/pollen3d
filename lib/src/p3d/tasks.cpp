@@ -376,11 +376,22 @@ bool p3d::rectifyImagePairs(Project &data, std::vector<int> imPairsIds)
         double angleL = imPair->getTheta1();
         double angleR = imPair->getTheta2();
 
-        if (utils::floatEq(angleL, 0.0) && utils::floatEq(angleR, 0.0))
+        if (utils::floatEq(angleL, 0.0) && utils::floatEq(angleR, 0.0)) {
+            LOG_ERR("Pair %i, needs slope angles (epipolar geometry)", i);
             continue;
+        }
 
         std::vector<Vec2> ptsL, ptsR;
         data.getPairwiseMatches(i, ptsL, ptsR);
+
+        if (imL->cvMat().empty()) {
+            LOG_ERR("Pair %i, no left image", i);
+            continue;
+        }
+        if (imR->cvMat().empty()) {
+            LOG_ERR("Pair %i, no right image", i);
+            continue;
+        }
 
         RectificationData rectif;
         rectif.imL = imL->cvMat();
