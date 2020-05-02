@@ -24,6 +24,8 @@ int Project::initMeta()
         LOG_DBG("Reflecting: Project");
         entt::meta<Project>()
             .alias("Project"_hs)
+            .data<&Project::setAutocalibPars, &Project::getAutocalibPars>(
+                P3D_ID_TYPE(p3dProject_autocalibPars))
             .data<&Project::setPointCloudCtnr, &Project::getPointCloudCtnr>(
                 P3D_ID_TYPE(p3dProject_pointCloudCtnr))
             .data<&Project::setMeasurementMatrix, &Project::getMeasurementMatrix>(
@@ -366,3 +368,10 @@ void Project::setPointCloudCtnr(const PointCloudContainer &pointCloudCtnr)
 const ProjectSettings &Project::getSettings() const { return m_settings; }
 
 void Project::setSettings(const ProjectSettings &settings) { m_settings = settings; }
+
+const AutocalibPars &Project::getAutocalibPars() const { return m_autocalibPars; }
+
+void Project::setAutocalibPars(const AutocalibPars &autocalibPars)
+{
+    m_autocalibPars = autocalibPars;
+}

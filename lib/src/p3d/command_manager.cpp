@@ -8,20 +8,21 @@ std::shared_ptr<CommandManager> _cmdManager =
 
 void LibCommandManager::executeCommand(p3d::Command *cmd)
 {
-    if (cmd->isValid()) {
-        cmd->execute();
+    if (!cmd->isValid()) return;
+    cmd->execute();
 
-        if (m_commandStack.empty()) m_mergeNextCommand = false;
-        if (m_mergeNextCommand) {
-            CommandGroup *newGroup = new CommandGroup();
-            newGroup->add(m_commandStack.back());
-            newGroup->add(cmd);
-            m_commandStack.pop_back();
-            m_commandStack.push_back(newGroup);
-            m_mergeNextCommand = false;
-        } else
-            m_commandStack.push_back(cmd);
-    }
+    if (!m_withUndo) return;
+
+    if (m_commandStack.empty()) m_mergeNextCommand = false;
+    if (m_mergeNextCommand) {
+        CommandGroup *newGroup = new CommandGroup();
+        newGroup->add(m_commandStack.back());
+        newGroup->add(cmd);
+        m_commandStack.pop_back();
+        m_commandStack.push_back(newGroup);
+        m_mergeNextCommand = false;
+    } else
+        m_commandStack.push_back(cmd);
 }
 
 void LibCommandManager::undoCommand()
@@ -50,6 +51,16 @@ void set(std::shared_ptr<CommandManager> cmdManager)
 void executeCommand(Command *cmd)
 {
     if (p3d::cmder::_cmdManager) p3d::cmder::_cmdManager->executeCommand(cmd);
+}
+
+void undoOn()
+{
+    if (p3d::cmder::_cmdManager) p3d::cmder::_cmdManager->setUndoOn();
+}
+
+void undoOff()
+{
+    if (p3d::cmder::_cmdManager) p3d::cmder::_cmdManager->setUndoOff();
 }
 
 } // namespace p3d::cmder

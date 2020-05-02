@@ -10,6 +10,7 @@
 #include "p3d/data/point_cloud_container.h"
 #include "p3d/data/project_settings.h"
 #include "p3d/logger.h"
+#include "p3d/multiview/autocalib.h"
 #include "p3d/serialization.h"
 
 namespace p3d
@@ -22,6 +23,7 @@ enum P3D_API p3dProject_ {
     p3dProject_imagePairs,
     p3dProject_measMat,
     p3dProject_pointCloudCtnr,
+    p3dProject_autocalibPars,
 };
 
 class P3D_API Project : public Serializable<Project>
@@ -117,6 +119,9 @@ public:
     const ProjectSettings &getSettings() const;
     void setSettings(const ProjectSettings &settings);
 
+    const AutocalibPars &getAutocalibPars() const;
+    void setAutocalibPars(const AutocalibPars &autocalibPars);
+
 private:
     Image *imagePairImage(const std::size_t idx, bool left)
     {
@@ -132,6 +137,7 @@ private:
 
     Mat m_measurementMatrix{};
 
+    AutocalibPars m_autocalibPars{};
     PointCloudContainer m_pointCloudCtnr{};
     ProjectSettings m_settings;
 };

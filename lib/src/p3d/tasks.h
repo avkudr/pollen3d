@@ -70,6 +70,9 @@ void setSetting(Project &project, const p3dSetting &name, const entt::meta_any &
 
 // ***** Misc
 
+void P3D_API setProjectProperty(Project &data, const P3D_ID_TYPE &propId,
+                                const entt::meta_any &value);
+
 void P3D_API setImageProperty(Project &             data,
                               const P3D_ID_TYPE &   propId,
                               const entt::meta_any &value,

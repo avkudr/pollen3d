@@ -4,16 +4,34 @@
 
 #include "p3d/core.h"
 #include "p3d/multiview/bundle_params.h"
+#include "p3d/serialization.h"
 
 namespace p3d
 {
+typedef int p3dAutocalib;
+enum P3D_API p3dAutocalib_ {
+    p3dAutocalib_batchSize,
+    p3dAutocalib_batchMinNbMatches,
+    p3dAutocalib_withBA,
+};
+
+class P3D_API AutocalibPars : public Serializable<AutocalibPars>
+{
+public:
+    static int initMeta();
+
+    int batchSize{4};
+    int batchMinNbMatches{20};
+    bool withBA{true};
+};
+
 /**
  * @brief AutoCalibrator allows to perform autocalibration.
  *
  * autocalibration consists in finding camera parameters (intrinsic and
  * extrinsic) from images only without any prior information about the object
  * (scene). This implementation is adapted for affine cameras only. In order to
- * perform autocalibration a measurement matrix is needed where all features are
+ * perform autocalibration a measurement matrix is needed where all features (!) are
  * seen in all images. User may also specify slope angles of epipolar lines that
  * will be used as a starting point of the algorithm.
  */

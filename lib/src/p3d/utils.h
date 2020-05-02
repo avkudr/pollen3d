@@ -43,6 +43,18 @@ private:
     std::streambuf * clogbuf;
 };
 
+template <typename T>
+static T min(T a, T b)
+{
+    return a < b ? a : b;
+}
+
+template <typename T>
+static T max(T a, T b)
+{
+    return a > b ? a : b;
+}
+
 void saveFileToMatlab(std::string fileName, cv::Mat a, std::string varName);
 
 Vec reprojectionError(const Mat & W, const Mat & P, const Mat4X & X, std::vector<int> selCams = {});

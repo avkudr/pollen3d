@@ -77,9 +77,9 @@ void p3d::autocalibrateBatch(Project &data)
 
     // **** parameters
 
-    const int batchSize = 4;
-    const bool withBA = true;
-	const int minNbMatchesInBatch = 20;
+    const int batchSize = data.getAutocalibPars().batchSize;
+    const int minNbMatchesInBatch = data.getAutocalibPars().batchMinNbMatches;
+    const bool withBA = data.getAutocalibPars().withBA;
 
     // **** start
 
@@ -1258,6 +1258,12 @@ void p3d::setSetting(Project &project, const p3dSetting &id, const entt::meta_an
 {
     auto s = project.settings();
     p3d::cmder::executeCommand(new CommandSetProperty{s, P3D_ID_TYPE(id), value});
+}
+
+void p3d::setProjectProperty(Project &data, const uint32_t &propId,
+                             const entt::meta_any &value)
+{
+    p3d::cmder::executeCommand(new CommandSetProperty{&data, propId, value});
 }
 
 void p3d::setImageProperty(Project &data, const P3D_ID_TYPE &propId,

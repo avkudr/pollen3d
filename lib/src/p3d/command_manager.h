@@ -18,7 +18,11 @@ public:
     virtual void undoCommand() = 0;
     void mergeNextCommand() { m_mergeNextCommand = true; }
 
+    void setUndoOn() { m_withUndo = true; }
+    void setUndoOff() { m_withUndo = false; }
+
 protected:
+    bool m_withUndo{true};
     std::vector<Command *> m_commandStack;
     bool m_mergeNextCommand{false};
 };
@@ -36,6 +40,8 @@ public:
 void P3D_API executeCommand(Command *cmd);
 std::shared_ptr<CommandManager> P3D_API get();
 void P3D_API set(std::shared_ptr<CommandManager> cmdManager);
+void P3D_API undoOn();
+void P3D_API undoOff();
 
 // void P3D_API on(); // TODO
 // void P3D_API off(); // TODO

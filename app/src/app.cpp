@@ -4,6 +4,7 @@
 
 #include "../assets/fonts/IconsFontAwesome5.h"
 
+#include "p3d/command_manager.h"
 #include "p3d/commands.h"
 #include "p3d/tasks.h"
 #include "p3d/utils.h"
@@ -657,8 +658,73 @@ void Application::_drawTab_Multiview()
                 if (ImGuiC::Collapsing("Autocalibration", &run)) {
                     ImGuiC::BeginSubGroup();
 
-                    if (ImGui::Button(P3D_ICON_RUN " Autocalibrate"))
-                        run = true;
+                    auto autocalibPars = m_projectData.getAutocalibPars();
+                    int batchSize = autocalibPars.batchSize;
+                    int batchMinNbMatches = autocalibPars.batchMinNbMatches;
+                    bool withBA = autocalibPars.withBA;
+
+                    bool needsUpdate = false;
+                    if (ImGui::InputInt("batch size", &batchSize, 1)) {
+                        batchSize = utils::max(batchSize, 3);
+                        batchSize = utils::min(batchSize, int(m_projectData.nbImages()));
+                        if (autocalibPars.batchSize != batchSize) { needsUpdate = true; }
+                    }
+
+                    if (ImGui::InputInt("min nb matches", &batchMinNbMatches, 1)) {
+                        batchMinNbMatches = utils::max(batchMinNbMatches, 0);
+                        if (autocalibPars.batchMinNbMatches != batchMinNbMatches) {
+                            needsUpdate = true;
+                        }
+                    }
+                    if (ImGui::Button("check batches")) {
+                        auto W = m_projectData.getMeasurementMatrix();
+                        if (W.size() == 0) {
+                            p3d::cmder::undoOff();
+                            p3d::findMeasurementMatrix(m_projectData);
+                            p3d::cmder::undoOn();
+                        }
+                        W = m_projectData.getMeasurementMatrix();
+                        if (W.size() != 0) {
+                            LOG_INFO("number of matches in each batch");
+                            auto batches = utils::generateBatches(
+                                m_projectData.nbImages(), batchSize);
+
+                            std::vector<std::string> list;
+                            int i = 0;
+                            for (const auto &batch : batches) {
+                                std::string res = "batch " + std::to_string(i) + " [";
+                                for (int b = 0; b < batch.size(); b++) {
+                                    res += std::to_string(batch[b]);
+                                    if (b == (batch.size() - 1))
+                                        res += "]: ";
+                                    else
+                                        res += ",";
+                                }
+                                Mat Wfsub;
+                                utils::findFullSubMeasurementMatrix(W, Wfsub, batch);
+                                res += std::to_string(Wfsub.cols());
+                                list.push_back(res);
+                                LOG_INFO("%s", res.c_str());
+                                i++;
+                            }
+                        } else {
+                            LOG_ERR("measurement matrix is empty. no matches?");
+                        }
+                    }
+
+                    if (ImGui::Checkbox("use bundle adjustment", &withBA)) {
+                        if (autocalibPars.withBA != withBA) { needsUpdate = true; }
+                    }
+
+                    if (needsUpdate) {
+                        autocalibPars.batchSize = batchSize;
+                        autocalibPars.batchMinNbMatches = batchMinNbMatches;
+                        autocalibPars.withBA = withBA;
+                        p3d::setProjectProperty(m_projectData, p3dProject_autocalibPars,
+                                                autocalibPars);
+                    }
+
+                    if (ImGui::Button(P3D_ICON_RUN " Autocalibrate")) run = true;
 
                     ImGuiC::EndSubGroup();
                 }
