@@ -533,10 +533,5 @@ Vec utils::reprojectionError(const Mat &W, const Mat &P, const Mat4X &X, std::ve
     Vec e;
     utils::convert(errs,e);
 
-    std::cout << " **** " << std::endl;
-    std::cout << "mean reproj: " << e.mean() << std::endl;
-    std::cout << "mean reproj 0.5: " << 100.0f * (e.array() < 0.5).count() / float(errs.size()) << " %" << std::endl;
-    std::cout << "mean reproj 1.0: " << 100.0f * (e.array() < 1.0).count() / float(errs.size()) << " %" << std::endl;
-
     return e;
 }

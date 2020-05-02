@@ -72,25 +72,23 @@ static void initDiamondProject(Project & project) {
 int main()
 {
     p3d::Project data;
-    p3d::openProject(data, "C:/Users/Andrey/Desktop/_datasets/Ostracode/temp.yml.gz");
-    //initDiamondProject(data);
+    initDiamondProject(data);
 
     auto W = data.getMeasurementMatrixFull();
 
-    // ***** reconstruction from first x images
-    std::cout << "W:\n" << W.rows() << "x" << W.cols() << std::endl;
-    std::cout << "W:\n" << W.topLeftCorner(7*3,20) << std::endl;
+    // ***** remove existing rho rotation
 
     auto temp = data.getCameraRotationsRelativeMat();
     temp.col(1) *= 0;
     data.setCameraRotationsRelative(temp);
-    std::cout << "data.getCameraRotationsRelativeMat():\n" << utils::rad2deg(data.getCameraRotationsRelativeMat()) << std::endl;
+
+    // ***** start
 
     Mat4X X;
     X.setZero(4,W.cols());
 
     std::set<int> calibrated;
-    auto batches = utils::generateBatches(data.nbImages(),4);
+    auto batches = utils::generateBatches(data.nbImages(), 5);
     const int nbCamsTotal = data.nbImages();
 
     int batchIdx = 0;
@@ -98,7 +96,8 @@ int main()
     errors.setZero(2, batches.size());
 
     for (const auto & batch : batches) {
-        std::cout << " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! " << std::endl;
+        std::cout << " ************************************************************** " << std::endl;
+        std::cout << " Batch[" << batchIdx << "]: ";
         for (auto i : batch) {
             std::cout << i << ",";
             calibrated.insert(i);
@@ -138,15 +137,8 @@ int main()
         autocalib.setMaxTime(60);
         autocalib.setMeasurementMatrix(Wfsub);
         autocalib.setSlopeAngles(slopes);
-        std::cout << "slopes:\n" << utils::rad2deg(slopes) << std::endl;
-        {
-            LOG_INFO("Autocalibration...");
-            utils::HideCout l;
-            p3d::logger::off();
-            autocalib.run();
-            p3d::logger::on();
 
-        }
+        autocalib.run();
 
         auto tvec = autocalib.getTranslations();
 
@@ -181,19 +173,6 @@ int main()
             data.imagePair(i)->setTheta2(rotRad(n+1,2));
         }
 
-        {
-            auto rot = utils::rad2deg(rotRad);
-            Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-
-            LOG_OK("Angles: [theta rho theta']");
-            std::stringstream ss;
-            ss << rot.format(CleanFmt);
-            auto rows = utils::split(ss.str(), "\n");
-            for (auto i = 0; i < rot.rows(); ++i) {
-                LOG_OK("Pair %i: %s", i, rows[i].c_str());
-            }
-        }
-
         // ***** triangulate missing
 
         std::vector<int> calibVec;
@@ -215,13 +194,9 @@ int main()
             X.col(pt) = Xa;
         }
 
-        std::cout << "nb triangulated: " << X.bottomRows(1).sum() << "/" << X.cols() << std::endl;
-
-        utils::reprojectionError(W,data.getCameraMatricesMat(),X,calibVec);
-
         // ***** bundle selected cams and selected points
 
-#define WITH_BUNDLE 0
+#define WITH_BUNDLE 1
 #if (WITH_BUNDLE == 1)
         BundleData bundleData;
         bundleData.X = X;
@@ -269,19 +244,25 @@ int main()
         data.setCameraRotationsAbsolute(bundleData.R, calibVec.back() + 1);
         data.setCameraTranslations(bundleData.t);
         X = bundleData.X;
+
+        LOG_OK("Bundle adjustement: done");
 #endif
-        // **** saving
 
-        data.pointCloudCtnr()["sparse"].setVertices(X.topRows(3).cast<float>());
+        {
+            std::cout << "nb triangulated: " << X.bottomRows(1).sum() << "/" << X.cols() << std::endl;
+            Vec e = utils::reprojectionError(W,data.getCameraMatricesMat(),X,calibVec);
+            std::cout << "mean reproj: " << e.mean() << std::endl;
+            std::cout << "reproj error < 0.5px: " << 100.0f * (e.array() < 0.5).count() / float(e.size()) << " %" << std::endl;
+            std::cout << "reproj error < 1.0px: " << 100.0f * (e.array() < 1.0).count() / float(e.size()) << " %" << std::endl;
+        }
+
         batchIdx++;
-
-        std::cout << "after bundle: " << std::endl;
-        utils::reprojectionError(W,data.getCameraMatricesMat(),X,calibVec);
-
-        //std::cout << utils::rad2deg(data.getCameraRotationsRelativeMat()) << std::endl;
     }
 
-    p3d::saveProject(data, "C:/Users/Andrey/Desktop/_datasets/Ostracode/temp2.yml.gz");
+    // **** saving
+
+    //data.pointCloudCtnr()["sparse"].setVertices(X.topRows(3).cast<float>());
+    //p3d::saveProject(data, "reconstruction_batch.yml.gz");
 
     return 0;
 }

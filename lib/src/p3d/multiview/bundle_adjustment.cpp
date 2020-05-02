@@ -134,7 +134,7 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
     options.preconditioner_type = ceres::JACOBI;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
-    options.minimizer_progress_to_stdout = false;
+    options.minimizer_progress_to_stdout = true;
     options.use_explicit_schur_complement = true;
     options.num_threads = utils::nbAvailableThreads();
 

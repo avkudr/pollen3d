@@ -193,12 +193,12 @@ double AutoCalibrator:: distanceWminusMMW(const std::vector<double> &x)
     m_iterCnt++;
     if (m_iterCnt % 1000 == 0) {
         if (objValue < m_bestObjValue) m_bestObjValue = objValue;
-        std::stringstream stream;
-        std::cout << "  :  " << std::setw(15) << m_iterCnt << "  :  "
-                  << std::setw(12) << std::setprecision(5) << m_bestObjValue
-                  << "  :  " << std::setw(12) << std::setprecision(5)
-                  << objValue << std::endl
-                  << std::flush;
+//        std::stringstream stream;
+//        std::cout << "  :  " << std::setw(15) << m_iterCnt << "  :  "
+//                  << std::setw(12) << std::setprecision(5) << m_bestObjValue
+//                  << "  :  " << std::setw(12) << std::setprecision(5)
+//                  << objValue << std::endl
+//                  << std::flush;
         LOG_INFO("Iter: %5i, %5e, %5e", m_iterCnt, m_bestObjValue, objValue);
     }
 
