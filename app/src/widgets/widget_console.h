@@ -5,6 +5,7 @@
 #include <mutex>
 
 #include "p3d/logger.h"
+#include "p3d/utils.h"
 
 struct LogEntry {
 public:
@@ -61,7 +62,8 @@ public:
                 break;
         }
         std::string ret = std::string(formatted.get());
-        Lines.emplace_back(m_type.c_str(), m_color, ret);
+        auto msgLines = p3d::utils::split(ret, "\n");
+        for (const auto& msg : msgLines) Lines.emplace_back(m_type.c_str(), m_color, msg);
     }
 
 private:

@@ -71,7 +71,8 @@ void p3d::autocalibrateBatch(Project &data)
 	p3d::findMeasurementMatrixFull(data);
     const auto & W = data.getMeasurementMatrixFull();
     if (W.rows() == 0 || W.cols() == 0) {
-	   return;
+        p3d_Error("measurement matrix is empty.\nno matches?");
+        return;
     }
 
     // **** parameters
@@ -106,6 +107,12 @@ void p3d::autocalibrateBatch(Project &data)
         Mat Wfsub;
         utils::findFullSubMeasurementMatrix(W, Wfsub, batch, &selectedPts);
 
+        if (Wfsub.cols() < minNbMatchesInBatch) {
+            std::string err = "not enough matches in batch\n images ";
+            for (auto i : batch) err += std::to_string(i) + " ";
+            p3d_Error(err);
+        }
+
         // **** get slopes
 
         Mat2X slopes;
@@ -113,12 +120,10 @@ void p3d::autocalibrateBatch(Project &data)
         for (auto i = 0; i < nbCams - 1; ++i) {
             auto imPair = data.imagePair(batch[i]);
             if (imPair->imL() != batch[i]) {
-                LOG_ERR("Pair doesn't correspond to the index");
-                return -1;
+                p3d_Error("pair doesn't correspond to the index");
             }
             if (imPair->imR() != batch[i + 1]) {
-                LOG_ERR("Pair doesn't correspond to the index");
-                return -1;
+                p3d_Error("pair doesn't correspond to the index");
             }
 
             slopes(0, i + 1) = data.imagePair(batch[i])->getTheta1();
@@ -260,7 +265,6 @@ void p3d::autocalibrateBatch(Project &data)
         new CommandPointCloudAdd(&data.pointCloudCtnr(), "sparse", pts3D));
 
     p3d::task::reset();
-    return 0;
 }
 
 void p3d::loadImages(Project &list, const std::vector<std::string> &imPaths)
@@ -360,7 +364,7 @@ bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
 
     auto nbImgs = static_cast<int>(imIds.size());
 
-    p3d::task::name_ = "Feature extraction";
+    p3d::task::setName("Feature extraction");
     p3d::task::total_ = nbImgs;
     p3d::task::progress_ = 0;
 
@@ -372,7 +376,7 @@ bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
         Image *im = data.image(imIds[i]);
         if (!im) continue;
         if (im->cvMat().empty()) {
-            LOG_ERR("Features cannot be extracted: no image loaded");
+            LOG_ERR("features cannot be extracted: no image loaded");
             continue;
         }
 
@@ -751,12 +755,12 @@ void p3d::filterDisparitySpeckles(Project &data, std::vector<int> imPairsIds)
     LOG_ERR("Not implemented yet");
 }
 
-int p3d::findMeasurementMatrixFull(Project &data)
+void p3d::findMeasurementMatrixFull(Project &data)
 {
     Mat Wfull;
     auto nbIm = data.nbImages();
     auto nbPairs = data.nbImagePairs();
-    if (nbPairs == 0) return -1;
+    if (nbPairs == 0) p3d_Error("project has no image pairs");
 
     Mati table;
     std::vector<std::map<int, int>> matchesMaps;
@@ -779,9 +783,9 @@ int p3d::findMeasurementMatrixFull(Project &data)
             auto ptIdx = table(i, p);
             if (ptIdx < 0) continue;
             if (ptIdx >= kpts.size()) {
-                LOG_ERR("measurement matrix: wrong feature indices");
-                // most certainly features were reestimated afrer matches
-                return -1;
+                p3d_Error(
+                    "measurement matrix: wrong feature indices\nfeatures were "
+                    "reestimated afrer matches?");
             }
             const double x = static_cast<double>(kpts[ptIdx].pt.x);
             const double y = static_cast<double>(kpts[ptIdx].pt.y);
@@ -792,7 +796,6 @@ int p3d::findMeasurementMatrixFull(Project &data)
     p3d::cmder::executeCommand(
         new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMatFull), Wfull});
     LOG_OK("measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
-    return 0;
 }
 
 void p3d::findMeasurementMatrix(Project &data)

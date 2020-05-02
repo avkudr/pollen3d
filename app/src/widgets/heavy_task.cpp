@@ -3,6 +3,7 @@
 #include <future>
 #include <vector>
 
+#include "p3d/core.h"
 #include "p3d/logger.h"
 #include "p3d/tasks.h"
 
@@ -83,9 +84,19 @@ void HeavyTask::draw(ImFont *monofont)
 
                 ImGui::EndPopup();
             }
-        } else
-        {
-            impl::heavyAsyncTask.get();
+        } else {
+            try {
+                impl::heavyAsyncTask.get();
+            } catch (const p3d::Exception& e) {
+                if (p3d::task::name().empty())
+                    LOG_ERR("error: %s", e.what());
+                else
+                    LOG_ERR("%s failed: %s", p3d::task::name().c_str(), e.what());
+            } catch (const cv::Exception& e) {
+                LOG_ERR("%s failed: opencv ", p3d::task::name().c_str(), e.what());
+            } catch (...) {
+                LOG_ERR("%s failed", p3d::task::name().c_str());
+            }
             impl::startedHeavyCalculus = false;
             p3d::task::reset();
             ImGui::CloseCurrentPopup();

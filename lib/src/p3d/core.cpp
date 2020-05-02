@@ -24,10 +24,15 @@ const char* Exception::what() const noexcept { return msg.c_str(); }
 
 void Exception::formatMessage()
 {
-    if( func.size() > 0 )
-        msg = format("%s:%d: error: (%d) %s in function %s\n", file.c_str(), line, code, err.c_str(), func.c_str());
-    else
-        msg = format("%s:%d: error: (%d) %s\n", file.c_str(), line, code, err.c_str());
+    //#ifdef POLLEN3D_DEBUG
+    //    if( func.size() > 0 )
+    //        msg = format("%s:%d: error: (%d) %s in function %s\n", file.c_str(), line,
+    //        code, err.c_str(), func.c_str());
+    //    else
+    //        msg = format("%s:%d: error: (%d) %s\n", file.c_str(), line, code,
+    //        err.c_str());
+    //#endif
+    msg = err.c_str();
 }
 
 #include <stdarg.h>
@@ -64,20 +69,27 @@ const char* arErrorStr( int status ){
 
 void error(const Exception &exc)
 {
+#ifdef POLLEN3D_DEBUG
     const char* errorStr = arErrorStr(exc.code);
     char buf[1 << 16];
 
 #ifdef WIN32
-    sprintf_s( buf, "pollen3d error: %s (%s) \n    function: %s\n    file    : %s\n    line    : %d",
-        errorStr, exc.err.c_str(), exc.func.size() > 0 ?
-        exc.func.c_str() : "unknown function", exc.file.c_str(), exc.line );
+    sprintf_s(
+        buf,
+        "pollen3d error: %s (%s) \n    function: %s\n    file    : %s\n    line    : %d",
+        errorStr, exc.err.c_str(),
+        exc.func.size() > 0 ? exc.func.c_str() : "unknown function", exc.file.c_str(),
+        exc.line);
 #elif __linux__ || __APPLE__
-    sprintf( buf, "pollen3d error: %s (%s) \n    function: %s\n    file    : %s\n    line    : %d",
-        errorStr, exc.err.c_str(), exc.func.size() > 0 ?
-        exc.func.c_str() : "unknown function", exc.file.c_str(), exc.line );
+    sprintf(
+        buf,
+        "pollen3d error: %s (%s) \n    function: %s\n    file    : %s\n    line    : %d",
+        errorStr, exc.err.c_str(),
+        exc.func.size() > 0 ? exc.func.c_str() : "unknown function", exc.file.c_str(),
+        exc.line);
 #endif
-
     LOG_ERR(buf);
+#endif
     throw exc;
 }
 }  // namespace p3d

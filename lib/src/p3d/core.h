@@ -134,8 +134,9 @@ std::string format(const char* fmt, ...);
 
 #define Pollen3D_StsAssert Exception::ASSERTION_CODE
 
-#define p3d_Error(code, msg) error(Exception(code, msg, p3d_Func, __FILE__, __LINE__))
-#define p3d_Error_(code, args) error(Exception(code, format args, p3d_Func, __FILE__, __LINE__))
+#define p3d_Error(msg) p3d::error(p3d::Exception(-1, msg, p3d_Func, __FILE__, __LINE__))
+#define p3d_Error_(code, args) \
+    error(Exception(code, format args, p3d_Func, __FILE__, __LINE__))
 #define p3d_Assert(expr) \
     if (!!(expr))        \
         ;                \
