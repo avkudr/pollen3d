@@ -11,13 +11,14 @@ int PointCloudContainer::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         LOG_DBG("Reflecting: PointCloudContainer");
+
+        SERIALIZED_ADD_READ_WRITE(PointCloudContainer);
+
         entt::meta<PointCloudContainer>()
-            .alias("PointCloudContainer"_hs)
             .data<&PointCloudContainer::setPointClouds,
                   &PointCloudContainer::getPointClouds>(
                 P3D_ID_TYPE(p3dPointCloudContainer_clouds));
 
-        SERIALIZED_ADD_READ_WRITE(PointCloudContainer);
         SERIALIZE_TYPE_VECS(PointCloudContainer,
                             "vector_PointCloudContainer"_hs);
         firstCall = false;

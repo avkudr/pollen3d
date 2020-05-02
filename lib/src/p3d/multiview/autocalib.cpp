@@ -47,14 +47,15 @@ int AutocalibPars::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         LOG_DBG("Reflecting: AutocalibPars");
+
+        SERIALIZED_ADD_READ_WRITE(AutocalibPars);
+
         entt::meta<AutocalibPars>()
-            .alias("AutocalibPars"_hs)
             .data<&AutocalibPars::batchSize>(P3D_ID_TYPE(p3dAutocalib_batchSize))
             .data<&AutocalibPars::batchMinNbMatches>(
                 P3D_ID_TYPE(p3dAutocalib_batchMinNbMatches))
             .data<&AutocalibPars::withBA>(P3D_ID_TYPE(p3dAutocalib_withBA));
 
-        SERIALIZED_ADD_READ_WRITE(AutocalibPars);
         firstCall = false;
     }
     return 0;

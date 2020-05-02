@@ -23,7 +23,7 @@ int Project::initMeta()
     if (firstCall) {
         LOG_DBG("Reflecting: Project");
         entt::meta<Project>()
-            .alias("Project"_hs)
+            .alias(p3d::alias(classNameStatic()))
             .data<&Project::setAutocalibPars, &Project::getAutocalibPars>(
                 P3D_ID_TYPE(p3dProject_autocalibPars))
             .data<&Project::setPointCloudCtnr, &Project::getPointCloudCtnr>(

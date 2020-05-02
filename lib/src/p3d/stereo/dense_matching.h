@@ -51,6 +51,7 @@ public:
     };
 
     static int initMeta();
+    static const char* classNameStatic() { return "DenseMatchingPars"; }
 
     cv::Mat dispMap;
 

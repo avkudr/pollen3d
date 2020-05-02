@@ -18,6 +18,7 @@ namespace impl
 
 #define SERIALIZED_ADD_READ_WRITE(x)                  \
     entt::meta<x>()                                   \
+        .alias(p3d::alias(x::classNameStatic()))      \
         .func<&p3d::impl::_readCustom<x>>("_read"_hs) \
         .func<&p3d::impl::_writeCustom<x>>("_write"_hs)
 
@@ -35,11 +36,11 @@ namespace impl
 
 #define SERIALIZE_TYPE_EIGEN(Scalar, x, y, name)                   \
     entt::meta<Eigen::Matrix<Scalar, x, y>>()                      \
-        .alias(name)                                                \
+        .alias(name)                                               \
         .func<&p3d::impl::_readEigen<Scalar, x, y>>("_read"_hs)    \
         .func<&p3d::impl::_writeEigen<Scalar, x, y>>("_write"_hs); \
     entt::meta<std::vector<Eigen::Matrix<Scalar, x, y>>>()         \
-        .alias("vector_" name)                                      \
+        .alias("vector_" name)                                     \
         .func<&p3d::impl::_readVecEigen<Scalar, x, y>>("_read"_hs) \
         .func<&p3d::impl::_writeVecEigen<Scalar, x, y>>("_write"_hs)
 
@@ -207,25 +208,40 @@ static void _readVecEigen(cv::FileNode& node, P3D_ID_TYPE& id, std::vector<Eigen
 }
 
 int P3D_API registerTypes();
-
 }  // namespace impl
 
-template<typename T>
-class P3D_API Serializable
+template <typename T>
+class P3D_API Serializable : public PObject
 {
 public:
     Serializable() {}
 
     virtual ~Serializable() {}
 
+    P3D_ID_TYPE getAlias() override { return p3d::alias(className()); }
+
+    virtual const char* className() { return T::classNameStatic(); }
+
     auto resolve() { return entt::resolve<T>(); }
+
+    void setData(const entt::meta_data& data, const entt::meta_any& value) override
+    {
+        auto ptr = dynamic_cast<T*>(this);
+        data.set(*ptr, value);
+    }
+
+    entt::meta_any getData(const entt::meta_data& data) override
+    {
+        auto ptr = dynamic_cast<T*>(this);
+        return data.get(*ptr);
+    }
 
     virtual bool operator==(const T& i) const
     {
-        T *  lhs = dynamic_cast<T *>(const_cast<Serializable<T> *>(this));
+        T* lhs = dynamic_cast<T*>(const_cast<Serializable<T>*>(this));
         T* rhs = const_cast<T*>(&i);
         bool res = true;
-        if (!entt::resolve<T>()) { LOG_DBG("Serializable::== : unknown type"); }
+        if (!entt::resolve<T>()) { LOG_DBG("%s: unknown type", className()); }
 
         entt::resolve<T>().data([&](auto data) {
             if (data.get(*lhs) != data.get(*rhs)) res = false;
@@ -248,7 +264,7 @@ public:
                 entt::meta_any any = data.get(*ptr);
                 func.invoke(any, std::ref(fs), P3D_ID_TYPE(data.alias()), any);
             } else {
-                LOG_ERR("not registered for write: %i", data.alias());
+                LOG_ERR("%s, not registered for write: %i", className(), data.alias());
             }
         });
 

@@ -11,8 +11,10 @@ int PointCloud::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         LOG_DBG("Reflecting: PointCloud");
+
+        SERIALIZED_ADD_READ_WRITE(PointCloud);
+
         entt::meta<PointCloud>()
-            .alias("PointCloud"_hs)
             .data<&PointCloud::setLabel, &PointCloud::getLabel>(
                 P3D_ID_TYPE(p3dPointCloud_label))
             .data<&PointCloud::setVertices, &PointCloud::getVertices>(
@@ -22,7 +24,6 @@ int PointCloud::initMeta()
             .data<&PointCloud::setVisible, &PointCloud::isVisible>(
                 P3D_ID_TYPE(p3dPointCloud_visible));
 
-        SERIALIZED_ADD_READ_WRITE(PointCloud);
         SERIALIZE_TYPE_VECS(PointCloud, "vector_PointCloud"_hs);
         firstCall = false;
     }

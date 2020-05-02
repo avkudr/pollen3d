@@ -30,6 +30,7 @@ class P3D_API Image : public Serializable<Image>
 {
 public:
     static int initMeta();
+    static const char *classNameStatic() { return "Image"; }
 
     Image() {}
     Image(cv::Mat im);

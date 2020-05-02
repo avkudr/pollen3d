@@ -720,8 +720,11 @@ void Application::_drawTab_Multiview()
                         autocalibPars.batchSize = batchSize;
                         autocalibPars.batchMinNbMatches = batchMinNbMatches;
                         autocalibPars.withBA = withBA;
-                        p3d::setProjectProperty(m_projectData, p3dProject_autocalibPars,
-                                                autocalibPars);
+                        //                        p3d::setProjectProperty(m_projectData,
+                        //                        p3dProject_autocalibPars,
+                        //                                                autocalibPars);
+                        p3d::cmder::executeCommand(new CommandSetProperty{
+                            &m_projectData, p3dProject_autocalibPars, autocalibPars});
                     }
 
                     if (ImGui::Button(P3D_ICON_RUN " Autocalibrate")) run = true;

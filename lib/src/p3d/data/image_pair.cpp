@@ -10,9 +10,8 @@ int ImagePair::initMeta()
     if (firstCall) {
         LOG_DBG("Reflecting: ImagePair");
         entt::meta<ImagePair>()
-            .alias("ImagePair"_hs)
-            .data<&ImagePair::setDenseMatchingPars,
-                  &ImagePair::getDenseMatchingPars>(
+            .alias(p3d::alias(classNameStatic()))
+            .data<&ImagePair::setDenseMatchingPars, &ImagePair::getDenseMatchingPars>(
                 P3D_ID_TYPE(p3dImagePair_denseMatchingPars))
             .data<&ImagePair::setMatchingPars, &ImagePair::getMatchingPars>(
                 P3D_ID_TYPE(p3dImagePair_matchingPars))
@@ -32,8 +31,7 @@ int ImagePair::initMeta()
                 P3D_ID_TYPE(p3dImagePair_rectifyingTransformRight))
             .data<&ImagePair::setTheta1, &ImagePair::getTheta1>(
                 P3D_ID_TYPE(p3dImagePair_Theta1))
-            .data<&ImagePair::setRho, &ImagePair::getRho>(
-                P3D_ID_TYPE(p3dImagePair_Rho))
+            .data<&ImagePair::setRho, &ImagePair::getRho>(P3D_ID_TYPE(p3dImagePair_Rho))
             .data<&ImagePair::setTheta2, &ImagePair::getTheta2>(
                 P3D_ID_TYPE(p3dImagePair_Theta2));
 

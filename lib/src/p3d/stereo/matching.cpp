@@ -13,7 +13,7 @@ int Match::initMeta()
     if (firstCall) {
         LOG_DBG("Reflecting: Match");
         entt::meta<Match>()
-            .alias("Match"_hs)
+            .alias(p3d::alias(classNameStatic()))
             .data<&Match::iPtL>(P3D_ID_TYPE(p3dMatch_iPtL))
             .data<&Match::iPtR>(P3D_ID_TYPE(p3dMatch_iPtR))
             .data<&Match::distance>(P3D_ID_TYPE(p3dMatch_distance));
@@ -31,13 +31,12 @@ int MatchingPars::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        entt::meta<MatchingPars>()
-            .alias("MatchingPars"_hs)
-            .data<&MatchingPars::method>(P3D_ID_TYPE(p3dMatching_method))
-            .data<&MatchingPars::filterCoeff>(
-                P3D_ID_TYPE(p3dMatching_filterCoeff));
-
         SERIALIZED_ADD_READ_WRITE(MatchingPars);
+
+        entt::meta<MatchingPars>()
+            .data<&MatchingPars::method>(P3D_ID_TYPE(p3dMatching_method))
+            .data<&MatchingPars::filterCoeff>(P3D_ID_TYPE(p3dMatching_filterCoeff));
+
         firstCall = false;
     }
     return 0;

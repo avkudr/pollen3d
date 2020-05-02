@@ -11,30 +11,28 @@ int DenseMatchingPars::initMeta()
     static bool firstCall = true;
     if (firstCall) {
         LOG_DBG("Reflecting: DenseMatching");
+
+        SERIALIZED_ADD_READ_WRITE(DenseMatchingPars);
+
         entt::meta<DenseMatchingPars>()
-            .alias("DenseMatching"_hs)
-            .data<&DenseMatchingPars::dispMethod>(
-                P3D_ID_TYPE(p3dDense_DispMethod))
+            .data<&DenseMatchingPars::dispMethod>(P3D_ID_TYPE(p3dDense_DispMethod))
             .data<&DenseMatchingPars::dispLowerBound>(
                 P3D_ID_TYPE(p3dDense_DispLowerBound))
             .data<&DenseMatchingPars::dispUpperBound>(
                 P3D_ID_TYPE(p3dDense_DispUpperBound))
-            .data<&DenseMatchingPars::dispBlockSize>(
-                P3D_ID_TYPE(p3dDense_DispBlockSize))
+            .data<&DenseMatchingPars::dispBlockSize>(P3D_ID_TYPE(p3dDense_DispBlockSize))
             .data<&DenseMatchingPars::dispFilterNewValue>(
                 P3D_ID_TYPE(p3dDense_DispFilterNewValue))
             .data<&DenseMatchingPars::dispFilterMaxSpeckleSize>(
                 P3D_ID_TYPE(p3dDense_DispFilterMaxSpeckleSize))
             .data<&DenseMatchingPars::dispFilterMaxDiff>(
                 P3D_ID_TYPE(p3dDense_DispFilterMaxDiff))
-            .data<&DenseMatchingPars::bilateralD>(
-                P3D_ID_TYPE(p3dDense_BilateralD))
+            .data<&DenseMatchingPars::bilateralD>(P3D_ID_TYPE(p3dDense_BilateralD))
             .data<&DenseMatchingPars::bilateralSigmaColor>(
                 P3D_ID_TYPE(p3dDense_BilateralSigmaColor))
             .data<&DenseMatchingPars::bilateralSigmaSpace>(
                 P3D_ID_TYPE(p3dDense_BilateralSigmaSpace));
 
-        SERIALIZED_ADD_READ_WRITE(DenseMatchingPars);
         firstCall = false;
     }
     return 0;

@@ -13,10 +13,11 @@ int Image::initMeta()
     if (firstCall) {
         // reflecting: Image
         entt::meta<Image>()
-            .alias("Image"_hs)
+            .alias(p3d::alias(classNameStatic()))
             .data<&Image::setPath, &Image::getPath>(P3D_ID_TYPE(p3dImage_path))
             .data<&Image::setCamera, &Image::getCamera>(P3D_ID_TYPE(p3dImage_camera))
-            .data<&Image::setTranslation, &Image::getTranslation>(P3D_ID_TYPE(p3dImage_translation))
+            .data<&Image::setTranslation, &Image::getTranslation>(
+                P3D_ID_TYPE(p3dImage_translation))
             .data<&Image::setFeatExtractionPars, &Image::getFeatExtractionPars>(
                 P3D_ID_TYPE(p3dImage_featExtractionPars));
 

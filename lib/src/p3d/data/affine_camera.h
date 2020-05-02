@@ -17,6 +17,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     static int initMeta();
+    static const char* classNameStatic() { return "AffineCamera"; }
 
     AffineCamera() { updateA(); }
     AffineCamera(const Mat2& A);

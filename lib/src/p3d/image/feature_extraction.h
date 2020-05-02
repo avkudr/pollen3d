@@ -20,6 +20,7 @@ class P3D_API FeatExtractionPars : public Serializable<FeatExtractionPars>
 {
 public:
     static int initMeta();
+    static const char* classNameStatic() { return "FeatExtractionPars"; }
 
     int   method{0}; // unused for now (only AKAZE)
     int   descType{5};

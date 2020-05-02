@@ -68,42 +68,38 @@ entt::meta<A>.
  * the type of a+b is not Mat3Xf!
  */
 
-template <typename T>
-class CommandSetProperty : public Command
+class P3D_API CommandSetProperty : public Command
 {
 public:
-    CommandSetProperty(T *instance, const P3D_ID_TYPE &propId, const entt::meta_any &v,
-                       bool force = false)
+    CommandSetProperty(PObject *instance, const P3D_ID_TYPE &propId,
+                       const entt::meta_any &v, bool force = false)
         : m_propId(propId), m_to(v), m_instance(instance)
     {
         if (instance == nullptr) return;
         if (v.data() == nullptr) return;
 
-        m_data = entt::resolve<T>().data(P3D_ID_TYPE(m_propId));
+        const auto &alias = instance->getAlias();
+        m_data = entt::resolve(alias).data(P3D_ID_TYPE(m_propId));
         if (!m_data) {
-            LOG_WARN("Property <%i> doesn't exist", propId);
+            LOG_WARN("%s, property <%i> doesn't exist", instance->className(), propId);
             return;
         }
 
         m_from = entt::meta_any{m_data.get(*instance)};
 
-        if (force)
-        {
+        if (force) {
             m_isValid = true;
             return;
         }
 
-        if (m_to.type() != m_data.type())
-        {
-            LOG_DBG("set property: types are different");
+        if (m_to.type() != m_data.type()) {
+            LOG_DBG("%s, set property: types are different", instance->className());
             return;
         }
 
-        if (!impl::isMetaEqual(m_to, m_from))
-        {
+        if (!impl::isMetaEqual(m_to, m_from)) {
             m_isValid = true;
-        } else
-        {
+        } else {
             LOG_DBG("set property: new equals old");
         }
     }
@@ -119,23 +115,24 @@ public:
         // before setting new value. It is important for group command when
         // the previous state of the property should be taken here and not
         // on the creation of the command
-        m_from = entt::meta_any{m_data.get(*m_instance)};
+        m_from = m_instance->getData(m_data);
 
         // setting new value
-        m_data.set(*m_instance, m_to);
+        m_instance->setData(m_data, m_to);
         //}
-        LOG_DBG("SetProperty: %i (%p)", m_propId, m_instance);
+        LOG_DBG("%s, set prop: %i (%p)", m_instance->className(), m_propId, m_instance);
     }
     void undo()
     {
         if (!m_instance) return;
         if (!m_data) return;
-        LOG_DBG("Undo SetProperty: %i (%p)", m_propId, m_instance);
-        m_data.set(*m_instance, m_from);
+        LOG_DBG("%s, undo set prop: %i (%p)", m_instance->className(), m_propId,
+                m_instance);
+        m_instance->setData(m_data, m_from);
     }
 
 private:
-    T *m_instance;
+    PObject *m_instance;
     P3D_ID_TYPE m_propId;
     entt::meta_any m_to{};
     entt::meta_any m_from{};

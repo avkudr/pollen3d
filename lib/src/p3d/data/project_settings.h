@@ -13,6 +13,7 @@ enum P3D_API p3dSetting_ {
 
 struct P3D_API ProjectSettings : Serializable<ProjectSettings> {
     static int initMeta();
+    static const char* classNameStatic() { return "ProjectSettings"; }
 
     ProjectSettings() {}
 
@@ -21,7 +22,5 @@ struct P3D_API ProjectSettings : Serializable<ProjectSettings> {
     int sharedFeatExtractionPars{1};
     int sharedMatchingPars{1};
 
-    static constexpr const char* className() { return "ProjectSettings"; }
-    static constexpr P3D_ID_TYPE alias() { return entt::hashed_string{className()}; }
 };
 }  // namespace p3d

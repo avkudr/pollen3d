@@ -19,6 +19,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     static int initMeta();
+    static const char* classNameStatic() { return "PointCloud"; }
 
     PointCloud() {}
     PointCloud(const std::string& label, const Mat3Xf& pcd,

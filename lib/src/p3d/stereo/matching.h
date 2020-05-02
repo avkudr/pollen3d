@@ -18,6 +18,7 @@ class P3D_API Match : public Serializable<Match>
 {
 public:
     static int initMeta();
+    static const char* classNameStatic() { return "Match"; }
 
     Match() {}
     Match(int idxPtImageL, int idxPtImageR, float dist = 0.0f)
@@ -54,6 +55,7 @@ class P3D_API MatchingPars : public Serializable<MatchingPars>
 {
 public:
     static int initMeta();
+    static const char* classNameStatic() { return "MatchingPars"; }
 
     int method{MatchingMethod_BRUTEFORCE_L1};
     float filterCoeff{0.3f};

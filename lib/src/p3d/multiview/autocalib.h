@@ -19,6 +19,7 @@ class P3D_API AutocalibPars : public Serializable<AutocalibPars>
 {
 public:
     static int initMeta();
+    static const char *classNameStatic() { return "AutocalibPars"; }
 
     int batchSize{4};
     int batchMinNbMatches{20};

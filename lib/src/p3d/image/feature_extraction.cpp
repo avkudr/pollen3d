@@ -13,15 +13,18 @@ int FeatExtractionPars::initMeta()
     if (firstCall)
     {
         LOG_DBG("Reflecting: FeatExtractionPars");
+
+        SERIALIZED_ADD_READ_WRITE(FeatExtractionPars);
+
         entt::meta<FeatExtractionPars>()
-            .alias("FeatExtractionPars"_hs)
             .data<&FeatExtractionPars::method>(P3D_ID_TYPE(p3dFeatExtraction_method))
             .data<&FeatExtractionPars::descType>(P3D_ID_TYPE(p3dFeatExtraction_descType))
             .data<&FeatExtractionPars::descSize>(P3D_ID_TYPE(p3dFeatExtraction_descSize))
-            .data<&FeatExtractionPars::descChannels>(P3D_ID_TYPE(p3dFeatExtraction_descChannels))
-            .data<&FeatExtractionPars::threshold>(P3D_ID_TYPE(p3dFeatExtraction_descThreshold));
+            .data<&FeatExtractionPars::descChannels>(
+                P3D_ID_TYPE(p3dFeatExtraction_descChannels))
+            .data<&FeatExtractionPars::threshold>(
+                P3D_ID_TYPE(p3dFeatExtraction_descThreshold));
 
-        SERIALIZED_ADD_READ_WRITE(FeatExtractionPars);
         firstCall = false;
     }
     return 0;

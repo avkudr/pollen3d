@@ -43,6 +43,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     static int initMeta();
+    static const char *classNameStatic() { return "ImagePair"; }
 
     ImagePair(int imL = -1, int imR = -1);
     ~ImagePair() override;
