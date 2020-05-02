@@ -21,7 +21,6 @@ enum P3D_API p3dProject_ {
     p3dProject_images,
     p3dProject_imagePairs,
     p3dProject_measMat,
-    p3dProject_measMatFull,
     p3dProject_pointCloudCtnr,
 };
 
@@ -78,13 +77,11 @@ public:
 
     // ***** measurement matrix
 
-    const Mat &getMeasurementMatrix() const { return m_measurementMatrix; }
-    void setMeasurementMatrix(const Mat &W) { m_measurementMatrix = W; }
-    const Mat &getMeasurementMatrixFull() const
+    const Mat &getMeasurementMatrix() const
     {
-        return m_measurementMatrixFull;
+        return m_measurementMatrix;
     }  // [3*nbImages,nbPts]
-    void setMeasurementMatrixFull(const Mat &Wf) { m_measurementMatrixFull = Wf; }
+    void setMeasurementMatrix(const Mat &Wf) { m_measurementMatrix = Wf; }
 
     // ***** cameras (intrinsic, extrinsic)
 
@@ -134,7 +131,6 @@ private:
     std::string m_projectPath{""};
 
     Mat m_measurementMatrix{};
-    Mat m_measurementMatrixFull{};
 
     PointCloudContainer m_pointCloudCtnr{};
     ProjectSettings m_settings;

@@ -68,8 +68,8 @@ void p3d::autocalibrateBatch(Project &data)
     // **** prerequisites
 
     LOG_OK("Autocalibration: started...");
-    p3d::findMeasurementMatrixFull(data);
-    const auto & W = data.getMeasurementMatrixFull();
+    p3d::findMeasurementMatrix(data);
+    const auto &W = data.getMeasurementMatrix();
     if (W.rows() == 0 || W.cols() == 0) {
         p3d_Error("measurement matrix is empty.\nno matches?");
         return;
@@ -755,7 +755,7 @@ void p3d::filterDisparitySpeckles(Project &data, std::vector<int> imPairsIds)
     LOG_ERR("Not implemented yet");
 }
 
-void p3d::findMeasurementMatrixFull(Project &data)
+void p3d::findMeasurementMatrix(Project &data)
 {
     Mat Wfull;
     auto nbIm = data.nbImages();
@@ -794,31 +794,8 @@ void p3d::findMeasurementMatrixFull(Project &data)
     }
     //data.setMeasurementMatrixFull(Wfull);
     p3d::cmder::executeCommand(
-        new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMatFull), Wfull});
+        new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMat), Wfull});
     LOG_OK("measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
-}
-
-void p3d::findMeasurementMatrix(Project &data)
-{
-    const auto &Wf = data.getMeasurementMatrixFull();
-    if (Wf.cols() == 0 || Wf.rows() == 0) {
-        LOG_ERR("Full measurement matrix must be estimated first");
-        return;
-    }
-
-    Mat W;
-    W.setZero(Wf.rows(), 0);
-    for (auto c = 0; c < Wf.cols(); ++c) {
-        if (std::abs(Wf.col(c).prod()) > 1e-5) {  // there is no zeros in the column
-            W.conservativeResize(Eigen::NoChange, W.cols() + 1);
-            W.rightCols(1) = Wf.col(c);
-        }
-    }
-
-    //data.setMeasurementMatrix(W);
-    p3d::cmder::executeCommand(
-        new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMat), W});
-    LOG_OK("Measurement matrix: %ix%i", W.rows(), W.cols());
 }
 
 bool p3d::autocalibrate(Project &data, std::vector<int> camIds)
@@ -833,7 +810,7 @@ bool p3d::autocalibrate(Project &data, std::vector<int> camIds)
         return false;
     }
 
-    auto W = data.getMeasurementMatrixFull();
+    auto W = data.getMeasurementMatrix();
     if (W.cols() == 0 || W.rows() == 0) {
         LOG_ERR("Meas mat should be estimated before autocalibration");
         return false;
@@ -933,7 +910,7 @@ void p3d::triangulateSparse(Project &data)
 {
     LOG_DBG("MAKE BUTTON DISABLED IF NO CALIB + NO FULL W");
 
-    auto Wf = data.getMeasurementMatrixFull();
+    auto Wf = data.getMeasurementMatrix();
     if (Wf.rows() == 0 || Wf.cols() == 0) {
         LOG_ERR("No full measurement matrix");
         return;
@@ -1188,7 +1165,7 @@ void p3d::bundleAdjustment(Project &data)
     BundleData p;
     p.X.setOnes(4, pcd.nbPoints());
     p.X.topRows(3) = pcd.getVertices().cast<double>();
-    p.W = data.getMeasurementMatrixFull();
+    p.W = data.getMeasurementMatrix();
 
     if (p.X.cols() != p.W.cols()) {
         LOG_ERR("Measurement matrix doesn't correspond to 3D points");

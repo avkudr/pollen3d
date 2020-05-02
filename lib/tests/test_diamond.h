@@ -73,7 +73,6 @@ static void initDiamondProject(Project & project) {
     }
 
     project.setMeasurementMatrix(W);
-    project.setMeasurementMatrixFull(W);
 }
 
 /*

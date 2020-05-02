@@ -28,8 +28,6 @@ int Project::initMeta()
                 P3D_ID_TYPE(p3dProject_pointCloudCtnr))
             .data<&Project::setMeasurementMatrix, &Project::getMeasurementMatrix>(
                 P3D_ID_TYPE(p3dProject_measMat))
-            .data<&Project::setMeasurementMatrixFull, &Project::getMeasurementMatrixFull>(
-                P3D_ID_TYPE(p3dProject_measMatFull))
             .data<&Project::setImagePairs, &Project::getImagePairs>(
                 P3D_ID_TYPE(p3dProject_imagePairs))
             .data<&Project::setImageList, &Project::getImageList>(

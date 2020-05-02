@@ -66,7 +66,6 @@ static void initDiamondProject(Project & project) {
     }
 
     project.setMeasurementMatrix(W);
-    project.setMeasurementMatrixFull(W);
 }
 
 int main()
@@ -74,7 +73,7 @@ int main()
     p3d::Project data;
     initDiamondProject(data);
 
-    auto W = data.getMeasurementMatrixFull();
+    auto W = data.getMeasurementMatrix();
 
     // ***** remove existing rho rotation
 

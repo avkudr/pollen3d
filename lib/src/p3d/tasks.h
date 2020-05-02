@@ -50,7 +50,6 @@ void P3D_API filterDisparitySpeckles(Project &data, std::vector<int> imPairsIds 
 
 // ***** Multiview
 
-void P3D_API findMeasurementMatrixFull(Project &data);
 void P3D_API findMeasurementMatrix(Project &data);
 void P3D_API autocalibrateBatch(Project &data);
 

@@ -40,7 +40,7 @@ void ReprojectionError(const Project& data, bool* open, int width)
 
             auto pcdSparse = data.getPointCloudCtnr().at("sparse");
             const auto& pts3D = pcdSparse.getVertices();
-            const auto& W = data.getMeasurementMatrixFull();
+            const auto& W = data.getMeasurementMatrix();
             const auto& P = data.getCameraMatricesMat();
 
             Mat4X X;

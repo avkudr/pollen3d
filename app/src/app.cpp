@@ -246,8 +246,7 @@ void Application::_drawMenuBar(int width)
                 if (disable) ImGuiC::PushDisabled();
 
                 if (ImGui::MenuItem("Measurement matrix"))
-                    HeavyTask::run(
-                        [&]() { p3d::findMeasurementMatrixFull(m_projectData); });
+                    HeavyTask::run([&]() { p3d::findMeasurementMatrix(m_projectData); });
 
                 if (ImGui::MenuItem("Autocalibrate"))
                     HeavyTask::run([&]() {
@@ -1046,13 +1045,9 @@ void Application::_drawProperties()
     }
 
     if (m_state.isTab(Tab_Multiview)) {
-        const auto &Wfull = m_projectData.getMeasurementMatrixFull();
+        const auto &Wfull = m_projectData.getMeasurementMatrix();
         if (Wfull.rows() > 0 && Wfull.cols() > 0)
-            drawProperty_matrix(Wfull, "Wf", "Full measurement matrix");
-
-        const auto &W = m_projectData.getMeasurementMatrix();
-        if (W.rows() > 0 && W.cols() > 0)
-            drawProperty_matrix(W, "W", "Measurement matrix");
+            drawProperty_matrix(Wfull, "W", "Measurement matrix");
 
         const auto &P = m_projectData.getCameraMatricesMat();
         if (P.rows() > 0 && P.cols() > 0)
