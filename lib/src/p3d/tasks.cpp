@@ -67,8 +67,8 @@ void p3d::autocalibrateBatch(Project &data)
 {
     // **** prerequisites
 
-    LOG_OK("Batch autocalibration: started...");
-	p3d::findMeasurementMatrixFull(data);
+    LOG_OK("Autocalibration: started...");
+    p3d::findMeasurementMatrixFull(data);
     const auto & W = data.getMeasurementMatrixFull();
     if (W.rows() == 0 || W.cols() == 0) {
         p3d_Error("measurement matrix is empty.\nno matches?");
@@ -83,7 +83,7 @@ void p3d::autocalibrateBatch(Project &data)
 
     // **** start
 
-    p3d::task::setName("Batch autocalibration");
+    p3d::task::setName("Autocalibration");
     p3d::task::total_ = data.nbImages();
     p3d::task::progress_ = 0;
 

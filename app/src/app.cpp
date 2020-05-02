@@ -240,6 +240,41 @@ void Application::_drawMenuBar(int width)
             ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("Tasks")) {
+            if (ImGui::BeginMenu("Multiview")) {
+                bool disable = m_projectData.nbImagePairs() < 2;
+                if (disable) ImGuiC::PushDisabled();
+
+                if (ImGui::MenuItem("Measurement matrix"))
+                    HeavyTask::run(
+                        [&]() { p3d::findMeasurementMatrixFull(m_projectData); });
+
+                if (ImGui::MenuItem("Autocalibrate"))
+                    HeavyTask::run([&]() {
+                        p3d::autocalibrateBatch(m_projectData);
+                        m_state.setViewer3dNeedsUpdateFull(true);
+                        m_state.setViewer3dNeedsUpdateCameras(true);
+                    });
+
+                if (ImGui::MenuItem("Triangulate sparse"))
+                    HeavyTask::run([&]() {
+                        p3d::triangulateSparse(m_projectData);
+                        m_state.setViewer3dNeedsUpdateFull(true);
+                    });
+
+                if (ImGui::MenuItem("Bundle adjustment"))
+                    HeavyTask::run([&]() {
+                        p3d::bundleAdjustment(m_projectData);
+                        m_state.setViewer3dNeedsUpdateFull(true);
+                    });
+
+                if (disable) ImGuiC::PopDisabled();
+
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+
 #ifdef POLLEN3D_DEBUG
         if (ImGui::BeginMenu("Debug")) {
             ImGui::MenuItem("Show metrics", nullptr, &showImGuiMetrics);
@@ -424,9 +459,7 @@ void Application::_drawMenuBar(int width)
             p3d::matchFeatures(m_projectData);
             p3d::findFundamentalMatrix(m_projectData);
 
-            p3d::findMeasurementMatrixFull(m_projectData);
-            p3d::findMeasurementMatrix(m_projectData);
-            p3d::autocalibrate(m_projectData);
+            p3d::autocalibrateBatch(m_projectData);
 
             p3d::triangulateSparse(m_projectData);
             p3d::bundleAdjustment(m_projectData);
@@ -619,29 +652,6 @@ void Application::_drawTab_Multiview()
             bool disable = m_projectData.nbImagePairs() < 2;
             if (disable) ImGuiC::PushDisabled();
 
-            // ***** Measurement matrix
-            {
-                bool run{false};
-                if (ImGuiC::Collapsing("Measurement matrix", &run)) {
-                    ImGuiC::BeginSubGroup();
-
-                    if (ImGui::Button("Get full W")) {
-                        auto f = [&]() { p3d::findMeasurementMatrixFull(m_projectData); };
-                        HeavyTask::run(f);
-                    }
-                    if (ImGui::Button(P3D_ICON_RUN " Get W")) {
-                        auto f = [&]() { p3d::findMeasurementMatrix(m_projectData); };
-                        HeavyTask::run(f);
-                    }
-                    ImGuiC::EndSubGroup();
-                }
-                if (run)
-                    HeavyTask::run([&]() {
-                        p3d::findMeasurementMatrixFull(m_projectData);
-                        p3d::findMeasurementMatrix(m_projectData);
-                    });
-            }
-
             // ***** Autocalibration
             {
                 bool run{false};
@@ -664,23 +674,14 @@ void Application::_drawTab_Multiview()
 
             // ***** Triangulation
             {
+                static int imPairIdx = 0;
                 bool run{false};
                 if (ImGuiC::Collapsing("Triangulation", &run)) {
                     ImGuiC::BeginSubGroup();
-                    if (ImGui::Button(P3D_ICON_RUN " Triangulate (sparse)"))
-                        run = true;
-
-                    ImGui::Separator();
-                    static int imPairIdx = 0;
                     ImGui::SliderInt("pair idx", &imPairIdx, 0,
                                      m_projectData.nbImagePairs() - 1);
-                    if (ImGui::Button("Triangulate dense (stereo)")) {
-                        auto f = [&](int imPairIdx) {
-                            p3d::triangulateDenseStereo(m_projectData, {imPairIdx});
-                            m_state.setViewer3dNeedsUpdateFull(true);
-                        };
-                        HeavyTask::run(f, imPairIdx);
-                    }
+                    if (ImGui::Button(P3D_ICON_RUN "Triangulate dense (stereo)"))
+                        run = true;
                     ImGui::SameLine();
                     if (ImGui::Button("ALL")) {
                         HeavyTask::run([&]() {
@@ -705,14 +706,17 @@ void Application::_drawTab_Multiview()
 #endif
                     ImGuiC::EndSubGroup();
                 }
-                if (run)
-                    HeavyTask::run([&]() {
-                        p3d::triangulateSparse(m_projectData);
+                if (run) {
+                    auto f = [&](int imPairIdx) {
+                        p3d::triangulateDenseStereo(m_projectData, {imPairIdx});
                         m_state.setViewer3dNeedsUpdateFull(true);
-                    });
+                    };
+                    HeavyTask::run(f, imPairIdx);
+                }
             }
 
             // ***** Bundle adjustment
+            /*
             {
                 bool run{false};
                 if (ImGuiC::Collapsing("Bundle adjustment", &run)) {
@@ -728,6 +732,7 @@ void Application::_drawTab_Multiview()
                         m_state.setViewer3dNeedsUpdateFull(true);
                     });
             }
+            */
 
             // ***** Analyze
 
