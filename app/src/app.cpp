@@ -653,11 +653,13 @@ void Application::_drawTab_Multiview()
 
                     ImGuiC::EndSubGroup();
                 }
-                if (run)
+                if (run) {
                     HeavyTask::run([&]() {
-                        p3d::autocalibrate(m_projectData);
+                        p3d::autocalibrateBatch(m_projectData);
+                        m_state.setViewer3dNeedsUpdateFull(true);
                         m_state.setViewer3dNeedsUpdateCameras(true);
                     });
+                }
             }
 
             // ***** Triangulation

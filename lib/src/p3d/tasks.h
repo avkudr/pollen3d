@@ -16,9 +16,11 @@ int total();
 int progress();
 float progressPercent();
 std::string name();
+void setName(const std::string &str);
 void reset();
 
-}
+}  // namespace task
+
 // ***** Undo manager
 
 void P3D_API undo();
@@ -50,6 +52,8 @@ void P3D_API filterDisparitySpeckles(Project &data, std::vector<int> imPairsIds 
 
 void P3D_API findMeasurementMatrixFull(Project &data);
 void P3D_API findMeasurementMatrix(Project &data);
+void P3D_API autocalibrateBatch(Project &data);
+
 bool P3D_API autocalibrate(Project &data, std::vector<int> camIds = {});
 void P3D_API triangulateSparse(Project &data);
 void P3D_API triangulateDenseStereo(Project &data, std::vector<int> imPairsIds = {});

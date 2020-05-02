@@ -6,7 +6,9 @@
 
 #include <Eigen/Dense>
 
+#include <atomic>
 #include <map>
+#include <mutex>
 #include <vector>
 
 #include "p3d/data/image.h"
@@ -24,29 +26,26 @@
 using namespace p3d;
 
 namespace p3d::task {
-int total_{0};
-int progress_{0};
+std::atomic<int> total_{0};
+std::atomic<int> progress_{0};
 std::string name_{""};
+std::mutex mutex;
 
 void reset()
 {
     total_ = 0;
     progress_ = 0;
+    std::lock_guard<std::mutex> l(mutex);
     name_ = "";
 }
 
-int total()
-{
-    return total_;
-}
+int total() { return total_; }
 
-int progress()
-{
-    return progress_;
-}
+int progress() { return progress_; }
 
 std::string name()
 {
+    std::lock_guard<std::mutex> l(mutex);
     return name_;
 }
 
@@ -56,7 +55,213 @@ float progressPercent()
     return float(progress_) / float(total_);
 }
 
-} // namespace p3d::task
+void setName(const std::string &str)
+{
+    std::lock_guard<std::mutex> l(mutex);
+    name_ = str;
+}
+
+}  // namespace p3d::task
+
+void p3d::autocalibrateBatch(Project &data)
+{
+    // **** prerequisites
+
+    LOG_OK("Batch autocalibration: started...");
+	p3d::findMeasurementMatrixFull(data);
+    const auto & W = data.getMeasurementMatrixFull();
+    if (W.rows() == 0 || W.cols() == 0) {
+	   return;
+    }
+
+    // **** parameters
+
+    const int batchSize = 4;
+    const bool withBA = true;
+	const int minNbMatchesInBatch = 20;
+
+    // **** start
+
+    p3d::task::setName("Batch autocalibration");
+    p3d::task::total_ = data.nbImages();
+    p3d::task::progress_ = 0;
+
+    Mat4X X;
+    X.setZero(4,W.cols());
+
+    std::set<int> calibrated;
+    auto batches = utils::generateBatches(data.nbImages(), batchSize);
+    const int nbCamsTotal = data.nbImages();
+
+    int batchIdx = 0;
+
+    for (const auto &batch : batches) {
+        for (auto i : batch) calibrated.insert(i);
+
+        const int nbCams = batch.size();
+
+        // **** get full measurement matrix for selected batch
+
+        std::vector<int> selectedPts;
+        Mat Wfsub;
+        utils::findFullSubMeasurementMatrix(W, Wfsub, batch, &selectedPts);
+
+        // **** get slopes
+
+        Mat2X slopes;
+        slopes.setZero(2, nbCams);
+        for (auto i = 0; i < nbCams - 1; ++i) {
+            auto imPair = data.imagePair(batch[i]);
+            if (imPair->imL() != batch[i]) {
+                LOG_ERR("Pair doesn't correspond to the index");
+                return -1;
+            }
+            if (imPair->imR() != batch[i + 1]) {
+                LOG_ERR("Pair doesn't correspond to the index");
+                return -1;
+            }
+
+            slopes(0, i + 1) = data.imagePair(batch[i])->getTheta1();
+            slopes(1, i + 1) = data.imagePair(batch[i])->getTheta2();
+        }
+
+        // **** autocalibration
+
+        AutoCalibrator autocalib(nbCams);
+        autocalib.setMaxTime(60);
+        autocalib.setMeasurementMatrix(Wfsub);
+        autocalib.setSlopeAngles(slopes);
+
+        autocalib.run();
+
+        auto tvec = autocalib.getTranslations();
+
+        Vec2 t0 = data.getCameraTranslations()[batch[0]];
+        bool batchesNeedAlign = (t0.norm() > 1e-2);
+        if (batchesNeedAlign) {
+            auto P = autocalib.getCameraMatrices();
+            Vec2 t0p = P[0].topRightCorner(2, 1);
+            auto rotRad = autocalib.getRotationAngles();
+            Mat3 R = Mat3::Identity();
+            for (auto i = 0; i < rotRad.rows(); ++i) {
+                double t1 = rotRad(i, 0);
+                double rho = rotRad(i, 1);
+                double t2 = rotRad(i, 2);
+                R = utils::RfromEulerZYZt_inv(t1, rho, t2) * R;
+                tvec[i] =
+                    R.topLeftCorner(2, 2) * (t0 - t0p) + R.topRightCorner(2, 1) + tvec[i];
+            }
+        }
+
+        for (auto n = 0; n < nbCams; ++n) {
+            const auto i = batch[n];
+            AffineCamera c;
+            data.image(i)->setCamera(c);
+            data.image(i)->setTranslation(tvec[n]);
+        }
+
+        auto rotRad = autocalib.getRotationAngles();
+        for (auto n = 0; n < nbCams - 1; ++n) {
+            const auto i = batch[n];
+            data.imagePair(i)->setTheta1(rotRad(n + 1, 0));
+            data.imagePair(i)->setRho(rotRad(n + 1, 1));
+            data.imagePair(i)->setTheta2(rotRad(n + 1, 2));
+        }
+
+        // ***** triangulate missing
+
+        std::vector<int> calibVec;
+        for (const auto &d : calibrated) calibVec.push_back(d);
+
+        auto Ps = data.getCameraMatrices();
+        for (auto pt = 0; pt < W.cols(); pt++) {
+            // if (X(3,pt) == 1) continue;
+            std::vector<Vec2> xa;
+            std::vector<Mat34> Pa;
+            for (const auto c : calibVec) {
+                if (W(3 * c + 2, pt) != 1.0) continue;
+                Pa.push_back(Ps[c]);
+                xa.push_back(W.block(3 * c, pt, 2, 1));
+            }
+            if (xa.size() < 2) continue;
+            Vec4 Xa = utils::triangulate(xa, Pa);
+            Xa /= Xa(3);
+            X.col(pt) = Xa;
+        }
+
+        // ***** bundle selected cams and selected points
+
+        if (withBA) {
+            LOG_OK("Bundle adjustement: started...");
+            BundleData bundleData;
+            bundleData.X = X;
+            bundleData.W = W;
+
+            data.getCamerasIntrinsics(&bundleData.cam);
+            bundleData.R = data.getCameraRotationsAbsolute();
+            bundleData.t = data.getCameraTranslations();
+
+            {
+                BundleParams params(nbCamsTotal);
+                params.setUsedCams(calibVec);
+                params.setConstAll();
+                params.setVaryingPts();
+                BundleAdjustment ba;
+                ba.run(bundleData, params);
+            }
+
+            {
+                BundleParams params(nbCamsTotal);
+                params.setConstAll();
+                params.setUsedCams(calibVec);
+                params.setVaryingAllCams(p3dBundleParam_R);
+                params.setVaryingAllCams(p3dBundleParam_t);
+                params.setConstAllParams({0});
+                BundleAdjustment ba;
+                ba.run(bundleData, params);
+            }
+
+            {
+                BundleParams params(nbCamsTotal);
+                params.setConstAll();
+                params.setUsedCams(calibVec);
+                params.setVaryingPts();
+                BundleAdjustment ba;
+                ba.run(bundleData, params);
+            }
+
+            data.setCamerasIntrinsics(bundleData.cam);
+            data.setCameraRotationsAbsolute(bundleData.R, calibVec.back() + 1);
+            data.setCameraTranslations(bundleData.t);
+            X = bundleData.X;
+
+            LOG_OK("Bundle adjustement: done");
+        }
+
+        {
+            std::cout << "nb triangulated: " << X.bottomRows(1).sum() << "/" << X.cols()
+                      << std::endl;
+            Vec e = utils::reprojectionError(W, data.getCameraMatricesMat(), X, calibVec);
+            std::cout << "mean reproj: " << e.mean() << std::endl;
+            std::cout << "reproj error < 0.5px: "
+                      << 100.0f * (e.array() < 0.5).count() / float(e.size()) << " %"
+                      << std::endl;
+            std::cout << "reproj error < 1.0px: "
+                      << 100.0f * (e.array() < 1.0).count() / float(e.size()) << " %"
+                      << std::endl;
+        }
+
+        batchIdx++;
+        p3d::task::progress_ = calibVec.size();
+    }
+
+    Mat3Xf pts3D = X.topRows(3).cast<float>();
+    p3d::cmder::executeCommand(
+        new CommandPointCloudAdd(&data.pointCloudCtnr(), "sparse", pts3D));
+
+    p3d::task::reset();
+    return 0;
+}
 
 void p3d::loadImages(Project &list, const std::vector<std::string> &imPaths)
 {
@@ -546,12 +751,12 @@ void p3d::filterDisparitySpeckles(Project &data, std::vector<int> imPairsIds)
     LOG_ERR("Not implemented yet");
 }
 
-void p3d::findMeasurementMatrixFull(Project &data)
+int p3d::findMeasurementMatrixFull(Project &data)
 {
     Mat Wfull;
     auto nbIm = data.nbImages();
     auto nbPairs = data.nbImagePairs();
-    if (nbPairs == 0) return;
+    if (nbPairs == 0) return -1;
 
     Mati table;
     std::vector<std::map<int, int>> matchesMaps;
@@ -574,9 +779,9 @@ void p3d::findMeasurementMatrixFull(Project &data)
             auto ptIdx = table(i, p);
             if (ptIdx < 0) continue;
             if (ptIdx >= kpts.size()) {
-                LOG_ERR("Full measurement matrix: wrong feature indices");
+                LOG_ERR("measurement matrix: wrong feature indices");
                 // most certainly features were reestimated afrer matches
-                return;
+                return -1;
             }
             const double x = static_cast<double>(kpts[ptIdx].pt.x);
             const double y = static_cast<double>(kpts[ptIdx].pt.y);
@@ -586,7 +791,8 @@ void p3d::findMeasurementMatrixFull(Project &data)
     //data.setMeasurementMatrixFull(Wfull);
     p3d::cmder::executeCommand(
         new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMatFull), Wfull});
-    LOG_OK("Full measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
+    LOG_OK("measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
+    return 0;
 }
 
 void p3d::findMeasurementMatrix(Project &data)

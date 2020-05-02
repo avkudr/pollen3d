@@ -48,6 +48,9 @@ void utils::saveFileToMatlab(std::string fileName, cv::Mat a, std::string varNam
  */
 void utils::makeNonHomogenious(Mat &m)
 {
+    if (m.rows() == 0) return;
+    if (m.cols() == 0) return;
+
     // Make W non-homogenious
     bool isNonHomogenious = !((m.rows() % 3) == 0 && (m(2, 0) == 1));
     if (isNonHomogenious)
