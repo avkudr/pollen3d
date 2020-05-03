@@ -1,5 +1,29 @@
 cmake_minimum_required(VERSION 3.1)
-project( pollen3d )
+
+#
+# Read project version
+#
+
+set(POLLEN3D_VERSION_REGEX "#define POLLEN3D_VERSION_.*[ \t]+(.+)")
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h" POLLEN3D_VERSION REGEX ${POLLEN3D_VERSION_REGEX})
+list(TRANSFORM POLLEN3D_VERSION REPLACE ${POLLEN3D_VERSION_REGEX} "\\1")
+list(GET POLLEN3D_VERSION 0 POLLEN3D_VERSION_MAJOR)
+list(GET POLLEN3D_VERSION 1 POLLEN3D_VERSION_MINOR)
+list(GET POLLEN3D_VERSION 2 POLLEN3D_VERSION_PATCH)
+string(JOIN "." POLLEN3D_VERSION ${POLLEN3D_VERSION})
+
+project(
+    pollen3d
+    VERSION ${POLLEN3D_VERSION}
+    DESCRIPTION "3D reconstruction in Scanning Electron Microscope"
+    HOMEPAGE_URL "https://github.com/avkudr/pollen3d"
+    LANGUAGES CXX
+    )
+
+message("*")
+message("* ${PROJECT_NAME} v${PROJECT_VERSION} (${CMAKE_BUILD_TYPE})")
+message("* Copyright (c) 2020 Andrey Kudryavtsev <andrey.kudryavtsev.24@gmail.com>")
+message("*")
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -8,11 +32,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(STATUS "compiling in debug")
     set(CMAKE_DEBUG_POSTFIX -debug)
     add_definitions(-DPOLLEN3D_DEBUG)
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    message(STATUS "compiling in release")
 endif()
 
 option(USE_OPENMP "Use OpenMP" ON)
@@ -107,6 +128,7 @@ set(SOURCES_GUI
     ./src/app.h
     ./src/common
     ./src/main_gui.cpp
+    ./src/version.h
     ./src/common/common.h
     ./src/common/common.cpp
     ./src/common/imgui_custom.cpp
@@ -306,24 +328,18 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
         set(ARCH "amd64")
     endif()
 
-    set(VERSION_MAJOR "0")
-    set(VERSION_MINOR "9")
-    set(VERSION_PATCH "${DATETIME_NOW}")
-
     set(CPACK_GENERATOR "DEB")
-    SET(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
-    SET(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
-    SET(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
+    set(CPACK_PACKAGE_VERSION_MAJOR "${POLLEN3D_VERSION_MAJOR}")
+    set(CPACK_PACKAGE_VERSION_MINOR "${POLLEN3D_VERSION_MINOR}")
+    set(CPACK_PACKAGE_VERSION_PATCH "${POLLEN3D_VERSION_PATCH}")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${ARCH})
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
-    SET(CPACK_PACKAGE_VENDOR "AVK")
+    set(CPACK_PACKAGE_VENDOR "AVK")
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "3D reconstruction in Scanning Electron Microscope (SEM)")
     set(CPACK_PACKAGE_DESCRIPTION "3D reconstruction in Scanning Electron Microscope (SEM)")
     set(CPACK_PACKAGE_CONTACT "Andrey Kudryavtsev, andrey.kudryavtsev.24 at gmail.com")
 
-    set(PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}")
-
-    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${DATETIME_NOW}-${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
 
     include(CPack)
 

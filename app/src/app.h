@@ -13,6 +13,7 @@
 #include "p3d/logger.h"
 
 #include "common/app_state.h"
+#include "version.h"
 #include "viewer3d/viewer3d.h"
 #include "widgets/widget.h"
 #include "widgets/widget_console.h"
@@ -31,7 +32,9 @@ public:
     void setWindowTitle(std::string str)
     {
         if (str == "") str = "*";
-        std::string title = "pollen3d: " + str;
+        std::string title = "pollen3d v" + std::to_string(POLLEN3D_VERSION_MAJOR) + "." +
+                            std::to_string(POLLEN3D_VERSION_MINOR) + "." +
+                            std::to_string(POLLEN3D_VERSION_PATCH) + ": " + str;
         setWindowTitleImpl(title);
     }
 
