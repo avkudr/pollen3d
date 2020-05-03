@@ -1394,6 +1394,33 @@ void Application::_drawCentral()
                     }
                 }
             }
+
+            bool showItemInfo = true;
+            if (showItemInfo) {
+                const int idx = m_state.itemIdx();
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.7);
+                if (m_state.isTab({Tab_General, Tab_Image})) {
+                    const auto name = m_projectData.image(idx)->name();
+                    const int w = m_projectData.image(idx)->width();
+                    const int h = m_projectData.image(idx)->height();
+                    ImGui::SetCursorPos(ImVec2(10, 25));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
+                    ImGui::Text("Image (%i)", idx);
+                    ImGui::Text("%s", name.c_str());
+                    ImGui::Text("%ix%i", w, h);
+                    ImGui::PopStyleVar();
+                } else if (m_state.isTab(Tab_Stereo)) {
+                    const auto nameL = m_projectData.imagePairL(idx)->name();
+                    const auto nameR = m_projectData.imagePairR(idx)->name();
+                    ImGui::SetCursorPos(ImVec2(10, 25));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
+                    ImGui::Text("Image pair (%i)", idx);
+                    ImGui::Text("left : %s", nameL.c_str());
+                    ImGui::Text("right: %s", nameR.c_str());
+                    ImGui::PopStyleVar();
+                }
+                ImGui::PopStyleVar();
+            }
         } else {
             ImGui::Text("No image to display");
         }
