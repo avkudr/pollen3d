@@ -22,7 +22,7 @@ using namespace p3d;
 #define __ID_PROP_INT 110521
 #define __ID_PROP_EIGEN 110581
 
-class A
+class A : public Serializable<A>
 {
 public:
     A()
@@ -30,13 +30,16 @@ public:
         static bool firstCall = true;
         if (firstCall) {
             entt::meta<A>()
-                .alias(P3D_ID_TYPE(110520))
+                .alias(getAlias())
                 .data<&A::setValue, &A::getValue>(P3D_ID_TYPE(__ID_PROP_INT))
                 .data<&A::setEigenMat, &A::getEigenMat>(P3D_ID_TYPE(__ID_PROP_EIGEN));
 
             firstCall = false;
         }
     }
+
+    static const char *classNameStatic() { return "A"; }
+
     int getValue() const { return m_value; }
     void setValue(int v) { m_value = v; }
     const cv::Mat &getMatrixCV() const
@@ -71,7 +74,7 @@ public:
         static bool first = true;
         if (first) {
             entt::meta<ClassA>()
-                .alias("ClassAdebug"_hs)
+                .alias(getAlias())
                 .data<&ClassA::float1>(P3D_ID_TYPE(1))
                 .data<&ClassA::float2>(P3D_ID_TYPE(2))
                 .data<&ClassA::integer>(P3D_ID_TYPE(10))
@@ -88,6 +91,8 @@ public:
     ~ClassA()
     {
     }
+
+    static const char *classNameStatic() { return "ClassA"; }
 
     bool operator==(const ClassA &i) const { return false; }
 
@@ -394,7 +399,7 @@ TEST(COMMANDS, command_setProperty)
     A a;
     a.setValue(15);
     EXPECT_EQ(a.getValue(), 15);
-    p3d::cmder::executeCommand(new CommandSetProperty{&a, __ID_PROP_INT, 254});
+    p3d::cmder::executeCommand(new CommandSetProperty(&a, __ID_PROP_INT, 254));
     EXPECT_EQ(a.getValue(), 254);
     p3d::cmder::get()->undoCommand();
     EXPECT_EQ(a.getValue(), 15);
@@ -410,7 +415,7 @@ TEST(COMMANDS, command_setPropertyEigenDyn)
     A a;
     a.setEigenMat(m);
     EXPECT_EQ(a.getEigenMat(), m);
-    p3d::cmder::executeCommand(new CommandSetProperty{&a, __ID_PROP_EIGEN, m1});
+    p3d::cmder::executeCommand(new CommandSetProperty(&a, __ID_PROP_EIGEN, m1));
     EXPECT_EQ(a.getEigenMat(), m1);
     p3d::cmder::get()->undoCommand();
     EXPECT_EQ(a.getEigenMat(), m);
@@ -422,10 +427,10 @@ TEST(COMMANDS, command_setPropertyGroup)
     a.setValue(15);
     EXPECT_EQ(a.getValue(), 15);
     CommandGroup *grp = new CommandGroup();
-    grp->add(new CommandSetProperty{&a, __ID_PROP_INT, 20});
-    grp->add(new CommandSetProperty{&a, __ID_PROP_INT, 21});
-    grp->add(new CommandSetProperty{&a, __ID_PROP_INT, 22});
-    grp->add(new CommandSetProperty{&a, __ID_PROP_INT, 23});
+    grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 20));
+    grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 21));
+    grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 22));
+    grp->add(new CommandSetProperty(&a, __ID_PROP_INT, 23));
     p3d::cmder::executeCommand(grp);
     EXPECT_EQ(a.getValue(), 23);
     p3d::cmder::get()->undoCommand();
@@ -455,10 +460,10 @@ TEST(COMMANDS, command_mergeNextCmd)
     a.setValue(15);
     a.setEigenMat(Mat(Mat3::Identity()));
 
-    p3d::cmder::executeCommand(new CommandSetProperty{&a, __ID_PROP_INT, 254});
+    p3d::cmder::executeCommand(new CommandSetProperty(&a, __ID_PROP_INT, 254));
     p3d::cmder::get()->mergeNextCommand();
     p3d::cmder::executeCommand(
-        new CommandSetProperty{&a, __ID_PROP_EIGEN, Mat(Mat4::Zero())});
+        new CommandSetProperty(&a, __ID_PROP_EIGEN, Mat(Mat4::Zero())));
 
     EXPECT_EQ(a.getValue(), 254);
     EXPECT_EQ(a.getEigenMat(), Mat(Mat4::Zero()));
@@ -478,11 +483,11 @@ TEST(META, meta_setValue)
     data.set(s, 2.0 * 2.0);
     EXPECT_DOUBLE_EQ(data.get(s).cast<double>(), 4.0);  // ok
 
-    p3d::cmder::executeCommand(new CommandSetProperty{&s, id, 0.001});
+    p3d::cmder::executeCommand(new CommandSetProperty(&s, id, 0.001));
     EXPECT_DOUBLE_EQ(data.get(s).cast<double>(), 0.001);
-    p3d::cmder::executeCommand(new CommandSetProperty{&s, id, 2.0});
+    p3d::cmder::executeCommand(new CommandSetProperty(&s, id, 2.0));
     EXPECT_DOUBLE_EQ(data.get(s).cast<double>(), 2.0);
-    p3d::cmder::executeCommand(new CommandSetProperty{&s, id, 2.0 * 2.0});
+    p3d::cmder::executeCommand(new CommandSetProperty(&s, id, 2.0 * 2.0));
     EXPECT_DOUBLE_EQ(data.get(s).cast<double>(), 4.0);
 }
 

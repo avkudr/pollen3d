@@ -86,8 +86,9 @@ int main()
     Mat4X X;
     X.setZero(4,W.cols());
 
+    const int batchSize = 4;
     std::set<int> calibrated;
-    auto batches = utils::generateBatches(data.nbImages(), 5);
+    auto batches = utils::generateBatches(data.nbImages(), batchSize);
     const int nbCamsTotal = data.nbImages();
 
     int batchIdx = 0;
