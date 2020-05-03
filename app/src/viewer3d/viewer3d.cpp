@@ -1,5 +1,7 @@
 #include "viewer3d.h"
 
+#include "../app/assets/fonts/IconsFontAwesome5.h"
+
 void Viewer3D::setSize(int width, int height)
 {
     bool sizeChanged = false;
@@ -47,14 +49,7 @@ void Viewer3D::draw(int width, int height)
                             io.MouseDelta.y / m_height);
         }
 
-        if (io.MouseWheel != 0.0f) {
-            if (io.KeyAlt) {
-                m_pointSize += 0.25f * io.MouseWheel / abs(io.MouseWheel);
-                m_pointSize = std::max(1.0f, m_pointSize);
-            } else {
-                moveCameraBackForward(io.MouseWheel);
-            }
-        }
+        if (io.MouseWheel != 0.0f) { moveCameraBackForward(io.MouseWheel); }
 
         if (ImGui::IsKeyPressed('A')) m_showAxis = !m_showAxis;
         if (ImGui::IsKeyPressed('C')) m_showCameras = !m_showCameras;
@@ -68,21 +63,33 @@ void Viewer3D::draw(int width, int height)
 
     drawImpl(width, height);
 
-    ImGui::SetCursorPos(ImVec2(15, 35));
-    ImGui::BeginGroup();
-    ImGui::Text("<G> to set the grid %s", m_showGrid ? "off" : "on");
-    ImGui::Text("<C> to show/hide cameras");
-    ImGui::Text("<R> to reset view");
-    ImGui::Text("<Alt + Wheel> to change point size");
+    ImGui::SetCursorPos(ImVec2(width - 30, 35));
+    ImGui::Button(ICON_FA_COGS "##viewer3d_settings");
+    ImGui::OpenPopupOnItemClick("##viewer3d_settings",
+                                ImGuiMouseButton_Left | ImGuiMouseButton_Left);
 
-    ImGui::Checkbox("true colors", &m_pcdTrueColors);
-    if (!m_pcdTrueColors) {
+    if (ImGui::BeginPopupContextItem("##viewer3d_settings")) {
+        ImGui::Checkbox("show grid (G)", &m_showGrid);
+        ImGui::Checkbox("show axis (A)", &m_showAxis);
+        ImGui::Checkbox("show cameras (C)", &m_showCameras);
+        ImGui::SetNextItemWidth(100);
+        ImGui::SliderInt("point size, px (Alt+Wheel)", &m_pointSize, 1.0, 10.0);
+
+        ImGui::Checkbox("true colors", &m_pcdTrueColors);
+        if (!m_pcdTrueColors) {
+            ImGui::SameLine();
+            ImGui::ColorEdit4("point cloud color##pcd_color", m_pcdColor.data(),
+                              ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+        }
+
+        ImGui::ColorEdit4("background color##pcd_color", m_backColor.data(),
+                          ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
         ImGui::SameLine();
-        ImGui::ColorEdit4(
-            "point cloud color##pcd_color", m_pcdColor.data(),
-            ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+        ImGui::Text("background color");
+
+        if (ImGui::Button("close")) { ImGui::CloseCurrentPopup(); }
+        ImGui::EndPopup();
     }
-    ImGui::EndGroup();
 }
 
 void Viewer3D::rotateWorld(float dx, float dy)

@@ -184,8 +184,7 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glViewport(0, 0, m_width, m_height);
 
-    glClearColor(m_backColor(0), m_backColor(1), m_backColor(2),
-                 m_backColor(3));
+    glClearColor(m_backColor[0], m_backColor[1], m_backColor[2], m_backColor[3]);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_DEPTH_CLAMP);  // BAD !

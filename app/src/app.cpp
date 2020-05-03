@@ -1287,9 +1287,7 @@ void Application::_drawCentral()
             m_state.setViewer3dNeedsUpdateCameras(false);
         }
 
-        ImGui::PushFont(m_fontMonoSmall);
         m_viewer3D->draw(width, height);
-        ImGui::PopFont();
         return;
     }
 
