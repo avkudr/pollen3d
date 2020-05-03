@@ -822,6 +822,9 @@ protected:
                 case type::open: command += " --getopenfilename"; break;
                 case type::folder: command += " --getexistingdirectory"; break;
             }
+            if (allow_multiselect && in_type == type::open)
+                command += " --multiple --separate-output";
+            
             command += " " + shell_quote(default_path);
 
             std::string filter;

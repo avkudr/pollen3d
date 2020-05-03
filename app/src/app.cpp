@@ -45,6 +45,7 @@ void Application::initImGui()
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigDockingWithShift = true;
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
 
     std::string font = "SourceSansPro-Regular.ttf";
     std::string fontMono = "UbuntuMono-R.ttf";
@@ -1508,15 +1509,16 @@ void Application::_showFeatures(const ImVec2 &pos, const ImVec2 &size,
     auto im = m_projectData.image(m_state.itemIdx());
     if (im && im->hasFeatures()) {
         const auto &keyPts = im->getKeyPoints();
-        ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
         const auto color32 =
             IM_COL32(col.x * 255, col.y * 255, col.z * 255, col.w * 255);
 
-        for (const auto &kpt : keyPts) {
+        ImDrawList *draw_list = ImGui::GetWindowDrawList();
+        
+        for (auto i = 0; i < keyPts.size(); i++) {       
+            const auto &kpt = keyPts[i];
             float x = pos.x + kpt.pt.x / float(m_textureWidth) * size.x;
             float y = pos.y + kpt.pt.y / float(m_textureHeight) * size.y;
-
             draw_list->AddCircle(ImVec2(x, y), featuresSize, color32, 6, 2);
         }
     }

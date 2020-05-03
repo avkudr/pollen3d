@@ -98,7 +98,7 @@ public:
     virtual ~PObject() {}
 
     virtual P3D_ID_TYPE getAlias() = 0;
-    virtual const char* className() = 0;
+    virtual const char* className() const = 0;
     virtual void setData(const entt::meta_data& data, const entt::meta_any& value) = 0;
     virtual entt::meta_any getData(const entt::meta_data& data) = 0;
 };

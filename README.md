@@ -30,7 +30,7 @@ cd ..
 
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . --config Release -j 4
+cmake --build . --config Release
 ./app/bin/pollen3d
 ```
 

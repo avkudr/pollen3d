@@ -220,7 +220,7 @@ public:
 
     P3D_ID_TYPE getAlias() override { return p3d::alias(className()); }
 
-    virtual const char* className() { return T::classNameStatic(); }
+    const char* className() const override { return T::classNameStatic(); }
 
     auto resolve() { return entt::resolve<T>(); }
 

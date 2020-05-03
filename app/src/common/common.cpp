@@ -10,8 +10,7 @@ std::vector<std::string> loadImagesDialog()
     auto f = pfd::open_file("Choose images", "",
     { "Images (.jpg .jpeg .png .tif .tiff)",
       "*.jpg *.jpeg *.png *.tif *.tiff",
-      "All Files", "*" },
-                            true);
+      "All Files", "*" }, true);
     return f.result();
 }
 
