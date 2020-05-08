@@ -219,15 +219,25 @@ void Application::_drawMenuBar(int width)
                      ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     if (ImGui::BeginMenuBar()) {
-        //        if (ImGui::BeginMenu("File")) {
+        if (ImGui::BeginMenu("File")) {
+            ImGui::MenuItem("New project");
+            ImGui::MenuItem("Open project");
+            ImGui::Separator();
+            ImGui::MenuItem("Save","Ctrl+S");
+            ImGui::MenuItem("Save as");
+            ImGui::Separator();
+            if (ImGui::MenuItem("Export to openMVS..."))
+                HeavyTask::run([&]() {
+                    p3d::exportOpenMVS(m_projectData,"scene.mvs");
+                });
         //            ImGui::MenuItem("Main menu bar");
         //            ImGui::MenuItem("Console");
         //            ImGui::MenuItem("Log");
         //            ImGui::MenuItem("Simple layout");
         //            ImGui::MenuItem("Property editor");
         //            ImGui::MenuItem("Long text display");
-        //            ImGui::EndMenu();
-        //        }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Edit")) {
             ImGui::MenuItem("Undo", "Ctrl+Z");
             ImGui::EndMenu();

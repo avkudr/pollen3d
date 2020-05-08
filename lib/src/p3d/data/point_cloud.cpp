@@ -51,6 +51,8 @@ std::string PointCloud::getLabel() const { return m_label; }
 
 void PointCloud::setLabel(const std::string &label) { m_label = label; }
 
+const Vec3f PointCloud::getVertex(size_t i) const { return m_vertices.col(i); }
+
 const Mat3Xf &PointCloud::getVertices() const { return m_vertices; }
 
 void PointCloud::setVertices(const Mat3Xf &matrix) { m_vertices = matrix; }

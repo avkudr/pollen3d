@@ -88,6 +88,7 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/point_cloud_container.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/point_cloud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/data/point_cloud.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/export/openmvs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/project.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/project.h
 )

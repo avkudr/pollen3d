@@ -18,6 +18,7 @@
 #include "p3d/stereo/fundmat.h"
 #include "p3d/stereo/rectification.h"
 #include "p3d/utils.h"
+#include "p3d/export/openmvs.h"
 
 #include "p3d/command_manager.h"
 
@@ -1238,6 +1239,100 @@ void p3d::exportPLY(const Project &data, const std::string &label,
     } catch (...) {
         LOG_ERR("Point cloud export failed");
     }
+}
+
+void p3d::exportOpenMVS(const Project &data, const std::string &filepath)
+{
+    MVS::Interface scene;
+
+    std::vector<Mat3> Rarr;
+    data.getCamerasRotations(&Rarr);
+
+    const int nViews = data.nbImages();
+    // fill scene.cameras
+    for (int i = 0; i < nViews; i++) {
+        const auto & im = data.getImage(i);
+
+        MVS::Interface::Platform platform;
+        MVS::Interface::Platform::Camera camera;
+
+        camera.name = "camera" + std::to_string(i);
+        camera.bandName = "SEM";
+        camera.width = im.width();
+        camera.height = im.height();
+
+        cv::Matx<double,3,3> Kcv = cv::Matx<double,3,3>::eye();
+        const auto K = im.getCamera().getK();
+        cv::eigen2cv(K,Kcv);
+        camera.K = Kcv;
+        camera.R = cv::Matx<double,3,3>::eye();
+        camera.C = cv::Point3_<double>(0,0,0);
+
+        platform.cameras.push_back(camera);
+        scene.platforms.push_back(platform);
+    }
+
+    // ***** fill scene.images
+
+    scene.images.reserve(nViews);
+    for (int i = 0; i < nViews; i++) {
+        const auto & im = data.getImage(i);
+
+        MVS::Interface::Image image;
+        image.name = im.getPath();
+        image.platformID = i;
+        MVS::Interface::Platform& platform = scene.platforms[image.platformID];
+        image.cameraID = 0;
+
+        MVS::Interface::Platform::Pose pose;
+        image.poseID = 0;
+
+        cv::Matx<double,3,3> Rcv = cv::Matx<double,3,3>::eye();
+        const auto R = Rarr[i];
+        cv::eigen2cv(R,Rcv);
+        pose.R = Rcv;
+
+        const Vec2 t = im.getTranslation();
+        cv::Point3_<double> tcv(t[0],t[1],-1000);
+        pose.C = tcv;
+
+        platform.poses.push_back(pose);
+        scene.images.emplace_back(image);
+    }
+
+    if (!data.getPointCloudCtnr().contains("sparse")) {
+        LOG_ERR("no sparse point cloud, aborting...");
+        return;
+    }
+
+    const auto & pcd = data.getPointCloudCtnr().at("sparse");
+    // ***** fill scene.images
+
+    scene.vertices.reserve(pcd.nbPoints());
+    for (int pointIdx = 0; pointIdx < pcd.nbPoints(); pointIdx++)
+    {
+        MVS::Interface::Vertex vert;
+        MVS::Interface::Vertex::ViewArr& views = vert.views;
+
+        for (int i = 0; i < nViews; ++i) {
+            MVS::Interface::Vertex::View view;
+            view.imageID = i;
+            view.confidence = 0.0;
+            views.push_back(view);
+        }
+
+        Vec3f pt = pcd.getVertex(pointIdx);
+        vert.X = cv::Point3_<float>(pt[0],pt[1],pt[2]);
+        scene.vertices.push_back(vert);
+    }
+
+    // write OpenMVS data
+    if (!MVS::ARCHIVE::SerializeSave(scene, filepath)) {
+        LOG_ERR("Failed to export as openMVS scene");
+        return;
+    }
+
+    LOG_OK("project saved to openMVS interface format");
 }
 
 void p3d::deletePointCloud(Project &data, const char *lbl)

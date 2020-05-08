@@ -30,6 +30,7 @@ public:
     std::string getLabel() const;
     void setLabel(const std::string& label);
 
+    const Vec3f getVertex(size_t i) const;
     const Mat3Xf& getVertices() const;
     void setVertices(const Mat3Xf& matrix);
 

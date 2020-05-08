@@ -61,6 +61,8 @@ void P3D_API triangulateDenseDev(Project &data);
 void P3D_API bundleAdjustment(Project &data);
 void P3D_API exportPLY(const Project &data, const std::string &label,
                        const std::string &filepath);
+
+void P3D_API exportOpenMVS(const Project &data, const std::string &filepath);
 void P3D_API deletePointCloud(Project &data, const char *lbl);
 
 // ***** Settings
