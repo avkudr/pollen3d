@@ -14,6 +14,8 @@ ceres-solver:use_gflags=False
 gtest:build_gmock=False
 gtest:shared=True
 opencv:shared=True
+opencv:with_flann=False
+opencv:with_gtk=True
 
 [generators]
 cmake_find_package

@@ -78,7 +78,14 @@ struct DenseMatchingUtil {
         const cv::Mat& disparity, cv::Mat& disparityFiltered,
         const DenseMatchingPars& denseMatching = DenseMatchingPars());
 
-    static void getDispForPlot(const cv::Mat& disparity, cv::Mat& plot);
+    static void getDispForPlot(const cv::Mat& disparity, cv::Mat& plot,
+                               const Vec2f& dispRange = {0, 0});
+
+    static void refineConsistencyCheck(cv::Mat& disparityBase,
+                                       const cv::Mat& disparityNeighbor,
+                                       float thresPx = 1.0);
+
+    constexpr static const float NO_DISPARITY{-10000.0};
 };
 
 }  // namespace p3d

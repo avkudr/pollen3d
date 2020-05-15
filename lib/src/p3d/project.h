@@ -47,6 +47,8 @@ public:
     bool empty() const { return nbImages() == 0; }
 
     std::string getProjectPath() const { return m_projectPath; }
+    std::string getName() const { return utils::baseNameFromPath(m_projectPath); }
+
     void setProjectPath(const std::string &path)
     {
         m_projectPath = path;
@@ -96,6 +98,7 @@ public:
     void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t, int N = 0);
 
     void getCamerasRotations(std::vector<Mat3> *R) const;
+    std::vector<Mat3> getCamerasRotations() const;
 
     std::vector<Vec3> getCameraRotationsAbsolute() const;
     void setCameraRotationsAbsolute(const std::vector<Vec3> & abs, int N = 0);

@@ -768,15 +768,8 @@ void Application::_drawTab_Multiview()
                             m_state.setViewer3dNeedsUpdateFull(true);
                         });
                     }
-#ifdef POLLEN3D_DEBUG
+#if 1  // def POLLEN3D_DEBUG
                     if (ImGui::Button("Triangulate dense (multi-view)")) {
-                        HeavyTask::run([&]() {
-                            p3d::triangulateDenseDev(m_projectData);
-                            m_state.setViewer3dNeedsUpdateFull(true);
-                        });
-                    }
-
-                    if (ImGui::Button("Triangulate dense (dev)")) {
                         HeavyTask::run([&]() {
                             p3d::triangulateDenseDev(m_projectData);
                             m_state.setViewer3dNeedsUpdateFull(true);

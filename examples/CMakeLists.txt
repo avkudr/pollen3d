@@ -72,3 +72,4 @@ file(COPY ${p3d_LIBS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 add_p3d_example(extract_features)
 add_p3d_example(reconstruction_batch)
+add_p3d_example(sparse_to_dense)

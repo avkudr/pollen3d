@@ -538,3 +538,20 @@ Vec utils::reprojectionError(const Mat &W, const Mat &P, const Mat4X &X, std::ve
 
     return e;
 }
+
+float utils::reprojectionErrorPt(const std::vector<Vec2> &x, const std::vector<Mat34> &P,
+                                 const Vec4 &X)
+{
+    int nbCams = x.size();
+    if (nbCams == 0) return std::numeric_limits<float>::max();
+
+    double meanErr = 0;
+    for (int c = 0; c < nbCams; ++c) {
+        Vec3 q = P[c] * X;
+        q = q / q(2);
+        meanErr += Vec2(x[c] - q.topRows(2)).norm();
+    }
+
+    meanErr /= float(nbCams);
+    return meanErr;
+}

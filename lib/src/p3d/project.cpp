@@ -179,20 +179,26 @@ void Project::setCamerasIntrinsics(std::vector<Vec3> &cam)
 void Project::getCamerasRotations(std::vector<Mat3> *R) const
 {
     if (!R) return;
-    if (nbImages() == 0) return;
+    *R = getCamerasRotations();
+}
 
-    R->clear();
-    R->resize(nbImages());
-    (*R)[0] = Mat3::Identity();
+std::vector<Mat3> Project::getCamerasRotations() const
+{
+    std::vector<Mat3> R;
+    if (nbImages() == 0) return R;
 
-    for (auto i = 0; i < nbImages()-1; i++) {
+    R.resize(nbImages());
+    R[0] = Mat3::Identity();
+
+    for (auto i = 0; i < static_cast<int>(nbImages()) - 1; i++) {
         double t1 = m_imagesPairs[i].getTheta1();
         double rho = m_imagesPairs[i].getRho();
         double t2 = m_imagesPairs[i].getTheta2();
 
-        (*R)[i + 1] = utils::RfromEulerZYZt_inv(t1, rho, t2);
-        if (i != 0) (*R)[i + 1] = (*R)[i + 1] * (*R)[i];
+        R[i + 1] = utils::RfromEulerZYZt_inv(t1, rho, t2);
+        if (i != 0) R[i + 1] = R[i + 1] * R[i];
     }
+    return R;
 }
 
 std::vector<Vec3> Project::getCameraRotationsAbsolute() const

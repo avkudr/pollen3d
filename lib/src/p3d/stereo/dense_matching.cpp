@@ -43,7 +43,7 @@ void DenseMatchingUtil::findDisparity(const cv::Mat &imLeftR,
                                       cv::Mat &disparity,
                                       const DenseMatchingPars &denseMatching)
 {
-    const auto &lowerBound = 16 * denseMatching.dispLowerBound;
+    const auto &lowerBound = denseMatching.dispLowerBound;
     const auto &upperBound = 16 * denseMatching.dispUpperBound;
     const auto &blockSize = denseMatching.dispBlockSize;
 
@@ -59,13 +59,16 @@ void DenseMatchingUtil::findDisparity(const cv::Mat &imLeftR,
         sgbm->setP1(8 * cn * blockSize * blockSize);
         sgbm->setP2(32 * cn * blockSize * blockSize);
 
+        sgbm->setSpeckleWindowSize(100);
+        sgbm->setSpeckleRange(1);
+
         cv::Mat disparityMap;
         sgbm->compute(imLeftR, imRightR, disparityMap);
 
-        if (disparityMap.type() != CV_32F)
-            disparityMap.convertTo(disparityMap, CV_32F);
-
         disparity = disparityMap.clone();
+
+        if (disparity.type() != CV_32FC1) disparity.convertTo(disparity, CV_32FC1);
+
     } catch (...) {
         disparity = cv::Mat();
     }
@@ -90,18 +93,70 @@ void DenseMatchingUtil::filterDisparityBilateral(
     }
 }
 
-void DenseMatchingUtil::getDispForPlot(const cv::Mat &disparity, cv::Mat &plot)
+void DenseMatchingUtil::getDispForPlot(const cv::Mat &disparity, cv::Mat &plot,
+                                       const Vec2f &dispRange)
 {
     plot = cv::Mat();
     if (disparity.type() != CV_32F) {
         LOG_ERR("DenseMatchingUtil::getPlot. Wrong type");
         return;
     }
-    float Amin =
-        *std::min_element(disparity.begin<float>(), disparity.end<float>());
-    float Amax =
-        *std::max_element(disparity.begin<float>(), disparity.end<float>());
-    cv::Mat A_scaled = (disparity - Amin) / (Amax - Amin);
+    float Amin, Amax;
+    float trueMin, trueMax;
+    trueMin = *std::min_element(disparity.begin<float>(), disparity.end<float>());
+    trueMax = *std::max_element(disparity.begin<float>(), disparity.end<float>());
+    if (dispRange(0) == dispRange(1)) {
+        Amin = *std::min_element(disparity.begin<float>(), disparity.end<float>());
+        Amax = *std::max_element(disparity.begin<float>(), disparity.end<float>());
+    } else {
+        Amin = 16.0f * dispRange(0) + -16.0f;
+        Amax = Amin + dispRange(1) * 16.0f * 16.0f;
+    }
+    LOG_INFO("Disparity plot range: (%0.3f,%0.3f)", Amin / 16.0, Amax / 16.0);
+    LOG_INFO("Disparity true range: (%0.3f,%0.3f)", trueMin / 16.0, trueMax / 16.0);
+
+    cv::Mat inRange;
+    cv::inRange(disparity, Amin, Amax, inRange);
+    plot = disparity * 0 + Amin;
+    disparity.copyTo(plot, inRange);
+
+    cv::Mat A_scaled = (plot - Amin) / (Amax - Amin);
     A_scaled.convertTo(plot, CV_8UC1, 255.0, 0);
     applyColorMap(plot, plot, cv::COLORMAP_HOT);
+}
+
+void DenseMatchingUtil::refineConsistencyCheck(cv::Mat &disparityBase,
+                                               const cv::Mat &disparityNeighbor,
+                                               float thresPx)
+{
+    p3d_Assert(thresPx > 0.0f);
+    p3d_Assert(!disparityBase.empty());
+    p3d_Assert(!disparityNeighbor.empty());
+    p3d_Assert(disparityBase.type() == CV_32FC1);
+    p3d_Assert(disparityNeighbor.type() == CV_32FC1);
+    p3d_Assert(disparityBase.size() == disparityNeighbor.size());
+
+    cv::Mat dispN = disparityNeighbor.clone();
+
+    cv::Mat kernel = cv::Mat::ones(3, 3, CV_32F) / 9.0f;
+    cv::filter2D(disparityNeighbor, dispN, -1, kernel);
+
+    float thres = 16.0f * thresPx;
+    float *p1;
+    for (int i = 0; i < disparityBase.rows; ++i) {
+        p1 = disparityBase.ptr<float>(i);
+        const auto p2 = disparityNeighbor.ptr<float>(i);
+
+        for (int j = 0; j < disparityBase.cols; ++j) {
+            int j2 = j + p1[j] / 16.0f;
+            if (j2 >= disparityNeighbor.cols) continue;
+
+            const float &d1 = p1[j];
+            const float &d2 = p2[j];
+            if (std::fabs(d1 + d2) > thres)
+                p1[j] = NO_DISPARITY;
+            else
+                p1[j] = (d1 - d2) / 2.0f;
+        }
+    }
 }

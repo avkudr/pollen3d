@@ -976,7 +976,7 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
         }
 
         float cosRho = std::cos(rho);
-        float sinRho = std::sin(rho);
+        float sinRhoInv = 1.0 / std::sin(rho);
 
         auto dispValues = data.imagePair(pairIdx)->getDisparityMap().clone();
         if (dispValues.type() != CV_32F) {
@@ -988,42 +988,58 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
         std::vector<Vec3f> pts3D;
         std::vector<Vec3f> colors;
 
-        cv::Mat I = data.imagePair(pairIdx)->getRectifiedImageL();
-        Mat3 Tl = data.imagePair(pairIdx)->getRectifyingTransformL().inverse();
-        Mat34 P = data.getCameraMatrices()[imPair->imL()];
+        cv::Mat Irl = data.imagePair(pairIdx)->getRectifiedImageL();
+        cv::Mat Irr = data.imagePair(pairIdx)->getRectifiedImageR();
+        if (Irl.type() != CV_8UC3)
+            LOG_DBG("Rectified image has wrong type: %i", Irl.type());
+        if (Irr.type() != CV_8UC3)
+            LOG_DBG("Rectified image has wrong type: %i", Irr.type());
 
-        if (I.type() != CV_8UC3) LOG_DBG("Rectified image has wrong type: %i", I.type());
+        Mat3 Tlinv =
+            utils::inverseTransform(data.imagePair(pairIdx)->getRectifyingTransformL());
+        Mat3 Trinv =
+            utils::inverseTransform(data.imagePair(pairIdx)->getRectifyingTransformR());
+        Mat34 Pl = data.getCameraMatrices()[imPair->imL()];
+        Mat34 Pr = data.getCameraMatrices()[imPair->imR()];
+        std::vector<Mat34> P = {Pl, Pr};
 
         p3d::task::name_ = "Trianulation, pair " + std::to_string(pairIdx);
         p3d::task::total_ = dispValues.cols;
         p3d::task::progress_ = 0;
 
-        for (int u = 0; u < dispValues.cols; ++u) {
+        const auto blackPx = cv::Vec3b(0, 0, 0);
+
+        for (int u1 = 0; u1 < dispValues.cols; ++u1) {
 #ifdef WITH_OPENMP
         omp_set_num_threads(utils::nbAvailableThreads());
 #pragma omp parallel for
 #endif
             for (int v = 0; v < dispValues.rows; ++v) {
-                const float d = dispValues.at<float>(v, u);
+                const float d = dispValues.at<float>(v, u1);
                 if (d * 0.0 != 0.0) continue;  // check for NaN
 
-                Vec3 unrectified = Tl * Vec3(u, v, 1.0);
-                const float q1x = static_cast<float>(unrectified(0));
-                const float q1y = static_cast<float>(unrectified(1));
-                const float q2x = q1x + d;
+                const cv::Vec3b &c1 = Irl.at<cv::Vec3b>(v, u1);
+                if (c1 == blackPx) continue;
 
-                const float q1z = -(q1x * cosRho - q2x) / sinRho;
+                int u2 = u1 - d;
+                if (u2 < 0 || u2 >= Irr.cols) continue;
 
-                //            #pragma omp critical
-                cv::Vec3b c = I.at<cv::Vec3b>(v, u);
-                if (c == cv::Vec3b(0, 0, 0)) continue;
+                const cv::Vec3b &c2 = Irr.at<cv::Vec3b>(v, u2);
+                if (c2 == blackPx) continue;
 
-                #pragma omp critical
+                Vec3 unrectified1 = Tlinv * Vec3(u1, v, 1.0);
+                Vec3 unrectified2 = Trinv * Vec3(u2, v, 1.0);
+
+                const std::vector<Vec2> x = {unrectified1.topRows(2),
+                                             unrectified2.topRows(2)};
+                Vec4 Q = utils::triangulate(x, P);
+
+#pragma omp critical
                 {
-                    p3d::task::progress_ = u;
-                    pts3D.emplace_back(Vec3f(q1x - P(0, 3), q1y - P(1, 3), q1z));
+                    p3d::task::progress_ = u1;
+                    pts3D.emplace_back(Vec3f(Q(0), Q(1), Q(2)));
                     colors.emplace_back(
-                        Vec3f(c.val[0] / 255.f, c.val[1] / 255.f, c.val[2] / 255.f));
+                        Vec3f(c1.val[0] / 255.f, c1.val[1] / 255.f, c1.val[2] / 255.f));
                 }
             }
         }
@@ -1091,7 +1107,7 @@ void p3d::triangulateDenseDev(Project &data)
                 if (d * 0.0 != 0.0) continue;  // check for NaN
 
                 Vec3 pl = Tli * Vec3(u, v, 1.0);
-                Vec3 pr = Tri * Vec3(double(u) + d, v, 1.0);
+                Vec3 pr = Tri * Vec3(double(u) - d, v, 1.0);
 
                 if (pl(0) < 0) continue;
                 if (pl(1) < 0) continue;
@@ -1113,10 +1129,10 @@ void p3d::triangulateDenseDev(Project &data)
         P.push_back(Ps[pairIdx + 1]);
 
         int nbGoodPoints = 0;
-        //    #ifdef WITH_OPENMP
-        //        omp_set_num_threads(utils::nbAvailableThreads());
-        //        #pragma omp parallel for
-        //    #endif
+#ifdef WITH_OPENMP
+        omp_set_num_threads(utils::nbAvailableThreads());
+#pragma omp parallel for
+#endif
         for (auto p = 0; p < matches.size(); ++p) {
             Vec4 pt = utils::triangulate(matches[p], P);
             pt /= pt(3);
@@ -1132,9 +1148,11 @@ void p3d::triangulateDenseDev(Project &data)
                 const auto &y = matches[p][c](1);
                 err += (xr - x) * (xr - x) + (yr - y) * (yr - y);
             }
-            bool inlier = err < 2 * 2;
-            //#pragma omp critical
-            if (inlier) {
+            bool inlier = err < 4.0;
+            if (!inlier) continue;
+
+#pragma omp critical
+            {
                 pts3D.push_back(pt.topRows(3));
                 nbGoodPoints++;
             }
@@ -1145,10 +1163,16 @@ void p3d::triangulateDenseDev(Project &data)
     Mat3Xf result;
     utils::convert(pts3D, result);
 
-    //    p3d::cmder::executeCommand(
-    //        new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_pts3DDense),
-    //        result, true));
+    std::string newPcd = "denseMVS";
 
+    if (data.pointCloudCtnr().contains(newPcd)) {
+        auto &pcd = data.pointCloudCtnr()[newPcd];
+        p3d::cmder::executeCommand(
+            new CommandSetProperty{&pcd, p3dPointCloud_vertices, result});
+    } else {
+        p3d::cmder::executeCommand(
+            new CommandPointCloudAdd(&data.pointCloudCtnr(), newPcd, result));
+    }
     LOG_OK("Triangulated %i points", pts3D.size());
 }
 

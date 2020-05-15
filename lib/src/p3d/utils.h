@@ -3,6 +3,7 @@
 
 #include <opencv2/core.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -44,6 +45,32 @@ private:
 };
 
 template <typename T>
+static double mean(const std::vector<T> &vec)
+{
+    double m = 0;
+    if (vec.size() == 0) return m;
+    for (const auto &v : vec) m += v;
+    return m / double(vec.size());
+}
+
+template <typename T>
+static double median(const std::vector<T> &vec)
+{
+    std::vector<T> v = vec;
+    double m = 0.0;
+    if (v.size() == 0) return m;
+    size_t n = v.size() / 2;
+    std::nth_element(v.begin(), v.begin() + n, v.end());
+    if (v.size() & 0x01 == 0) {
+        std::nth_element(v.begin(), v.begin() + n - 1, v.end());
+        m = 0.5 * (v[n] + v[n - 1]);
+    } else {
+        m = v[n];
+    }
+    return m;
+}
+
+template <typename T>
 static T min(T a, T b)
 {
     return a < b ? a : b;
@@ -58,6 +85,8 @@ static T max(T a, T b)
 void saveFileToMatlab(std::string fileName, cv::Mat a, std::string varName);
 
 Vec reprojectionError(const Mat & W, const Mat & P, const Mat4X & X, std::vector<int> selCams = {});
+float reprojectionErrorPt(const std::vector<Vec2> &xa, const std::vector<Mat34> &P,
+                          const Vec4 &X);
 
 template <typename T>
 static T rad2deg(const T &angRad)

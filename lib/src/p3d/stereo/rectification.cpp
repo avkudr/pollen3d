@@ -4,6 +4,8 @@ using namespace p3d;
 
 void RectificationUtil::rectify(RectificationData &data)
 {
+    p3d_Assert(data.ptsL.size() == data.ptsR.size());
+
     Mat3 Tl, Tr;
     cv::Mat imLrect, imRrect;
     {
