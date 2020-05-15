@@ -76,7 +76,7 @@ protected:
 
     std::map<std::string, std::unique_ptr<PCDView>> m_pcd;
     bool m_pcdTrueColors{true};
-    int m_pointSize{2};
+    int m_pointSize{1};
     std::array<float, 4> m_pcdColor{0.9f, 0.9f, 0.9f, 1.0f};
 
     // ***** cameras
