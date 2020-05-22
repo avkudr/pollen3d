@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "test_dense.h"
 #include "test_diamond.h"
 #include "test_fundmat.h"
 #include "test_meta.h"
@@ -19,5 +20,6 @@ int main(int argc, char **argv)
 //#endif
 
     ::testing::InitGoogleTest(&argc, argv);
+    ::testing::GTEST_FLAG(filter) = "DENSE*";
     return RUN_ALL_TESTS();
 }

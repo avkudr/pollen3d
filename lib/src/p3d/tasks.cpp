@@ -675,10 +675,9 @@ bool p3d::findDisparityMap(Project &data, std::vector<int> imPairsIds)
         const auto &imLeftR = data.imagePair(i)->getRectifiedImageL();
         const auto &imRightR = data.imagePair(i)->getRectifiedImageR();
 
-        cv::Mat disparityMap;
-        DenseMatchingUtil::findDisparity(
-            imLeftR, imRightR, disparityMap,
-            data.imagePair(i)->getDenseMatchingPars());
+        cv::Mat disparityMap, confidenceMap;
+        DenseMatchingUtil::findDisparity(imLeftR, imRightR, disparityMap, confidenceMap,
+                                         data.imagePair(i)->getDenseMatchingPars());
 
         if (disparityMap.empty()) {
             LOG_ERR("Pair %i: disparity estimation failed", i);

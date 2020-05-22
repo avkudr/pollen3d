@@ -7,6 +7,9 @@
 #include "p3d/serialization.h"
 #include "p3d/utils.h"
 
+#include <set>
+#include <stack>
+
 namespace p3d
 {
 enum P3D_API p3dDense_ {
@@ -38,7 +41,14 @@ enum P3D_API p3dDense_ {
     // StereoSGBM and may be other algorithms return a fixed-point disparity
     // map, where disparity values are multiplied by 16, this scale factor
     // should be taken into account when specifying this parameter value.
-
+    p3dDense_specklesWindowSize,  // Maximum size of smooth disparity regions to consider
+                                  // their noise speckles and invalidate. Set it to 0 to
+                                  // disable speckle filtering. Otherwise, set it
+                                  // somewhere in the 50-200 range.
+    p3dDense_specklesRange,       // Maximum disparity variation within each connected
+                             // component. If you do speckle filtering, set the parameter
+                             // to a positive value, it will be implicitly multiplied
+                             // by 16. Normally, 1 or 2 is good enough.
 };
 
 class P3D_API DenseMatchingPars : public Serializable<DenseMatchingPars>
@@ -69,10 +79,69 @@ public:
     int bilateralSigmaSpace{180};
 };
 
+class Neighbor
+{
+public:
+    cv::Size imLsize;
+    cv::Mat imLrect;
+    cv::Mat imRrect;
+    cv::Size imRsize{0, 0};
+    Mat3f Tl{Mat3f::Identity()};
+    Mat3f Tr{Mat3f::Identity()};
+    Mat3f Trinv{Mat3f::Identity()};
+    Mat3f R{Mat3f::Identity()};
+    Vec2f dispRange{0, 0};
+    cv::Mat disp;
+    cv::Mat confidence;
+
+    inline bool isValid() const { return valid; }
+    inline bool isInversed() const { return m_isInversed; }
+
+    Neighbor inverse()
+    {
+        Neighbor ninv;
+        ninv.imLsize = imRsize;
+        ninv.imRsize = imLsize;
+        ninv.imLrect = imRrect.clone();
+        ninv.imRrect = imLrect.clone();
+        ninv.Tr = Tl;
+        ninv.Tl = Tr;
+        ninv.Trinv = utils::inverseTransform(ninv.Tr);
+        ninv.R = R.transpose();
+        ninv.disp = -1.0f * disp;
+        ninv.confidence = confidence.clone();
+        ninv.valid = valid;
+        ninv.m_isInversed = true;
+        return ninv;
+    }
+
+private:
+    bool m_isInversed{false};
+    bool valid{true};
+};
+
+struct MatchCandidate {
+    MatchCandidate(const Vec2& pt_, int camId_, float confidence_ = 1.0)
+        : pt(pt_), confidence(confidence_), camId{camId_}
+    {
+    }
+
+    int camId{-1};
+    Vec2 pt{0.0, 0.0};
+    float confidence{0.0};
+
+    void print() const
+    {
+        std::cout << "cam(" << camId << "): " << pt.transpose() << ": " << confidence
+                  << std::endl;
+    }
+};
+
 struct DenseMatchingUtil {
     static void findDisparity(
         const cv::Mat& imLeftR, const cv::Mat& imRightR, cv::Mat& disparity,
-        const DenseMatchingPars& denseMatching = DenseMatchingPars());
+        cv::Mat& confidence, const DenseMatchingPars& denseMatching = DenseMatchingPars(),
+        const DenseMatchingPars& denseMatchingRightToLeft = DenseMatchingPars());
 
     static void filterDisparityBilateral(
         const cv::Mat& disparity, cv::Mat& disparityFiltered,
@@ -85,6 +154,27 @@ struct DenseMatchingUtil {
                                        const cv::Mat& disparityNeighbor,
                                        float thresPx = 1.0);
 
+    static std::map<int, MatchCandidate> findMatch(
+        const std::map<int, std::map<int, Neighbor>>& neighbors, int camRef,
+        const Vec2f& pt, float confidence = 1.0f);
+
+    static void mergeDisparities(std::map<int, std::map<int, Neighbor>> neighbors,
+                                 std::vector<std::map<int, Vec2>>& matches);
+
+    static void printLandmark(const std::map<int, std::vector<MatchCandidate>>& ldmrk)
+    {
+#if 1  // print bearing
+        std::cout << "{" << std::endl;
+        for (const auto& m : ldmrk) {
+            std::cout << " - " << m.first << ": ";
+            for (const auto& pt : m.second) {
+                std::cout << "(" << pt.pt(0) << ":" << pt.confidence << ")";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "}" << std::endl;
+#endif
+    }
     constexpr static const float NO_DISPARITY{-10000.0};
 };
 

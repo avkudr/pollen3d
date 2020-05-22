@@ -200,6 +200,7 @@ add_executable(${p3d_tests}
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_meta.h
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_misc.h
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_paths.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_dense.h
     ${SOURCES}
 )
 target_compile_features(${p3d_tests} PRIVATE cxx_std_17)

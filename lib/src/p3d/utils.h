@@ -16,32 +16,33 @@ namespace p3d
 {
 namespace utils
 {
-
-class HideCout{
+class HideCout
+{
 public:
-    HideCout(){
+    HideCout()
+    {
         out.clear();
-        coutbuf = std::cout.rdbuf(); //save old buf
-        cerrbuf = std::cerr.rdbuf(); //save old buf
-        clogbuf = std::clog.rdbuf(); //save old buf
-        std::cout.rdbuf(out.rdbuf()); //redirect std::cout
-        std::cerr.rdbuf(out.rdbuf()); //redirect std::cout
-        std::clog.rdbuf(out.rdbuf()); //redirect std::cout
-
+        coutbuf = std::cout.rdbuf();   // save old buf
+        cerrbuf = std::cerr.rdbuf();   // save old buf
+        clogbuf = std::clog.rdbuf();   // save old buf
+        std::cout.rdbuf(out.rdbuf());  // redirect std::cout
+        std::cerr.rdbuf(out.rdbuf());  // redirect std::cout
+        std::clog.rdbuf(out.rdbuf());  // redirect std::cout
     }
 
-    ~HideCout(){
+    ~HideCout()
+    {
         out.clear();
-        std::cout.rdbuf(coutbuf); //redirect std::cout back
-        std::cerr.rdbuf(cerrbuf); //redirect std::cout back
-        std::clog.rdbuf(clogbuf); //redirect std::cout back
+        std::cout.rdbuf(coutbuf);  // redirect std::cout back
+        std::cerr.rdbuf(cerrbuf);  // redirect std::cout back
+        std::clog.rdbuf(clogbuf);  // redirect std::cout back
     }
 
 private:
     std::ofstream out;
-    std::streambuf * coutbuf;
-    std::streambuf * cerrbuf;
-    std::streambuf * clogbuf;
+    std::streambuf *coutbuf;
+    std::streambuf *cerrbuf;
+    std::streambuf *clogbuf;
 };
 
 template <typename T>
@@ -84,7 +85,8 @@ static T max(T a, T b)
 
 void saveFileToMatlab(std::string fileName, cv::Mat a, std::string varName);
 
-Vec reprojectionError(const Mat & W, const Mat & P, const Mat4X & X, std::vector<int> selCams = {});
+Vec reprojectionError(const Mat &W, const Mat &P, const Mat4X &X,
+                      std::vector<int> selCams = {});
 float reprojectionErrorPt(const std::vector<Vec2> &xa, const std::vector<Mat34> &P,
                           const Vec4 &X);
 
@@ -107,8 +109,10 @@ static inline bool floatEq(const T &a, const T &b, double eps = 1e-5)
 }
 
 void makeNonHomogenious(Mat &m);
-void copyMatElementsToVector(const Mat &mat, const std::vector<std::pair<int, int>> &idx, std::vector<double> &vec);
-void copyVectorToMatElements(const std::vector<double> &vec, const std::vector<std::pair<int, int>> &idx, Mat &mat);
+void copyMatElementsToVector(const Mat &mat, const std::vector<std::pair<int, int>> &idx,
+                             std::vector<double> &vec);
+void copyVectorToMatElements(const std::vector<double> &vec,
+                             const std::vector<std::pair<int, int>> &idx, Mat &mat);
 
 std::string baseNameFromPath(const std::string &path);
 bool endsWith(std::string const &value, std::string const &ending);
@@ -121,7 +125,8 @@ enum {
     CONCAT_VERTICAL,
 };
 
-cv::Mat concatenateCvMat(const std::vector<cv::Mat> &matArray, int method = CONCAT_VERTICAL);
+cv::Mat concatenateCvMat(const std::vector<cv::Mat> &matArray,
+                         int method = CONCAT_VERTICAL);
 
 void convert(const std::vector<double> &src, Vec &dst);
 void convert(const std::vector<Vec3f> &src, Mat3Xf &dst);
@@ -133,7 +138,9 @@ void convert(const Mat2X &src, std::vector<Vec2> &dst);
 std::string to_string(const std::vector<int> &v);
 
 template <typename T, int SizeX, int SizeY>
-Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> concatenateMat(const std::vector<Eigen::Matrix<T, SizeX, SizeY>> &matArray, int method = CONCAT_VERTICAL)
+Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> concatenateMat(
+    const std::vector<Eigen::Matrix<T, SizeX, SizeY>> &matArray,
+    int method = CONCAT_VERTICAL)
 {
     Mat outMat;
     if (method == CONCAT_VERTICAL) {
@@ -158,11 +165,12 @@ Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> concatenateMat(const std::vecto
 
 int nbAvailableThreads();
 
-std::pair<Vec2, Vec2> lineIntersectBox(const Vec3 &line, double w, double h /*, double x = 0.0, double y = 0.0*/);
+std::pair<Vec2, Vec2> lineIntersectBox(const Vec3 &line, double w,
+                                       double h /*, double x = 0.0, double y = 0.0*/);
 
 void matchesMapsToTable(std::vector<std::map<int, int>> matchesMaps, Mati &table);
-void findFullSubMeasurementMatrix(const Mat & W, Mat & Wfsub, std::vector<int> camIds = {},
-                                  std::vector<int> * selectedCols = nullptr);
+void findFullSubMeasurementMatrix(const Mat &W, Mat &Wfsub, std::vector<int> camIds = {},
+                                  std::vector<int> *selectedCols = nullptr);
 std::vector<std::vector<int>> generateBatches(int nbCams, int batchSize);
 
 bool exportToPly(const Mat3Xf &vec_points_white, const std::string &sFileName,
@@ -215,15 +223,15 @@ Eigen::Matrix<T, 3, 3> RfromEulerZYX(const T &rx, const T &ry, const T &rz)
     //          -sy            cy*sx             cy*cx]
     //   = Rz(tz) * Ry(ty) * Rx(tx)
 
-    R(0, 0) = cy*cz;
-    R(0, 1) = sy*sx*cz - sz*cx;
-    R(0, 2) = sy*cx*cz + sz*sx;
-    R(1, 0) = cy*sz;
-    R(1, 1) = sy*sx*sz + cz*cx;
-    R(1, 2) = sy*cx*sz - cz*sx;
+    R(0, 0) = cy * cz;
+    R(0, 1) = sy * sx * cz - sz * cx;
+    R(0, 2) = sy * cx * cz + sz * sx;
+    R(1, 0) = cy * sz;
+    R(1, 1) = sy * sx * sz + cz * cx;
+    R(1, 2) = sy * cx * sz - cz * sx;
     R(2, 0) = -sy;
-    R(2, 1) = cy*sx;
-    R(2, 2) = cy*cx;
+    R(2, 1) = cy * sx;
+    R(2, 2) = cy * cx;
 
     return R;
 }
@@ -248,15 +256,15 @@ Eigen::Matrix<T, 3, 3> RfromEulerXYZ(const T &rx, const T &ry, const T &rz)
     //     [ sx*sz - cx*cz*sy, cz*sx + cx*sy*sz,  cx*cy]
     //   = Rx(tx) * Ry(ty) * Rz(tz)
 
-    R(0,0) = cy*cz;
-    R(0,1) = -cy*sz;
-    R(0,2) = sy;
-    R(1,0) = cx*sz + cz*sx*sy;
-    R(1,1) = cx*cz - sx*sy*sz;
-    R(1,2) = -cy*sx;
-    R(2,0) = sx*sz - cx*cz*sy;
-    R(2,1) = cz*sx + cx*sy*sz;
-    R(2,2) = cx*cy;
+    R(0, 0) = cy * cz;
+    R(0, 1) = -cy * sz;
+    R(0, 2) = sy;
+    R(1, 0) = cx * sz + cz * sx * sy;
+    R(1, 1) = cx * cz - sx * sy * sz;
+    R(1, 2) = -cy * sx;
+    R(2, 0) = sx * sz - cx * cz * sy;
+    R(2, 1) = cz * sx + cx * sy * sz;
+    R(2, 2) = cx * cy;
 
     return R;
 }
@@ -293,6 +301,7 @@ double nullspace(const Eigen::Ref<const Mat> &A, Vec *nullsp);
 Vec4 triangulate(const std::vector<Vec2> &x, const std::vector<Mat34> &Ps);
 
 std::string getExecPath();
+
 }  // namespace utils
 }  // namespace p3d
 
