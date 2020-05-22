@@ -135,6 +135,8 @@ struct MatchCandidate {
         std::cout << "cam(" << camId << "): " << pt.transpose() << ": " << confidence
                   << std::endl;
     }
+
+    bool operator<(const MatchCandidate& other) const { return camId < other.camId; }
 };
 
 struct DenseMatchingUtil {
@@ -154,12 +156,12 @@ struct DenseMatchingUtil {
                                        const cv::Mat& disparityNeighbor,
                                        float thresPx = 1.0);
 
-    static std::map<int, MatchCandidate> findMatch(
+    static std::vector<MatchCandidate> findMatch(
         const std::map<int, std::map<int, Neighbor>>& neighbors, int camRef,
         const Vec2f& pt, float confidence = 1.0f);
 
     static void mergeDisparities(std::map<int, std::map<int, Neighbor>> neighbors,
-                                 std::vector<std::map<int, Vec2>>& matches);
+                                 std::vector<std::vector<MatchCandidate>>& matches);
 
     static void printLandmark(const std::map<int, std::vector<MatchCandidate>>& ldmrk)
     {

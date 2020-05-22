@@ -122,7 +122,7 @@ void DenseMatchingUtil::getDispForPlot(const cv::Mat &disparity, cv::Mat &plot,
 {
     plot = cv::Mat();
     if (disparity.type() != CV_32F) {
-        LOG_ERR("DenseMatchingUtil::getPlot. Wrong type");
+        LOG_ERR("DenseMatchingUtil::getPlot. Wrong type: %i", disparity.type());
         return;
     }
     float Amin, Amax;
@@ -185,10 +185,10 @@ void DenseMatchingUtil::refineConsistencyCheck(cv::Mat &disparityBase,
     }
 }
 
-void DenseMatchingUtil::mergeDisparities(std::map<int, std::map<int, Neighbor>> neighbors,
-                                         std::vector<std::map<int, Vec2>> &matches)
+void DenseMatchingUtil::mergeDisparities(
+    std::map<int, std::map<int, Neighbor>> neighbors,
+    std::vector<std::vector<MatchCandidate>> &matches)
 {
-    /*
     matches.clear();
     if (neighbors.empty()) return;
 
@@ -203,70 +203,53 @@ void DenseMatchingUtil::mergeDisparities(std::map<int, std::map<int, Neighbor>> 
         visited[cRef] = cv::Mat::zeros(h, w, CV_8UC1);
     }
 
-    for (const auto &kvref : neighbors) {
-        int cRef = kvref.first;
-        const auto &neighborsRef = kvref.second;
+    for (const auto &kv : neighbors) {
+        const auto &cRef = kv.first;
+        const auto &neighborsRef = kv.second;
         if (neighborsRef.empty()) continue;
 
         int w = neighborsRef.begin()->second.imLsize.width;
         int h = neighborsRef.begin()->second.imLsize.height;
 
         for (auto u = 0; u < h; ++u) {
+#ifdef WITH_OPENMP
+            omp_set_num_threads(utils::nbAvailableThreads());
+#pragma omp parallel for
+#endif
             for (auto v = 0; v < w; ++v) {
                 if (visited[cRef].at<uchar>(u, v)) continue;
 
-                std::map<int, std::vector<MatchCandidate>> bearingCand;
-                bearingCand = findMatch(neighbors, cRef, Vec2f(v, u), 1.0);
+                std::vector<MatchCandidate> landmark;
+                landmark = findMatch(neighbors, cRef, Vec2f(v, u), 1.0);
 
-#if 1  // print bearing
-                std::cout << "{" << std::endl;
-                for (const auto &m : bearingCand) {
-                    std::cout << " - " << m.first << ": ";
-                    for (const auto &pt : m.second) {
-                        std::cout << "(" << pt.pt(0) << ":" << pt.confidence << ") ";
-                    }
-                    std::cout << std::endl;
-                }
-                std::cout << "}" << std::endl;
-#endif
-                // merge bearingCand in bearing
-                std::map<int, Vec2> bearing;
-                for (const auto &e : bearingCand) { bearing[e.first] = e.second[0].pt; }
-                matches.push_back(bearing);
+                if (landmark.size() < 2) continue;
 
-                for (const auto &e : bearing) {
-                    if (visited.count(e.first) == 0) continue;
-                    visited[e.first].at<uchar>(e.second(1), e.second(0)) = 255;
+                for (const auto &e : landmark) {
+                    if (visited.count(e.camId) == 0) continue;
+                    visited[e.camId].at<uchar>(e.pt(1), e.pt(0)) = 255;
                 }
 
-#if 1  // draw visited
-                for (const auto &e : visited) {
-                    auto im = e.first;
-                    std::string name = "image" + std::to_string(im);
-                    cv::namedWindow(name, cv::WINDOW_NORMAL);
-                    cv::imshow(name, e.second);
-                    cv::resizeWindow(name, 300, 300);
-                    cv::moveWindow(name, 100 + im * 300, 100);
+#pragma omp critical
+                {
+                    matches.push_back(landmark);
                 }
-                cv::waitKeyEx(0);
-#endif
             }
         }
-
+        std::cout << "Merging disparities: image " << cRef << ", " << matches.size()
+                  << " matches" << std::endl;
     }  // ref image
-    */
 }
 
-void findMatchImpl(const std::map<int, std::map<int, Neighbor>> &neighbors, int camRef,
-                   float u, float v, float confidence,
-                   std::vector<MatchCandidate> &landmark,
-                   std::vector<MatchCandidate> &bestLmrk, std::set<int> visited)
+void findMatchDFS(const std::map<int, std::map<int, Neighbor>> &neighbors, int camRef,
+                  float x, float y, float confidence,
+                  std::vector<MatchCandidate> &landmark,
+                  std::vector<MatchCandidate> &bestLmrk, std::set<int> visited)
 {
     if (landmark.empty()) {
-        landmark.emplace_back(MatchCandidate(Vec2(v, u), camRef, confidence));
+        landmark.emplace_back(MatchCandidate(Vec2(x, y), camRef, confidence));
     } else {
         landmark.emplace_back(
-            MatchCandidate(Vec2(v, u), camRef, landmark.back().confidence + confidence));
+            MatchCandidate(Vec2(x, y), camRef, landmark.back().confidence + confidence));
     }
 
     //    std::cout << "---------- " << std::endl;
@@ -287,42 +270,49 @@ void findMatchImpl(const std::map<int, std::map<int, Neighbor>> &neighbors, int 
         const Neighbor &n = kvref.second;
 
         if (!n.isValid()) continue;
+        if (visited.count(cam2) > 0) continue;
 
-        Vec3f q = n.Tl * Vec3f(v, u, 1);
+        Vec3f q = n.Tl * Vec3f(x, y, 1);
+
+        if (q(0) < 0) continue;
+        if (q(1) < 0) continue;
+        if (q(0) >= n.disp.cols) continue;
+        if (q(1) >= n.disp.rows) continue;
+
         const float &disp = n.disp.at<float>(q(1), q(0));
         if (disp == DenseMatchingUtil::NO_DISPARITY) continue;
-        q(0) -= disp / 16.0;
-        const Vec3f qn = n.Trinv * q;
-
-        if (qn(0) < 0) continue;
-        if (qn(1) < 0) continue;
-        if (qn(0) >= n.imRsize.width) continue;
-        if (qn(1) >= n.imRsize.height) continue;
-
         const float &newConfidence =
             (n.confidence.empty()) ? 1.0f : n.confidence.at<float>(q(1), q(0));
 
-        findMatchImpl(neighbors, cam2, qn(1), qn(0), newConfidence, landmark, bestLmrk,
-                      visited);
+        q(0) -= disp / 16.0;
+        q = n.Trinv * q;
+
+        if (q(0) < 0) continue;
+        if (q(1) < 0) continue;
+        if (q(0) >= n.imRsize.width) continue;
+        if (q(1) >= n.imRsize.height) continue;
+
+        findMatchDFS(neighbors, cam2, q(0), q(1), newConfidence, landmark, bestLmrk,
+                     visited);
         landmark.pop_back();
     }
 }
 
-std::map<int, MatchCandidate> DenseMatchingUtil::findMatch(
+std::vector<MatchCandidate> DenseMatchingUtil::findMatch(
     const std::map<int, std::map<int, Neighbor>> &neighbors, int camRef, const Vec2f &pt,
     float confidence)
 {
     std::map<int, MatchCandidate> landmark;
     std::set<int> visited;
     std::vector<MatchCandidate> l, bl;
-    findMatchImpl(neighbors, camRef, pt(1), pt(0), confidence, l, bl, visited);
+    findMatchDFS(neighbors, camRef, pt(0), pt(1), confidence, l, bl, visited);
 
-    if (bl.empty()) return landmark;
+    //    if (bl.empty()) return landmark;
 
-    landmark.insert({bl[0].camId, bl[0]});
+    //    landmark.insert({bl[0].camId, bl[0]});
     for (auto i = bl.size() - 1; i > 0; --i) {
         bl[i].confidence -= bl[i - 1].confidence;
-        landmark.insert({bl[i].camId, bl[i]});
+        //        landmark.insert({bl[i].camId, bl[i]});
     }
-    return landmark;
+    return bl;
 };
