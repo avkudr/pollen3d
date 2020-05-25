@@ -11,15 +11,33 @@
 
 int main(int argc, char **argv)
 {
-    //    p3d::logger::setStd();
-    //    p3d::logger::off();
+    // example command
+    // ./p3d_tests DENSE.test_neighborInverse -s
 
-    //#ifndef POLLEN3D_DEBUG
-    //    std::cout.setstate(std::ios_base::failbit);
-    //    std::cerr.setstate(std::ios_base::failbit);
-    //#endif
+    cv::String keys =
+        "{@test    |  | selected test to run}"
+        "{silent s |  | silent std output}"
+        "{help     |  | show help message}"
+        "\n";
+
+    cv::CommandLineParser parser(argc, argv, keys);
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
+    }
+
+    std::string test = parser.get<cv::String>(0);
+    if (parser.has("s")) {
+        p3d::logger::setStd();
+        p3d::logger::off();
+        std::cout.setstate(std::ios_base::failbit);
+        std::cerr.setstate(std::ios_base::failbit);
+    }
+
+    std::string testSelection = parser.get<cv::String>(0);
 
     ::testing::InitGoogleTest(&argc, argv);
-    ::testing::GTEST_FLAG(filter) = "DENSE*";
+    if (testSelection != "") ::testing::GTEST_FLAG(filter) = testSelection;
+
     return RUN_ALL_TESTS();
 }
