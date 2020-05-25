@@ -5,6 +5,9 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/ximgproc.hpp>
 
+#include <queue>
+#include <set>
+
 using namespace p3d;
 
 int dummyDenseMatching_ = DenseMatchingPars::initMeta();
@@ -136,8 +139,8 @@ void DenseMatchingUtil::getDispForPlot(const cv::Mat &disparity, cv::Mat &plot,
         Amin = 16.0f * dispRange(0) + -16.0f;
         Amax = Amin + dispRange(1) * 16.0f * 16.0f;
     }
-    LOG_INFO("Disparity plot range: (%0.3f,%0.3f)", Amin / 16.0, Amax / 16.0);
-    LOG_INFO("Disparity true range: (%0.3f,%0.3f)", trueMin / 16.0, trueMax / 16.0);
+    LOG_DBG("Disparity plot range: (%0.3f,%0.3f)", Amin / 16.0, Amax / 16.0);
+    LOG_DBG("Disparity true range: (%0.3f,%0.3f)", trueMin / 16.0, trueMax / 16.0);
 
     cv::Mat inRange;
     cv::inRange(disparity, Amin, Amax, inRange);
@@ -185,9 +188,8 @@ void DenseMatchingUtil::refineConsistencyCheck(cv::Mat &disparityBase,
     }
 }
 
-void DenseMatchingUtil::mergeDisparities(
-    std::map<int, std::map<int, Neighbor>> neighbors,
-    std::vector<std::vector<MatchCandidate>> &matches)
+void DenseMatchingUtil::mergeDisparities(std::map<int, std::map<int, Neighbor>> neighbors,
+                                         std::vector<std::map<int, Observation>> &matches)
 {
     matches.clear();
     if (neighbors.empty()) return;
@@ -212,28 +214,43 @@ void DenseMatchingUtil::mergeDisparities(
         int h = neighborsRef.begin()->second.imLsize.height;
 
         for (auto u = 0; u < h; ++u) {
-#ifdef WITH_OPENMP
-            omp_set_num_threads(utils::nbAvailableThreads());
-#pragma omp parallel for
-#endif
+            //#ifdef WITH_OPENMP
+            //#pragma omp parallel for
+            //#endif
             for (auto v = 0; v < w; ++v) {
                 if (visited[cRef].at<uchar>(u, v)) continue;
 
-                std::vector<MatchCandidate> landmark;
-                landmark = findMatch(neighbors, cRef, Vec2f(v, u), 1.0);
+                std::map<int, Observation> landmark =
+                    findMatch(neighbors, cRef, Vec2f(v, u), 1.0);
+
+                for (const auto &[camId, obs] : landmark) {
+                    if (visited.count(camId) == 0) continue;
+                    visited[camId].at<uchar>(obs.pt(1), obs.pt(0)) = 255;
+                }
 
                 if (landmark.size() < 2) continue;
 
-                for (const auto &e : landmark) {
-                    if (visited.count(e.camId) == 0) continue;
-                    visited[e.camId].at<uchar>(e.pt(1), e.pt(0)) = 255;
-                }
-
-#pragma omp critical
+                //#pragma omp critical
                 {
                     matches.push_back(landmark);
                 }
             }
+            std::cout << cRef << " progress: " << u / float(h) << std::endl;
+
+#if 0  // draw
+            int winSize = 400;
+            for (auto i = 0; i < visited.size(); ++i) {
+                std::string name =
+                    "(" + std::to_string(i) + ":" + std::to_string(i) + ")";
+                cv::Mat plot;
+                cv::namedWindow(name, CV_WINDOW_NORMAL);
+                cv::imshow(name, visited[i]);
+                cv::resizeWindow(name, winSize * 0.9, winSize * 0.9);
+                cv::moveWindow(name, (i % 10) * winSize, i / 10 * winSize);
+            }
+            cv::waitKey(1);
+            // cv::destroyAllWindows();
+#endif
         }
         std::cout << "Merging disparities: image " << cRef << ", " << matches.size()
                   << " matches" << std::endl;
@@ -242,26 +259,28 @@ void DenseMatchingUtil::mergeDisparities(
 
 void findMatchDFS(const std::map<int, std::map<int, Neighbor>> &neighbors, int camRef,
                   float x, float y, float confidence,
-                  std::vector<MatchCandidate> &landmark,
-                  std::vector<MatchCandidate> &bestLmrk, std::set<int> visited)
+                  std::vector<std::pair<int, Observation>> &landmark,
+                  std::vector<std::pair<int, Observation>> &bestLmrk,
+                  std::set<int> visited)
 {
     if (landmark.empty()) {
-        landmark.emplace_back(MatchCandidate(Vec2(x, y), camRef, confidence));
+        landmark.push_back({camRef, Observation(Vec2(x, y), confidence)});
     } else {
-        landmark.emplace_back(
-            MatchCandidate(Vec2(x, y), camRef, landmark.back().confidence + confidence));
+        landmark.push_back(
+            {camRef,
+             Observation(Vec2(x, y), landmark.back().second.confidence + confidence)});
     }
-
-    //    std::cout << "---------- " << std::endl;
-    //    for (const auto &l : landmark) { l.print(); }
 
     visited.insert(camRef);
 
-    if (bestLmrk.empty() || bestLmrk.back().confidence < landmark.back().confidence)
+    if (bestLmrk.empty() ||
+        bestLmrk.back().second.confidence < landmark.back().second.confidence)
         bestLmrk = landmark;
 
-    //    for (const auto &v : visited) std::cout << v << " ";
-    //    std::cout << std::endl;
+    // the complexity of the algorithm is exponential
+    // so, when image number is high it is way too slow
+    // TODO: better algorithm
+    if (visited.size() > 3) return;
 
     if (neighbors.count(camRef) == 0) return;
 
@@ -284,6 +303,8 @@ void findMatchDFS(const std::map<int, std::map<int, Neighbor>> &neighbors, int c
         const float &newConfidence =
             (n.confidence.empty()) ? 1.0f : n.confidence.at<float>(q(1), q(0));
 
+        if (newConfidence == 0.0f) continue;
+
         q(0) -= disp / 16.0;
         q = n.Trinv * q;
 
@@ -298,21 +319,75 @@ void findMatchDFS(const std::map<int, std::map<int, Neighbor>> &neighbors, int c
     }
 }
 
-std::vector<MatchCandidate> DenseMatchingUtil::findMatch(
+void findMatchBFS(const std::map<int, std::map<int, Neighbor>> &neighbors, int camRef,
+                  float x, float y, float confidence,
+                  std::map<int, Observation> &landmark)
+{
+    std::queue<std::pair<int, Observation>> queue;
+    queue.push({camRef, Observation(Vec2(x, y), confidence)});
+
+    landmark.clear();
+
+    while (!queue.empty()) {
+        auto m = queue.front();
+        queue.pop();
+
+        const auto &camId = m.first;
+        const Observation &obs = m.second;
+        if (landmark.count(camId) > 0) continue;
+        landmark[camId] = obs;
+
+        for (const auto &kvref : neighbors.at(camId)) {
+            const int cam2 = kvref.first;
+            const Neighbor &n = kvref.second;
+
+            if (!n.isValid()) continue;
+            if (landmark.count(cam2) > 0) continue;
+
+            Vec3f q = n.Tl * Vec3f(x, y, 1);
+
+            if (q(0) < 0) continue;
+            if (q(1) < 0) continue;
+            if (q(0) >= n.disp.cols) continue;
+            if (q(1) >= n.disp.rows) continue;
+
+            const float &disp = n.disp.at<float>(q(1), q(0));
+            if (disp == DenseMatchingUtil::NO_DISPARITY) continue;
+            const float &newConfidence =
+                (n.confidence.empty()) ? 1.0f : n.confidence.at<float>(q(1), q(0));
+
+            q(0) -= disp / 16.0;
+            q = n.Trinv * q;
+
+            if (q(0) < 0) continue;
+            if (q(1) < 0) continue;
+            if (q(0) >= n.imRsize.width) continue;
+            if (q(1) >= n.imRsize.height) continue;
+
+            queue.push({cam2, Observation(Vec2(q(0), q(1)), newConfidence)});
+        }
+    }
+}
+
+std::map<int, Observation> DenseMatchingUtil::findMatch(
     const std::map<int, std::map<int, Neighbor>> &neighbors, int camRef, const Vec2f &pt,
     float confidence)
 {
-    std::map<int, MatchCandidate> landmark;
-    std::set<int> visited;
-    std::vector<MatchCandidate> l, bl;
-    findMatchDFS(neighbors, camRef, pt(0), pt(1), confidence, l, bl, visited);
+    std::map<int, Observation> landmark;
+    int method = 0;  // the best for now :/
+    if (method == 0) {
+        std::vector<std::pair<int, Observation>> l, bl;
+        std::set<int> visited;
+        findMatchDFS(neighbors, camRef, pt(0), pt(1), confidence, l, bl, visited);
+        for (auto i = bl.size() - 1; i > 0; --i)
+            bl[i].second.confidence -= bl[i - 1].second.confidence;
 
-    //    if (bl.empty()) return landmark;
-
-    //    landmark.insert({bl[0].camId, bl[0]});
-    for (auto i = bl.size() - 1; i > 0; --i) {
-        bl[i].confidence -= bl[i - 1].confidence;
-        //        landmark.insert({bl[i].camId, bl[i]});
+        for (const auto &m : bl) { landmark[m.first] = m.second; }
+        return landmark;
     }
-    return bl;
-};
+
+    if (method == 1) {
+        findMatchBFS(neighbors, camRef, pt(0), pt(1), confidence, landmark);
+        return landmark;
+    }
+}

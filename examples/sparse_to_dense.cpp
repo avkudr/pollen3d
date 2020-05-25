@@ -15,10 +15,14 @@ int main()
 {
     float threshold = 2.0f;
 
+    std::string file;
     p3d::Project data;
-    // p3d::openProject(data, "/home/andrey/Desktop/_datasets/brassica/brassica.yml.gz");
-    // p3d::openProject(data, "/home/andrey/Desktop/_datasets/pot/pot.yml.gz");
-    p3d::openProject(data, "/home/andrey/Desktop/_datasets/pot1/pot1.yml.gz");
+    // file = "/home/andrey/Desktop/_datasets/brassica/brassica.yml.gz";
+    // file = "/home/andrey/Desktop/_datasets/pot/pot.yml.gz";
+    // file = "/home/andrey/Desktop/_datasets/pot1/pot1.yml.gz";
+    // file = "/home/andrey/Desktop/_datasets/Ostracode/ostracode.yml.gz";
+    file = "/home/andrey/Desktop/_datasets/ostracode24/ostracode24.yml.gz";
+    p3d::openProject(data, file);
 
     LOG_INFO("Project: %s", data.getName().c_str());
 
@@ -33,14 +37,17 @@ int main()
     //    std::vector<std::vector<Neighbor>>(
     //        data.nbImages(), std::vector<Neighbor>(data.nbImages()));
 
-    std::map<int, std::map<int, Neighbor>> neighbors;
-
     int minNumberCommonPts = 20;
     float minTriangAngle = utils::deg2rad(2.0f);
     float maxTriangAngle = utils::deg2rad(10.0f);
 
-    for (int camBaseIdx = 0; camBaseIdx < data.nbImages() - 1; camBaseIdx++) {
-        for (int i = camBaseIdx + 1; i < data.nbImages(); i++) {
+    int imageFrom = 0;
+    int imageTo = data.nbImages();  // data.nbImages();
+
+    std::map<int, std::map<int, Neighbor>> neighbors;
+    for (int camBaseIdx = imageFrom; camBaseIdx < imageTo - 1; camBaseIdx++) {
+#pragma omp parallel for
+        for (int i = camBaseIdx + 1; i < imageTo; i++) {
             LOG_INFO("*** Image %i", i);
 
             Neighbor neighbor;
@@ -56,8 +63,8 @@ int main()
             LOG_INFO("angle rho   : %0.3f", utils::rad2deg(rho));
             LOG_INFO("angle theta2: %0.3f", utils::rad2deg(t2));
 
-            if (rho < minTriangAngle) continue;
-            if (rho > maxTriangAngle) continue;
+            if (std::fabs(rho) < minTriangAngle) continue;
+            if (std::fabs(rho) > maxTriangAngle) continue;
 
             RectificationData rectifData;
             rectifData.imL = data.image(camBaseIdx)->cvMat();
@@ -77,6 +84,7 @@ int main()
             neighbor.Tl = rectifData.Tl.cast<float>();
             neighbor.Tr = rectifData.Tr.cast<float>();
             neighbor.Trinv = utils::inverseTransform(neighbor.Tr);
+            neighbor.imLsize = rectifData.imL.size();
             neighbor.imRsize = rectifData.imR.size();
 
             Mat3X qL = rectifData.Tl * Wneighbor.middleRows(0, 3);
@@ -164,18 +172,24 @@ int main()
             neighbor.disp = disp1;
             neighbor.confidence = confidence;
 
-            neighbors[camBaseIdx][i] = neighbor;
-            neighbors[i][camBaseIdx] = neighbor.inverse();
+#pragma omp critical
+            {
+                neighbors[camBaseIdx][i] = neighbor;
+                neighbors[i][camBaseIdx] = neighbor.inverse();
+            }
         }
 
 #if 0  // draw
+        int winSize = 150;
         for (const auto& [i, n] : neighbors[camBaseIdx]) {
-            std::string name = "disparity (" + std::to_string(camBaseIdx) + ":" +
-                               std::to_string(i) + ")";
+            std::string name =
+                "(" + std::to_string(camBaseIdx) + ":" + std::to_string(i) + ")";
             cv::Mat plot;
             DenseMatchingUtil::getDispForPlot(n.disp, plot, n.dispRange);
+            cv::namedWindow(name, CV_WINDOW_NORMAL);
             cv::imshow(name, plot);
-            cv::moveWindow(name, i * plot.cols, 50);
+            cv::resizeWindow(name, winSize, winSize);
+            cv::moveWindow(name, (i % 10) * winSize, i / 10 * winSize);
         }
         cv::waitKeyEx(0);
         cv::destroyAllWindows();
@@ -214,26 +228,12 @@ int main()
     //        }
     //    }
 
-    std::vector<std::vector<MatchCandidate>> matches;
+    std::vector<std::map<int, Observation>> matches;
     DenseMatchingUtil::mergeDisparities(neighbors, matches);
 
-    // ***** construct measurement matrix
-
-    Mat Wdense;
-    Wdense.setZero(3 * data.nbImages(), matches.size());
-
-    for (auto pt = 0; pt < matches.size(); pt++) {
-        for (const auto& m : matches[pt]) {
-            const auto& c = m.camId;
-            const auto& x = m.pt;
-
-            Wdense(3 * c + 0, pt) = x.x();
-            Wdense(3 * c + 1, pt) = x.y();
-            Wdense(3 * c + 2, pt) = 1.0;
-        }
-    }
-
     // ***** triangulate
+
+    std::cout << "Triangulation..." << std::endl;
 
     Mat4X X;
     X.setZero(4, matches.size());
@@ -245,25 +245,25 @@ int main()
     cv::Mat I1 = data.image(0)->cvMat();
     if (I1.channels() == 1) cv::cvtColor(I1, I1, CV_GRAY2BGR);
 
-    for (auto pt = 0; pt < matches.size(); pt++) {
+    for (auto pt = 0; pt < static_cast<int>(matches.size()); pt++) {
         std::vector<Vec2> xa;
         std::vector<Mat34> Pa;
 
-        bool draw = false && matches[pt].size() > 2;
+        bool draw = false && matches[pt].size() > 3;
         // draw = pt % 1000 == 0;
 
-        for (const auto& m : matches[pt]) {
-            Pa.push_back(Ps[m.camId]);
-            xa.push_back(m.pt);
+        for (const auto& [camId, obs] : matches[pt]) {
+            Pa.push_back(Ps[camId]);
+            xa.push_back(obs.pt);
 
             if (draw) {
-                cv::Mat I = data.image(m.camId)->cvMat().clone();
+                cv::Mat I = data.image(camId)->cvMat().clone();
                 if (I.channels() == 1) cv::cvtColor(I, I, CV_GRAY2BGR);
-                std::string name = "image" + std::to_string(m.camId);
-                cv::drawMarker(I, cv::Point(m.pt.x(), m.pt.y()), cv::Scalar(0, 0, 255),
-                               cv::MARKER_CROSS, 20, 2);
+                std::string name = "image" + std::to_string(camId);
+                cv::drawMarker(I, cv::Point(obs.pt.x(), obs.pt.y()),
+                               cv::Scalar(0, 0, 255), cv::MARKER_CROSS, 20, 2);
                 cv::imshow(name, I);
-                cv::moveWindow(name, m.camId * I.cols, 100);
+                cv::moveWindow(name, camId * I.cols, 100);
             }
         }
 
@@ -278,8 +278,8 @@ int main()
 
         float err = utils::reprojectionErrorPt(xa, Pa, Xa);
 
-        const cv::Vec3b& c1 =
-            I1.at<cv::Vec3b>(matches[pt][0].pt.y(), matches[pt][0].pt.x());
+        const cv::Vec3b& c1 = I1.at<cv::Vec3b>(matches[pt].begin()->second.pt.y(),
+                                               matches[pt].begin()->second.pt.x());
         colors.col(pt) = Vec3f(c1.val[0] / 255.f, c1.val[1] / 255.f, c1.val[2] / 255.f);
 
         // colors.col(pt) = err > 10.0 ? Vec3f(1.0, 0.0, 0.0) : Vec3f(1.0, 1.0, 1.0);
@@ -288,28 +288,30 @@ int main()
     std::cout << "X size: " << X.cols() << std::endl;
 
     if (withBA) {
+        // ***** construct measurement matrix
+
         p3d::BundleData bundleData;
-        bundleData.X = X;
-        bundleData.W = Wdense;
+        bundleData.X = &X;
+        bundleData.matches = &matches;
 
         LOG_OK("Bundle adjustement: started...");
         data.getCamerasIntrinsics(&bundleData.cam);
         bundleData.R = data.getCameraRotationsAbsolute();
         bundleData.t = data.getCameraTranslations();
 
-        {
-            BundleParams params(data.nbImages());
-            params.setConstAll();
-            params.setVaryingPts();
-            BundleAdjustment ba;
-            ba.run(bundleData, params);
-        }
-        X = bundleData.X;
+        BundleAdjustment ba;
+
+        //        p3d::BundleParams params(bundleData.t.size());
+        //        params.setConstAll();
+        //        params.setVaryingPts();
+        //        ba.run(bundleData, params);
+
+        ba.runPtsOnly(bundleData);
     }
 
-    data.pointCloudCtnr()["denseLala"].setVertices(X.topRows(3).cast<float>());
-    data.pointCloudCtnr()["denseLala"].setColors(colors);
-    p3d::saveProject(data, "sparse_to_dense.yml.gz");
+    data.pointCloudCtnr()["densePcd"].setVertices(X.topRows(3).cast<float>());
+    data.pointCloudCtnr()["densePcd"].setColors(colors);
+    p3d::saveProject(data, "/home/andrey/Desktop/sparse_to_dense.yml.gz");
 
     return 0;
 }

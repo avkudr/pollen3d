@@ -43,4 +43,17 @@ int registerTypes()
 
     return 0;
 }
+
+std::string mapName(const char *className)
+{
+    std::string str = "map_" + std::string(className);
+    return str;
+}
+
+std::string vecName(const char *className)
+{
+    std::string str = "vector_" + std::string(className);
+    return str;
+}
+
 } // namespace p3d::impl

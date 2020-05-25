@@ -199,8 +199,10 @@ int main()
 #define WITH_BUNDLE 1
 #if (WITH_BUNDLE == 1)
         BundleData bundleData;
-        bundleData.X = X;
-        bundleData.W = W;
+        bundleData.X = &X;
+
+        std::vector<std::map<int, Observation>> matches = ObservationUtil::fromMeasMat(W);
+        bundleData.matches = &matches;
 
         LOG_OK("Bundle adjustement: started...");
         data.getCamerasIntrinsics(&bundleData.cam);
@@ -243,7 +245,6 @@ int main()
         data.setCamerasIntrinsics(bundleData.cam);
         data.setCameraRotationsAbsolute(bundleData.R, calibVec.back() + 1);
         data.setCameraTranslations(bundleData.t);
-        X = bundleData.X;
 
         LOG_OK("Bundle adjustement: done");
 #endif

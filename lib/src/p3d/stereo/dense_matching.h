@@ -4,11 +4,11 @@
 #include <opencv2/core.hpp>
 
 #include "p3d/core.h"
+#include "p3d/multiview/landmark.h"
 #include "p3d/serialization.h"
 #include "p3d/utils.h"
 
-#include <set>
-#include <stack>
+#include <map>
 
 namespace p3d
 {
@@ -94,7 +94,7 @@ public:
     cv::Mat disp;
     cv::Mat confidence;
 
-    inline bool isValid() const { return valid; }
+    inline bool isValid() const { return !disp.empty(); }
     inline bool isInversed() const { return m_isInversed; }
 
     Neighbor inverse()
@@ -112,31 +112,13 @@ public:
         ninv.confidence = confidence.clone();
         ninv.valid = valid;
         ninv.m_isInversed = true;
+        ninv.dispRange = Vec2f{0, 0};
         return ninv;
     }
 
 private:
     bool m_isInversed{false};
     bool valid{true};
-};
-
-struct MatchCandidate {
-    MatchCandidate(const Vec2& pt_, int camId_, float confidence_ = 1.0)
-        : pt(pt_), confidence(confidence_), camId{camId_}
-    {
-    }
-
-    int camId{-1};
-    Vec2 pt{0.0, 0.0};
-    float confidence{0.0};
-
-    void print() const
-    {
-        std::cout << "cam(" << camId << "): " << pt.transpose() << ": " << confidence
-                  << std::endl;
-    }
-
-    bool operator<(const MatchCandidate& other) const { return camId < other.camId; }
 };
 
 struct DenseMatchingUtil {
@@ -156,27 +138,13 @@ struct DenseMatchingUtil {
                                        const cv::Mat& disparityNeighbor,
                                        float thresPx = 1.0);
 
-    static std::vector<MatchCandidate> findMatch(
+    static std::map<int, Observation> findMatch(
         const std::map<int, std::map<int, Neighbor>>& neighbors, int camRef,
         const Vec2f& pt, float confidence = 1.0f);
 
     static void mergeDisparities(std::map<int, std::map<int, Neighbor>> neighbors,
-                                 std::vector<std::vector<MatchCandidate>>& matches);
+                                 std::vector<std::map<int, Observation>>& matches);
 
-    static void printLandmark(const std::map<int, std::vector<MatchCandidate>>& ldmrk)
-    {
-#if 1  // print bearing
-        std::cout << "{" << std::endl;
-        for (const auto& m : ldmrk) {
-            std::cout << " - " << m.first << ": ";
-            for (const auto& pt : m.second) {
-                std::cout << "(" << pt.pt(0) << ":" << pt.confidence << ")";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << "}" << std::endl;
-#endif
-    }
     constexpr static const float NO_DISPARITY{-10000.0};
 };
 

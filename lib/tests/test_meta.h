@@ -34,6 +34,7 @@ public:
                 .data<&A::setValue, &A::getValue>(P3D_ID_TYPE(__ID_PROP_INT))
                 .data<&A::setEigenMat, &A::getEigenMat>(P3D_ID_TYPE(__ID_PROP_EIGEN));
 
+            SERIALIZE_TYPE_MAPS(A);
             firstCall = false;
         }
     }
@@ -82,7 +83,8 @@ public:
                 .data<&ClassA::vectorDouble>(P3D_ID_TYPE(20))
                 .data<&ClassA::eigenMatrix>(P3D_ID_TYPE(25))
                 .data<&ClassA::eigenMatrixDyn>(P3D_ID_TYPE(26))
-                .data<&ClassA::eigenVec>(P3D_ID_TYPE(27));
+                .data<&ClassA::eigenVec>(P3D_ID_TYPE(27))
+                .data<&ClassA::map>(P3D_ID_TYPE(28));
             first = false;
         }
         eigenMatrix.setIdentity();
@@ -104,6 +106,7 @@ public:
     Eigen::Matrix3f eigenMatrix;
     Eigen::MatrixXf eigenMatrixDyn;
     std::vector<p3d::Vec2> eigenVec;
+    std::map<int, A> map;
 };
 
 #define EXPECT_TYPE_SERIALIZABLE(x)                   \
@@ -150,6 +153,8 @@ TEST(META, meta_serializeClass)
     a.eigenMatrix.setOnes();
     a.eigenMatrixDyn.setOnes();
     a.eigenVec = {p3d::Vec2(0, 0), p3d::Vec2(1, 1), p3d::Vec2(4, 2)};
+    a.map.insert({0, A()});
+    a.map.insert({1, A()});
 
     {
         cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
@@ -173,6 +178,7 @@ TEST(META, meta_serializeClass)
     EXPECT_EQ(a.eigenMatrix, b.eigenMatrix);
     EXPECT_EQ(a.eigenMatrixDyn, b.eigenMatrixDyn);
     EXPECT_EQ(a.eigenVec, b.eigenVec);
+    EXPECT_EQ(a.map, b.map);
 }
 
 #define SERIALIZATION_TEST(Type, X, Y)                          \

@@ -66,6 +66,8 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/bundle_adjustment.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/bundle_adjustment.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/bundle_params.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/landmark.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/landmark.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/dense_matching.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/dense_matching.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/fundmat.cpp
@@ -144,13 +146,23 @@ endif()
 
 # ----- Add ceres --------------------------------------------
 
-find_package(ceres-solver REQUIRED QUIET)
-if (ceres-solver_FOUND)
-    message("ceres-solver: found")
-    target_include_directories(${p3d_lib} PRIVATE ${ceres-solver_INCLUDE_DIR})
-    target_include_directories(${p3d_lib} PRIVATE ${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog)
+find_package(Ceres QUIET)
+
+if (Ceres_FOUND)
+    message("Ceres: found")
+    target_include_directories(${p3d_lib} PRIVATE ${CERES_INCLUDE_DIRS})
+    set(ceres-solver_LIBS ${CERES_LIBRARIES})
+    set(ceres-solver_INCLUDE_DIR ${CERES_INCLUDE_DIRS})
+    set(ceres-solver_LIB_DIRS "")
 else()
-    message(FATAL_ERROR "ceres-solver: not found")
+    find_package(ceres-solver REQUIRED QUIET)
+    if (ceres-solver_FOUND)
+        message("ceres-solver: found")
+        target_include_directories(${p3d_lib} PRIVATE ${ceres-solver_INCLUDE_DIR})
+        target_include_directories(${p3d_lib} PRIVATE ${ceres-solver_LIB_DIRS}/../include/ceres/internal/miniglog)
+    else()
+        message(FATAL_ERROR "ceres-solver: not found")
+    endif()
 endif()
 
 target_link_libraries(${p3d_lib}
@@ -234,7 +246,7 @@ target_link_libraries(${p3d_tests}
     PRIVATE
         ${NLopt_LIBS}
         ${NLopt_SYSTEM_LIBS}
-        ceres-solver::ceres-solver
+        ${CERES_LIBRARIES}
 )
 
 add_test(

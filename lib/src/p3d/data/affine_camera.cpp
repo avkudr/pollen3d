@@ -22,7 +22,7 @@ int AffineCamera::initMeta()
             .data<&AffineCamera::setFocal, &AffineCamera::getFocal>(
                 P3D_ID_TYPE(p3dAffineCamera_Focal));
 
-        SERIALIZE_TYPE_VECS(AffineCamera,"vector_AffineCamera"_hs);
+        SERIALIZE_TYPE_VECS(AffineCamera);
         firstCall = false;
     }
     return 0;

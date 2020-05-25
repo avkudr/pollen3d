@@ -20,7 +20,7 @@ int Match::initMeta()
 
         firstCall = false;
 
-        SERIALIZE_TYPE_VECS(Match, "vector_Match"_hs);
+        SERIALIZE_TYPE_VECS(Match);
     }
     return 0;
 }

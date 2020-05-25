@@ -5,6 +5,7 @@
 #include "p3d/core.h"
 #include "p3d/data/affine_camera.h"
 #include "p3d/multiview/bundle_params.h"
+#include "p3d/stereo/dense_matching.h"
 
 namespace p3d
 {
@@ -37,10 +38,9 @@ struct P3D_API BundleData {
     std::vector<Vec3> cam;
 
     /// @brief 3D point cloud (4 \times p)
-    Mat4X X;
+    Mat4X* X;
 
-    /// @brief measurement matrix (3c\timesp)
-    Mat W;
+    std::vector<std::map<int, Observation>>* matches;
 
     /**
      * @brief checks the validity of the given BA problem
@@ -50,13 +50,15 @@ struct P3D_API BundleData {
      */
     bool isValid() const
     {
-        int nbPts = X.cols();
-        if (W.cols() != nbPts) return false;
+        if (X == nullptr) return false;
+        if (matches == nullptr) return false;
+
+        int nbPts = X->cols();
+        if (matches->size() != nbPts) return false;
 
         const auto nbCams = R.size();
         if (t.size() != nbCams) return false;
         if (cam.size() != nbCams) return false;
-        if (W.rows() / 3 != nbCams) return false;
         return true;
     }
 };
@@ -65,6 +67,7 @@ class P3D_API BundleAdjustment
 {
 public:
     /*! @brief magic happens here. */
-    void run(BundleData& p, BundleParams& params);
+    void run(BundleData& data, BundleParams& params);
+    void runPtsOnly(BundleData& data);
 };
 }  // namespace p3d

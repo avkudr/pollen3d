@@ -21,7 +21,7 @@ int Image::initMeta()
             .data<&Image::setFeatExtractionPars, &Image::getFeatExtractionPars>(
                 P3D_ID_TYPE(p3dImage_featExtractionPars));
 
-        SERIALIZE_TYPE_VECS(Image, "vector_Image"_hs);
+        SERIALIZE_TYPE_VECS(Image);
         firstCall = false;
     }
     return 0;

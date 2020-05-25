@@ -198,10 +198,12 @@ void p3d::autocalibrateBatch(Project &data)
         // ***** bundle selected cams and selected points
 
         if (withBA) {
+            std::vector<std::map<int, Observation>> matches =
+                ObservationUtil::fromMeasMat(W);
             LOG_OK("Bundle adjustement: started...");
             BundleData bundleData;
-            bundleData.X = X;
-            bundleData.W = W;
+            bundleData.X = &X;
+            bundleData.matches = &matches;
 
             data.getCamerasIntrinsics(&bundleData.cam);
             bundleData.R = data.getCameraRotationsAbsolute();
@@ -239,7 +241,6 @@ void p3d::autocalibrateBatch(Project &data)
             data.setCamerasIntrinsics(bundleData.cam);
             data.setCameraRotationsAbsolute(bundleData.R, calibVec.back() + 1);
             data.setCameraTranslations(bundleData.t);
-            X = bundleData.X;
 
             LOG_OK("Bundle adjustement: done");
         }
@@ -1186,12 +1187,19 @@ void p3d::bundleAdjustment(Project &data)
         LOG_ERR("Sparse point cloud is empty");
         return;
     }
-    BundleData p;
-    p.X.setOnes(4, pcd.nbPoints());
-    p.X.topRows(3) = pcd.getVertices().cast<double>();
-    p.W = data.getMeasurementMatrix();
 
-    if (p.X.cols() != p.W.cols()) {
+    Mat4X X;
+    X.setOnes(4, pcd.nbPoints());
+    X.topRows(3) = pcd.getVertices().cast<double>();
+    BundleData p;
+    p.X = &X;
+
+    std::vector<std::map<int, Observation>> matches =
+        ObservationUtil::fromMeasMat(data.getMeasurementMatrix());
+
+    p.matches = &matches;
+
+    if (p.X->cols() != p.matches->size()) {
         LOG_ERR("Measurement matrix doesn't correspond to 3D points");
         return;
     }
@@ -1227,7 +1235,7 @@ void p3d::bundleAdjustment(Project &data)
         ba.run(p, params);
     }
 
-    pcd.setVertices(p.X.topRows(3).cast<float>());
+    pcd.setVertices(X.topRows(3).cast<float>());
     data.setCamerasIntrinsics(p.cam);
     data.setCamerasExtrinsics(p.R, p.t);
 

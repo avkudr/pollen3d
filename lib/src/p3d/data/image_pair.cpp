@@ -35,7 +35,7 @@ int ImagePair::initMeta()
             .data<&ImagePair::setTheta2, &ImagePair::getTheta2>(
                 P3D_ID_TYPE(p3dImagePair_Theta2));
 
-        SERIALIZE_TYPE_VECS(ImagePair,"vector_ImagePair"_hs);
+        SERIALIZE_TYPE_VECS(ImagePair);
 
         firstCall = false;
     }

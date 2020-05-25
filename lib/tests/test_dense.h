@@ -68,15 +68,14 @@ TEST(DENSE, test_mergeDenseMaps)
         }
     }
 
-    std::vector<MatchCandidate> landmark;
+    std::map<int, Observation> landmark;
     // use this to print:
     //     for (const auto& l : landmark) l.print();
 
     // *** im0, point(0,0) : all disparities are correct
-    landmark.clear();
     landmark = DenseMatchingUtil::findMatch(neighbors, 0, Vec2f(0.0, 0.0));
     EXPECT_EQ(landmark.size(), 4);
-    for (const auto& l : landmark) EXPECT_FLOAT_EQ(l.confidence, 1.0f);
+    for (const auto& [i, obs] : landmark) EXPECT_FLOAT_EQ(obs.confidence, 1.0f);
 
     // no disparity 0-1
     // but there is still another way => 0-2-1-3
@@ -85,16 +84,18 @@ TEST(DENSE, test_mergeDenseMaps)
 
     landmark = DenseMatchingUtil::findMatch(neighbors, 0, Vec2f(0.0, 0.0));
     EXPECT_EQ(landmark.size(), 4);
-    for (const auto& l : landmark) EXPECT_FLOAT_EQ(l.confidence, 1.0f);
+    for (const auto& [i, obs] : landmark) EXPECT_FLOAT_EQ(obs.confidence, 1.0f);
 
     // no disparity still 0-1
     // but there is still a way => 0-2-1-3 but the confidence is lower
-    // however, there is another better way 0-2-3-1 :)
     neighbors[1][2].confidence.at<float>(0, 0) = 0.8;
     neighbors[2][1] = neighbors[1][2].inverse();
     landmark = DenseMatchingUtil::findMatch(neighbors, 0, Vec2f(0.0, 0.0));
     EXPECT_EQ(landmark.size(), 4);
-    for (const auto& l : landmark) EXPECT_FLOAT_EQ(l.confidence, 1.0f);
+    EXPECT_FLOAT_EQ(landmark.at(0).confidence, 1.0f);
+    EXPECT_FLOAT_EQ(landmark.at(1).confidence, 0.8f);
+    EXPECT_FLOAT_EQ(landmark.at(2).confidence, 1.0f);
+    EXPECT_FLOAT_EQ(landmark.at(3).confidence, 1.0f);
 
     // lower confidence for 1-3 path
     // the best is now the path through 0-2-1-3
@@ -103,11 +104,10 @@ TEST(DENSE, test_mergeDenseMaps)
     landmark = DenseMatchingUtil::findMatch(neighbors, 0, Vec2f(0.0, 0.0));
 
     EXPECT_EQ(landmark.size(), 4);
-    std::sort(landmark.begin(), landmark.end());
-    EXPECT_FLOAT_EQ(landmark[0].confidence, 1.0f);
-    EXPECT_FLOAT_EQ(landmark[1].confidence, 0.7f);  // must be 0.8 !!!
-    EXPECT_FLOAT_EQ(landmark[2].confidence, 1.0f);
-    EXPECT_FLOAT_EQ(landmark[3].confidence, 1.0f);
+    EXPECT_FLOAT_EQ(landmark.at(0).confidence, 1.0f);
+    EXPECT_FLOAT_EQ(landmark.at(1).confidence, 0.8f);
+    EXPECT_FLOAT_EQ(landmark.at(2).confidence, 1.0f);
+    EXPECT_FLOAT_EQ(landmark.at(3).confidence, 1.0f);
 
     // delete the 3rd disparity
     neighbors[1][3].disp.at<float>(0, 0) = DenseMatchingUtil::NO_DISPARITY;
@@ -117,8 +117,7 @@ TEST(DENSE, test_mergeDenseMaps)
     landmark = DenseMatchingUtil::findMatch(neighbors, 0, Vec2f(0.0, 0.0));
 
     EXPECT_EQ(landmark.size(), 3);
-    std::sort(landmark.begin(), landmark.end());
-    EXPECT_FLOAT_EQ(landmark[0].confidence, 1.0f);
-    EXPECT_FLOAT_EQ(landmark[1].confidence, 0.8f);
-    EXPECT_FLOAT_EQ(landmark[2].confidence, 1.0f);
+    EXPECT_FLOAT_EQ(landmark.at(0).confidence, 1.0f);
+    EXPECT_FLOAT_EQ(landmark.at(1).confidence, 0.8f);
+    EXPECT_FLOAT_EQ(landmark.at(2).confidence, 1.0f);
 }

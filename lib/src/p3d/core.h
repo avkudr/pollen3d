@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -90,6 +91,10 @@ using Veci   = Eigen::Matrix<int,-1, 1>;
 // clang-format on
 
 static P3D_ID_TYPE alias(const char* className) { return entt::hashed_string{className}; }
+static P3D_ID_TYPE alias(const std::string& className)
+{
+    return alias(className.c_str());
+}
 
 class P3D_API PObject
 {
