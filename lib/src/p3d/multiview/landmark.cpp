@@ -55,7 +55,7 @@ std::vector<std::map<int, Observation>> p3d::ObservationUtil::fromMeasMat(const 
         std::map<int, Observation> m;
         for (int c = 0; c < nbViews; ++c) {
             if (W(3 * c + 2, p) == 1.0)
-                m.insert({p, Observation(W.block(3 * c, p, 2, 1))});
+                m.insert({c, Observation(W.block(3 * c, p, 2, 1))});
         }
         matches.push_back(m);
     }

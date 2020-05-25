@@ -73,8 +73,8 @@ struct BAFunctor_Affine
 
         // Compute and return the error is the difference between the predicted
         //  and observed position
-        out_residuals[0] = q(0) - T(x[0]);
-        out_residuals[1] = q(1) - T(x[1]);
+        out_residuals[0] = q(0) - T(x(0));
+        out_residuals[1] = q(1) - T(x(1));
         return true;
     }
 
@@ -122,8 +122,6 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
     }
 
     const auto nbCams = params.nbCams();
-    auto& X = *data.X;
-    const auto& matches = *data.matches;
 
     ceres::Problem problem;
     auto lossFunction = new ceres::HuberLoss(8);
@@ -155,11 +153,15 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
             problem.SetParameterBlockConstant(&data.t[c][0]);
     }
 
+    auto& X = *data.X;
+    const auto& matches = *data.matches;
     for (auto p = 0; p < matches.size(); p++) {
         if (X(3, p) != 1) continue;  // wasn't triangulated
         double* ptrX = (double*)&X(0, p);
 
         for (const auto& [c, obs] : matches[p]) {
+            if (!params.isCamUsed(c)) continue;
+
             ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3>* cost_function =
                 new ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3>(
                     new BAFunctor_Affine(obs.pt));

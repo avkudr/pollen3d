@@ -405,7 +405,7 @@ void utils::findFullSubMeasurementMatrix(const Mat &W, Mat &Wfsub, std::vector<i
 {
     Wfsub = Mat();
     if (W.cols() == 0 || W.rows() == 0) {
-        LOG_ERR("Full measurement matrix can't be empty");
+        LOG_ERR("Measurement matrix can't be empty");
         return;
     }
 

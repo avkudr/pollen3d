@@ -75,6 +75,11 @@ int main()
 
     auto W = data.getMeasurementMatrix();
 
+    if (W.size() == 0) {
+        std::cout << "measurement matrix is empty" << std::endl;
+        return -1;
+    }
+
     // ***** remove existing rho rotation
 
     auto temp = data.getCameraRotationsRelativeMat();
@@ -250,8 +255,10 @@ int main()
 #endif
 
         {
-            std::cout << "nb triangulated: " << X.bottomRows(1).sum() << "/" << X.cols() << std::endl;
-            Vec e = utils::reprojectionError(W,data.getCameraMatricesMat(),X,calibVec);
+            std::cout << "nb triangulated: " << X.bottomRows(1).sum() << "/" << X.cols()
+                      << std::endl;
+
+            Vec e = utils::reprojectionError(W, data.getCameraMatricesMat(), X, calibVec);
             std::cout << "mean reproj: " << e.mean() << std::endl;
             std::cout << "reproj error < 0.5px: " << 100.0f * (e.array() < 0.5).count() / float(e.size()) << " %" << std::endl;
             std::cout << "reproj error < 1.0px: " << 100.0f * (e.array() < 1.0).count() / float(e.size()) << " %" << std::endl;
