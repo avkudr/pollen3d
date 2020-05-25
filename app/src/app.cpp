@@ -195,6 +195,12 @@ void Application::draw(int width, int height)
     _processKeyboardInput();
 }
 
+void Application::openProject(const std::string &projPath)
+{
+    auto f = [&](const std::string &path) { p3d::openProject(m_projectData, path); };
+    HeavyTask::run(f, projPath);
+}
+
 void Application::saveProject()
 {
     std::string path = m_projectData.getProjectPath();
