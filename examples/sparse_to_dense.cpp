@@ -21,7 +21,8 @@ int main()
     // file = "/home/andrey/Desktop/_datasets/pot/pot.yml.gz";
     // file = "/home/andrey/Desktop/_datasets/pot1/pot1.yml.gz";
     // file = "/home/andrey/Desktop/_datasets/Ostracode/ostracode.yml.gz";
-    file = "/home/andrey/Desktop/_datasets/ostracode24/ostracode24.yml.gz";
+    // file = "/home/andrey/Desktop/_datasets/ostracode24/ostracode24.yml.gz";
+    file = "/home/andrey/Desktop/_datasets/hayamica/hayamica.yml.gz";
     p3d::openProject(data, file);
 
     LOG_INFO("Project: %s", data.getName().c_str());

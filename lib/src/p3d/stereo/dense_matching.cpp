@@ -76,9 +76,9 @@ void DenseMatchingUtil::findDisparity(const cv::Mat &imLeftR, const cv::Mat &imR
 
         cv::Mat disparityMapRL;
         cv::Ptr<cv::StereoSGBM> sgbmRL(sgbmLR);
-        sgbmLR->setMinDisparity(denseMatchingRightToLeft.dispLowerBound);
-        sgbmLR->setNumDisparities(16 * denseMatchingRightToLeft.dispUpperBound);
-        sgbmLR->compute(imR, imL, disparityMapRL);
+        sgbmRL->setMinDisparity(denseMatchingRightToLeft.dispLowerBound);
+        sgbmRL->setNumDisparities(16 * denseMatchingRightToLeft.dispUpperBound);
+        sgbmRL->compute(imR, imL, disparityMapRL);
 
         cv::Mat out = 0.0f * disparityMapLR.clone();
 
@@ -89,12 +89,22 @@ void DenseMatchingUtil::findDisparity(const cv::Mat &imLeftR, const cv::Mat &imR
         confidenceMap = wls_filter->getConfidenceMap();
         cv::Mat confidenceMask;
         confidenceMap.convertTo(confidenceMask, CV_8UC1);
+        confidenceMap /= 255.0;
         cv::threshold(confidenceMask, confidenceMask, 0.75 * 255.0, 255.0,
                       cv::THRESH_BINARY);
 
+        cv::Mat blackZoneMask;
+        cv::threshold(imL, blackZoneMask, 5, 255, cv::THRESH_BINARY);
+        if (blackZoneMask.channels() == 3)
+            cvtColor(blackZoneMask, blackZoneMask, cv::COLOR_BGR2GRAY);
+
+        cv::Mat mask = blackZoneMask & confidenceMask;
         if (out.type() != CV_32FC1) out.convertTo(out, CV_32FC1);
         disparity = 0.0f * out + DenseMatchingUtil::NO_DISPARITY;
-        out.copyTo(disparity, confidenceMask);
+        out.copyTo(disparity, mask);
+
+        //        cv::imshow("sdqsdqsqs", mask);
+        //        cv::waitKeyEx(0);
 
     } catch (...) {
         disparity = cv::Mat();
