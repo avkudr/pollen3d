@@ -31,15 +31,17 @@ int registerTypes()
     SERIALIZE_TYPE_EIGEN(float, 3,-1, "Eigen__float3X"_hs);
     SERIALIZE_TYPE_EIGEN(float, 4, -1, "Eigen__float4X"_hs);
     SERIALIZE_TYPE_EIGEN(float, 6,-1, "Eigen__float6X"_hs);
+    SERIALIZE_TYPE_EIGEN(float, -1, 1, "Eigen__floatX1"_hs);
 
     SERIALIZE_TYPE_EIGEN(double, 2, 1, "Eigen__double21"_hs);
     SERIALIZE_TYPE_EIGEN(double, 3, 1, "Eigen__double31"_hs);
     SERIALIZE_TYPE_EIGEN(double, 3, 4, "Eigen__double34"_hs);
     SERIALIZE_TYPE_EIGEN(double, 3, 3, "Eigen__double33"_hs);
-    SERIALIZE_TYPE_EIGEN(double,-1,-1, "Eigen__doubleXX"_hs);
-    SERIALIZE_TYPE_EIGEN(double, 2,-1, "Eigen__double2X"_hs);
-    SERIALIZE_TYPE_EIGEN(double, 3,-1, "Eigen__double3X"_hs);
-    SERIALIZE_TYPE_EIGEN(double,-1, 3, "Eigen__doubleX3"_hs);
+    SERIALIZE_TYPE_EIGEN(double, -1, -1, "Eigen__doubleXX"_hs);
+    SERIALIZE_TYPE_EIGEN(double, -1, 1, "Eigen__doubleX1"_hs);
+    SERIALIZE_TYPE_EIGEN(double, 2, -1, "Eigen__double2X"_hs);
+    SERIALIZE_TYPE_EIGEN(double, 3, -1, "Eigen__double3X"_hs);
+    SERIALIZE_TYPE_EIGEN(double, -1, 3, "Eigen__doubleX3"_hs);
     SERIALIZE_TYPE_EIGEN(double, 4, -1, "Eigen__double4X"_hs);
 
     SERIALIZE_TYPE_EIGEN(unsigned char, 3, 1, "Eigen__uchar31"_hs);

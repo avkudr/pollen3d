@@ -88,6 +88,7 @@ using MatX3  = Eigen::Matrix<double,-1,3>;
 using Mat3Xf = Eigen::Matrix<float,3,-1>;
 using Mat4X  = Eigen::Matrix<double,4,-1>;
 using Vec    = Eigen::VectorXd;
+using Vecf   = Eigen::VectorXf;
 using Veci   = Eigen::Matrix<int,-1, 1>;
 // clang-format on
 

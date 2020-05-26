@@ -78,6 +78,7 @@ public:
                 .alias(getAlias())
                 .data<&ClassA::float1>(P3D_ID_TYPE(1))
                 .data<&ClassA::float2>(P3D_ID_TYPE(2))
+                .prop(P3D_NOT_STORED)
                 .data<&ClassA::integer>(P3D_ID_TYPE(10))
                 .data<&ClassA::str>(P3D_ID_TYPE(15))
                 .data<&ClassA::vectorDouble>(P3D_ID_TYPE(20))
@@ -112,6 +113,29 @@ public:
 #define EXPECT_TYPE_SERIALIZABLE(x)                   \
     EXPECT_TRUE(entt::resolve<x>().func("_read"_hs)); \
     EXPECT_TRUE(entt::resolve<x>().func("_write"_hs))
+
+TEST(META, meta_isStored)
+{
+    ClassA dummy;
+
+    std::map<P3D_ID_TYPE, bool> storedYesNo;
+
+    entt::resolve<ClassA>().data([&](auto data) {
+        auto prop = data.prop("stored"_hs);
+        if (prop && prop.value() == false) {
+            storedYesNo.insert({data.alias(), false});
+        } else {
+            storedYesNo.insert({data.alias(), true});
+        }
+    });
+
+    for (const auto &[k, v] : storedYesNo) {
+        if (k == P3D_ID_TYPE(2))
+            EXPECT_FALSE(v);
+        else
+            EXPECT_TRUE(v);
+    }
+}
 
 TEST(META, meta_serializedTypes)
 {
@@ -171,7 +195,7 @@ TEST(META, meta_serializeClass)
     }
 
     EXPECT_EQ(a.float1, b.float1);
-    EXPECT_EQ(a.float2, b.float2);
+    EXPECT_TRUE(a.float2 != b.float2);  // property is not stored
     EXPECT_EQ(a.str, b.str);
     EXPECT_EQ(a.integer, b.integer);
     EXPECT_EQ(a.vectorDouble, b.vectorDouble);

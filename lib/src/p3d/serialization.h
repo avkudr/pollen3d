@@ -13,6 +13,8 @@ namespace impl
 std::string mapName(const char* className);
 std::string vecName(const char* className);
 
+#define P3D_NOT_STORED std::make_pair("stored"_hs, false)
+
 #define SERIALIZE_TYPE(x, name)                 \
     entt::meta<x>()                             \
         .alias(name)                            \
@@ -304,9 +306,12 @@ public:
         entt::resolve<T>().data([&](auto data) {
             auto func = data.type().func("_write"_hs);
             if (func) {
-                auto ptr = dynamic_cast<T*>(this);
-                entt::meta_any any = data.get(*ptr);
-                func.invoke(any, std::ref(fs), P3D_ID_TYPE(data.alias()), any);
+                auto prop = data.prop("stored"_hs);
+                if (!prop || prop.value() == true) {
+                    auto ptr = dynamic_cast<T*>(this);
+                    entt::meta_any any = data.get(*ptr);
+                    func.invoke(any, std::ref(fs), P3D_ID_TYPE(data.alias()), any);
+                }
             } else {
                 LOG_ERR("%s, not registered for write: %i", className(), data.alias());
             }
@@ -327,11 +332,14 @@ public:
         entt::resolve<T>().data([&](auto data) {
             entt::meta_func func = data.type().func("_read"_hs);
             if (func) {
-                auto ptr = dynamic_cast<T*>(this);
-                entt::meta_any old = data.get(*ptr);
-                entt::meta_any any(old);
-                func.invoke(old, nodeL, P3D_ID_TYPE(data.alias()), *any);
-                data.set(*ptr, any);
+                auto prop = data.prop("stored"_hs);
+                if (!prop || prop.value() == true) {
+                    auto ptr = dynamic_cast<T*>(this);
+                    entt::meta_any old = data.get(*ptr);
+                    entt::meta_any any(old);
+                    func.invoke(old, nodeL, P3D_ID_TYPE(data.alias()), *any);
+                    data.set(*ptr, any);
+                }
             } else {
                 LOG_ERR("not registered for read: %i", data.alias());
             }
