@@ -73,7 +73,7 @@ class P3D_API CommandPointCloudAdd : public Command
 {
 public:
     CommandPointCloudAdd(PointCloudContainer* ctnr, const std::string& lbl,
-                         const Mat3Xf& verts, const Mat3Xf& colors = {})
+                         const Mat3Xf& verts, const std::vector<Vec3uc>& colors = {})
         : m_lbl(lbl), m_ctnr(ctnr)
     {
         m_isValid = true;

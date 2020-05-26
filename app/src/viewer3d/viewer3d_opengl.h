@@ -36,7 +36,7 @@ public:
     void init() override;
     void drawImpl(int width, int height) override;
     void addPointCloud(const std::string& label, const p3d::Mat3Xf& pcd,
-                       const p3d::Mat3Xf& colors = {}) override;
+                       const std::vector<p3d::Vec3uc>& colors = {}) override;
 
     void addCamera(const p3d::Mat3 &R, const p3d::Vec2 &t) override;
 

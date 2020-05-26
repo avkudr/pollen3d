@@ -49,7 +49,7 @@ public:
     p3d::Vec3f m_rotationAxis{p3d::Vec3f(0.0f, 0.0f, 1.0f)};
 
     virtual void addPointCloud(const std::string& label, const p3d::Mat3Xf& pcd,
-                               const p3d::Mat3Xf& colors = {}) = 0;
+                               const std::vector<p3d::Vec3uc>& colors = {}) = 0;
     void deletePointCloud(const std::string& label) { m_pcd.erase(label); }
     void setPointCloudVisible(const std::string& label, bool visible);
     void deletePointCloudsAll() { m_pcd.clear(); }

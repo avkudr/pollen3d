@@ -4,7 +4,7 @@
 
 #include "shader_opengl.h"
 
-void PCDViewOpenGL::init(const p3d::Mat3Xf &pcd, const p3d::Mat3Xf &colors)
+void PCDViewOpenGL::init(const p3d::Mat3Xf &pcd, const std::vector<p3d::Vec3uc> &colors)
 {
     if (m_Tvbo) glDeleteBuffers(1, &m_Tvbo);
     if (m_Tvao) glDeleteVertexArrays(1, &m_Tvao);
@@ -20,7 +20,13 @@ void PCDViewOpenGL::init(const p3d::Mat3Xf &pcd, const p3d::Mat3Xf &colors)
     Eigen::Matrix<float, 6, Eigen::Dynamic> data;
     data.setOnes(6, m_nbPoints);
     data.topRows(3) = pcd;
-    if (colors.cols() == m_nbPoints) data.bottomRows(3) = colors;
+    if (colors.size() == m_nbPoints) {
+        for (auto i = 0; i < colors.size(); ++i) {
+            data(3, i) = colors[i](0) / 255.0f;
+            data(4, i) = colors[i](1) / 255.0f;
+            data(5, i) = colors[i](2) / 255.0f;
+        }
+    }
 
     glGenVertexArrays(1, &m_Tvao);
     glGenBuffers(1, &m_Tvbo);

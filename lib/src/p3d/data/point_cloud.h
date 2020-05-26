@@ -23,7 +23,7 @@ public:
 
     PointCloud() {}
     PointCloud(const std::string& label, const Mat3Xf& pcd,
-               const Mat3Xf& colors = {});
+               const std::vector<Vec3uc>& colors = {});
 
     bool operator==(const PointCloud& i) const override;
 
@@ -34,8 +34,9 @@ public:
     const Mat3Xf& getVertices() const;
     void setVertices(const Mat3Xf& matrix);
 
-    const Mat3Xf& getColors() const;
-    void setColors(const Mat3Xf& colors);
+    const std::vector<Vec3uc>& getColors() const;
+    void setColors(const std::vector<Vec3uc>& colors);
+    void setColorsRValue(std::vector<Vec3uc>&& colors);
 
     int nbPoints() const { return m_vertices.cols(); }
 
@@ -45,7 +46,7 @@ public:
 private:
     std::string m_label{""};
     Mat3Xf m_vertices{};
-    Mat3Xf m_colors{};
+    std::vector<Vec3uc> m_colors{};
     bool m_visible{true};
 };
 }  // namespace p3d

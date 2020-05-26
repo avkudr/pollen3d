@@ -70,6 +70,7 @@ using Vec2   = Eigen::Vector2d;
 using Vec2f  = Eigen::Vector2f;
 using Vec3   = Eigen::Vector3d;
 using Vec3f  = Eigen::Vector3f;
+using Vec3uc = Eigen::Matrix<unsigned char,3,1>;
 using Vec4   = Eigen::Matrix<double,4,1>;
 using Vec4f  = Eigen::Matrix<float,4,1>;
 using Mat2   = Eigen::Matrix<double,2,2>;

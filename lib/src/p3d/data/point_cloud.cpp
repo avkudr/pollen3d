@@ -31,7 +31,7 @@ int PointCloud::initMeta()
 }
 
 p3d::PointCloud::PointCloud(const std::string &label, const p3d::Mat3Xf &pcd,
-                            const Mat3Xf &colors)
+                            const std::vector<Vec3uc> &colors)
     : Serializable(), m_label(label), m_vertices(pcd), m_colors(colors)
 {
 }
@@ -40,10 +40,9 @@ bool PointCloud::operator==(const PointCloud &i) const
 {
     if (m_label != i.getLabel()) return false;
     if (m_vertices.cols() != i.getVertices().cols()) return false;
-    if (m_colors.cols() != i.getColors().cols()) return false;
+    if (m_colors.size() != i.getColors().size()) return false;
 
     if (!m_vertices.isApprox(i.getVertices())) return false;
-    if (!m_colors.isApprox(i.getColors())) return false;
     return true;
 }
 
@@ -57,9 +56,14 @@ const Mat3Xf &PointCloud::getVertices() const { return m_vertices; }
 
 void PointCloud::setVertices(const Mat3Xf &matrix) { m_vertices = matrix; }
 
-const Mat3Xf &PointCloud::getColors() const { return m_colors; }
+const std::vector<Vec3uc> &PointCloud::getColors() const { return m_colors; }
 
-void PointCloud::setColors(const Mat3Xf &colors) { m_colors = colors; }
+void PointCloud::setColors(const std::vector<Vec3uc> &colors) { m_colors = colors; }
+
+void PointCloud::setColorsRValue(std::vector<Vec3uc> &&colors)
+{
+    m_colors = std::forward<std::vector<Vec3uc>>(colors);
+}
 
 bool PointCloud::isVisible() const { return m_visible; }
 

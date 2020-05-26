@@ -17,12 +17,12 @@ int main()
 
     std::string file;
     p3d::Project data;
-    // file = "/home/andrey/Desktop/_datasets/brassica/brassica.yml.gz";
+    file = "/home/andrey/Desktop/_datasets/brassica/brassica.yml.gz";
     // file = "/home/andrey/Desktop/_datasets/pot/pot.yml.gz";
     // file = "/home/andrey/Desktop/_datasets/pot1/pot1.yml.gz";
     // file = "/home/andrey/Desktop/_datasets/Ostracode/ostracode.yml.gz";
     // file = "/home/andrey/Desktop/_datasets/ostracode24/ostracode24.yml.gz";
-    file = "/home/andrey/Desktop/_datasets/hayamica/hayamica.yml.gz";
+    // file = "/home/andrey/Desktop/_datasets/hayamica/hayamica.yml.gz";
     p3d::openProject(data, file);
 
     LOG_INFO("Project: %s", data.getName().c_str());
@@ -236,12 +236,9 @@ int main()
 
     std::cout << "Triangulation..." << std::endl;
 
-    Mat4X X;
-    X.setZero(4, matches.size());
+    std::vector<Landmark> landmarks;
+    std::vector<Vec3uc> colors;
     auto Ps = data.getCameraMatrices();
-
-    Mat3Xf colors;
-    colors.setZero(3, matches.size());
 
     cv::Mat I1 = data.image(0)->cvMat();
     if (I1.channels() == 1) cv::cvtColor(I1, I1, CV_GRAY2BGR);
@@ -253,7 +250,9 @@ int main()
         bool draw = false && matches[pt].size() > 3;
         // draw = pt % 1000 == 0;
 
-        for (const auto& [camId, obs] : matches[pt]) {
+        Landmark l(std::move(matches[pt]));
+
+        for (const auto& [camId, obs] : l.obs) {
             Pa.push_back(Ps[camId]);
             xa.push_back(obs.pt);
 
@@ -275,25 +274,25 @@ int main()
 
         // if (xa.size() > 2) { void(); }
         Vec4 Xa = utils::triangulate(xa, Pa);
-        X.col(pt) = Xa;
+        l.X = Xa.topRows(3);
 
         float err = utils::reprojectionErrorPt(xa, Pa, Xa);
 
         const cv::Vec3b& c1 = I1.at<cv::Vec3b>(matches[pt].begin()->second.pt.y(),
                                                matches[pt].begin()->second.pt.x());
-        colors.col(pt) = Vec3f(c1.val[0] / 255.f, c1.val[1] / 255.f, c1.val[2] / 255.f);
 
-        // colors.col(pt) = err > 10.0 ? Vec3f(1.0, 0.0, 0.0) : Vec3f(1.0, 1.0, 1.0);
+        landmarks.push_back(std::move(l));
+        colors.emplace_back(Vec3uc(c1.val[0], c1.val[1], c1.val[2]));
     }
+    matches.clear();
 
-    std::cout << "X size: " << X.cols() << std::endl;
+    std::cout << "X size: " << landmarks.size() << std::endl;
 
     if (withBA) {
         // ***** construct measurement matrix
 
         p3d::BundleData bundleData;
-        bundleData.X = &X;
-        bundleData.matches = &matches;
+        bundleData.landmarks = &landmarks;
 
         LOG_OK("Bundle adjustement: started...");
         data.getCamerasIntrinsics(&bundleData.cam);
@@ -301,17 +300,13 @@ int main()
         bundleData.t = data.getCameraTranslations();
 
         BundleAdjustment ba;
-
-        //        p3d::BundleParams params(bundleData.t.size());
-        //        params.setConstAll();
-        //        params.setVaryingPts();
-        //        ba.run(bundleData, params);
-
         ba.runPtsOnly(bundleData);
     }
 
-    data.pointCloudCtnr()["densePcd"].setVertices(X.topRows(3).cast<float>());
-    data.pointCloudCtnr()["densePcd"].setColors(colors);
+    Mat3X X;
+    LandmarksUtil::toMat3X(landmarks, X);
+    data.pointCloudCtnr()["densePcd"].setVertices(X.cast<float>());
+    data.pointCloudCtnr()["densePcd"].setColorsRValue(std::move(colors));
     p3d::saveProject(data, "/home/andrey/Desktop/sparse_to_dense.yml.gz");
 
     return 0;

@@ -198,12 +198,12 @@ void p3d::autocalibrateBatch(Project &data)
         // ***** bundle selected cams and selected points
 
         if (withBA) {
-            std::vector<std::map<int, Observation>> matches =
-                ObservationUtil::fromMeasMat(W);
             LOG_OK("Bundle adjustement: started...");
+
             BundleData bundleData;
-            bundleData.X = &X;
-            bundleData.matches = &matches;
+            std::vector<Landmark> landmarks;
+            LandmarksUtil::from3DPtsMeasMat(X.topRows(3), W, landmarks);
+            bundleData.landmarks = &landmarks;
 
             data.getCamerasIntrinsics(&bundleData.cam);
             bundleData.R = data.getCameraRotationsAbsolute();
@@ -986,7 +986,7 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
         dispValues = dispValues / 16.0;
 
         std::vector<Vec3f> pts3D;
-        std::vector<Vec3f> colors;
+        std::vector<Vec3uc> colors;
 
         cv::Mat Irl = data.imagePair(pairIdx)->getRectifiedImageL();
         cv::Mat Irr = data.imagePair(pairIdx)->getRectifiedImageR();
@@ -1038,16 +1038,13 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
                 {
                     p3d::task::progress_ = u1;
                     pts3D.emplace_back(Vec3f(Q(0), Q(1), Q(2)));
-                    colors.emplace_back(
-                        Vec3f(c1.val[0] / 255.f, c1.val[1] / 255.f, c1.val[2] / 255.f));
+                    colors.emplace_back(Vec3uc(c1.val[0], c1.val[1], c1.val[2]));
                 }
             }
         }
 
         Mat3Xf result;
-        Mat3Xf colorsMat;
         utils::convert(pts3D, result);
-        utils::convert(colors, colorsMat);
 
         std::string newPcd = "densePair" + std::to_string(pairIdx);
 
@@ -1055,11 +1052,10 @@ void p3d::triangulateDenseStereo(Project &data, std::vector<int> imPairsIds)
             auto &pcd = data.pointCloudCtnr()[newPcd];
             groupCmd->add(
                 new CommandSetProperty{&pcd, p3dPointCloud_vertices, result});
-            groupCmd->add(
-                new CommandSetProperty{&pcd, p3dPointCloud_colors, colorsMat});
+            groupCmd->add(new CommandSetProperty{&pcd, p3dPointCloud_colors, colors});
         } else {
-            groupCmd->add(new CommandPointCloudAdd(
-                &data.pointCloudCtnr(), newPcd, result, colorsMat));
+            groupCmd->add(
+                new CommandPointCloudAdd(&data.pointCloudCtnr(), newPcd, result, colors));
         }
         LOG_OK("Triangulated (stereo) %i points", result.cols());
     }
@@ -1188,21 +1184,12 @@ void p3d::bundleAdjustment(Project &data)
         return;
     }
 
-    Mat4X X;
-    X.setOnes(4, pcd.nbPoints());
-    X.topRows(3) = pcd.getVertices().cast<double>();
     BundleData p;
-    p.X = &X;
 
-    std::vector<std::map<int, Observation>> matches =
-        ObservationUtil::fromMeasMat(data.getMeasurementMatrix());
-
-    p.matches = &matches;
-
-    if (p.X->cols() != p.matches->size()) {
-        LOG_ERR("Measurement matrix doesn't correspond to 3D points");
-        return;
-    }
+    std::vector<Landmark> landmarks;
+    LandmarksUtil::from3DPtsMeasMat(pcd.getVertices().cast<double>(),
+                                    data.getMeasurementMatrix(), landmarks);
+    p.landmarks = &landmarks;
 
     data.getCamerasIntrinsics(&p.cam);
     data.getCamerasExtrinsics(&p.R, &p.t);
@@ -1235,7 +1222,11 @@ void p3d::bundleAdjustment(Project &data)
         ba.run(p, params);
     }
 
-    pcd.setVertices(X.topRows(3).cast<float>());
+    Mat3X X;
+    LandmarksUtil::toMat3X(landmarks, X);
+    landmarks.clear();
+
+    pcd.setVertices(X.cast<float>());
     data.setCamerasIntrinsics(p.cam);
     data.setCamerasExtrinsics(p.R, p.t);
 

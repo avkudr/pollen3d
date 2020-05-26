@@ -30,11 +30,39 @@ struct P3D_API Landmark : public Serializable<Landmark> {
     static int initMeta();
     static const char* classNameStatic() { return "Landmark"; }
 
-    Vec3 X{0, 0, 0};
+    Landmark() {}
+    Landmark(const std::map<int, Observation>& obs_, const Vec3& X_ = Vec3(0, 0, 0))
+        : obs{obs_}, X{X_}
+    {
+    }
+
+    Vec3 X{0.0, 0.0, 0.0};
     std::map<int, Observation> obs;
+
+    bool isTriangulated() const
+    {
+        if (X(0) != 0.0) return true;
+        if (X(1) != 0.0) return true;
+        if (X(2) != 0.0) return true;
+        return false;
+    }
 };
 
 struct ObservationUtil {
     static std::vector<std::map<int, Observation>> fromMeasMat(const Mat& W);
+};
+
+struct LandmarksUtil {
+    static void toMat4X(const std::vector<Landmark>& l, Mat4X& X);
+    static void toMat3X(const std::vector<Landmark>& l, Mat3X& X);
+    static void from3DPtsMeasMat(const Mat3X& inX, const Mat& inW,
+                                 std::vector<Landmark>& l);
+
+    // P - a vector of camera matrices, some of them might not be used
+    // by the given landmark;
+    static double reprojError(const Landmark& l, const std::vector<Mat34>& P);
+    static Vec reprojErrors(const std::vector<Landmark>& l, const std::vector<Mat34>& P);
+    static bool equalsApprox(const std::vector<Landmark>& lhs,
+                             const std::vector<Landmark>& rhs);
 };
 }  // namespace p3d

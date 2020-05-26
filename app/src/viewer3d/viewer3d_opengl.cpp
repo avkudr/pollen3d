@@ -265,7 +265,7 @@ void Viewer3DOpenGL::drawImpl(int width, int height)
 }
 
 void Viewer3DOpenGL::addPointCloud(const std::string &label, const Mat3Xf &pcd,
-                                   const Mat3Xf &colors)
+                                   const std::vector<p3d::Vec3uc> &colors)
 {
     if (pcd.cols() == 0) return;
     m_pcd.insert({label, std::make_unique<PCDViewOpenGL>(pcd, colors)});

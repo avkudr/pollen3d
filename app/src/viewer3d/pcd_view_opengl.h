@@ -27,7 +27,7 @@ class PCDViewOpenGL : public PCDView
 {
 public:
     PCDViewOpenGL() = delete;
-    PCDViewOpenGL(const p3d::Mat3Xf& pcd, const p3d::Mat3Xf& colors = {})
+    PCDViewOpenGL(const p3d::Mat3Xf& pcd, const std::vector<p3d::Vec3uc>& colors = {})
         : PCDView()
     {
         init(pcd, colors);
@@ -38,7 +38,8 @@ public:
         if (m_Tvao) glDeleteVertexArrays(1, &m_Tvao);
     }
 
-    void init(const p3d::Mat3Xf& pcd, const p3d::Mat3Xf& colors = {}) override;
+    void init(const p3d::Mat3Xf& pcd,
+              const std::vector<p3d::Vec3uc>& colors = {}) override;
     void draw(std::shared_ptr<ShaderOpenGL> shader = nullptr) override;
 
 private:

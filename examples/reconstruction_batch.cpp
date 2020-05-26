@@ -204,10 +204,10 @@ int main()
 #define WITH_BUNDLE 1
 #if (WITH_BUNDLE == 1)
         BundleData bundleData;
-        bundleData.X = &X;
 
-        std::vector<std::map<int, Observation>> matches = ObservationUtil::fromMeasMat(W);
-        bundleData.matches = &matches;
+        std::vector<Landmark> landmarks;
+        LandmarksUtil::from3DPtsMeasMat(X.topRows(3), W, landmarks);
+        bundleData.landmarks = &landmarks;
 
         LOG_OK("Bundle adjustement: started...");
         data.getCamerasIntrinsics(&bundleData.cam);
@@ -246,6 +246,8 @@ int main()
                 ba.run(bundleData, params);
             }
         }
+
+        LandmarksUtil::toMat4X(landmarks, X);
 
         data.setCamerasIntrinsics(bundleData.cam);
         data.setCameraRotationsAbsolute(bundleData.R, calibVec.back() + 1);

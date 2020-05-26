@@ -37,10 +37,7 @@ struct P3D_API BundleData {
      */
     std::vector<Vec3> cam;
 
-    /// @brief 3D point cloud (4 \times p)
-    Mat4X* X;
-
-    std::vector<std::map<int, Observation>>* matches;
+    std::vector<Landmark>* landmarks;
 
     /**
      * @brief checks the validity of the given BA problem
@@ -50,11 +47,10 @@ struct P3D_API BundleData {
      */
     bool isValid() const
     {
-        if (X == nullptr) return false;
-        if (matches == nullptr) return false;
-
-        int nbPts = X->cols();
-        if (matches->size() != nbPts) return false;
+        if (landmarks == nullptr) {
+            LOG_ERR("Bundle adjustment needs landmarks");
+            return false;
+        }
 
         const auto nbCams = R.size();
         if (t.size() != nbCams) return false;

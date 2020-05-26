@@ -153,13 +153,12 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
             problem.SetParameterBlockConstant(&data.t[c][0]);
     }
 
-    auto& X = *data.X;
-    const auto& matches = *data.matches;
-    for (auto p = 0; p < matches.size(); p++) {
-        if (X(3, p) != 1) continue;  // wasn't triangulated
-        double* ptrX = (double*)&X(0, p);
+    auto& landmarks = *data.landmarks;
+    for (auto& l : landmarks) {
+        if (!l.isTriangulated()) continue;
+        double* ptrX = (double*)&l.X;
 
-        for (const auto& [c, obs] : matches[p]) {
+        for (const auto& [c, obs] : l.obs) {
             if (!params.isCamUsed(c)) continue;
 
             ceres::AutoDiffCostFunction<BAFunctor_Affine, 2, 3, 3, 2, 3>* cost_function =
@@ -172,12 +171,7 @@ void BundleAdjustment::run(BundleData &data, BundleParams &params)
             problem.AddResidualBlock(cost_function, lossFunction, &data.cam[c][0],
                                      &data.R[c][0], &data.t[c][0], ptrX);
         }
-
-        if (p % 100000 == 0)
-            std::cout << "progress: " << p / float(matches.size()) << std::endl;
     }
-
-    std::cout << "progress: done " << std::endl;
 
     ceres::Solver::Options options;
     options.preconditioner_type = ceres::JACOBI;
@@ -215,8 +209,7 @@ void BundleAdjustment::runPtsOnly(BundleData& data)
     }
 
     const int nbCams = static_cast<int>(data.R.size());
-    auto& X = *data.X;
-    const std::vector<std::map<int, Observation>>& matches = *data.matches;
+    auto& landmarks = *data.landmarks;
 
     std::vector<std::vector<double>> P(nbCams, std::vector<double>(8, 0));
 
@@ -228,7 +221,7 @@ void BundleAdjustment::runPtsOnly(BundleData& data)
 
     int start = 0;
     int nbPtsSimultaneous = 50000;
-    int nbPtsTotal = matches.size();
+    int nbPtsTotal = landmarks.size();
 
     while (start < nbPtsTotal) {
         int end = std::min(nbPtsTotal, start + nbPtsSimultaneous);
@@ -237,10 +230,11 @@ void BundleAdjustment::runPtsOnly(BundleData& data)
         auto lossFunction = new ceres::HuberLoss(8);
 
         for (auto p = start; p < end; ++p) {
-            if (X(3, p) != 1) continue;  // wasn't triangulated
-            double* ptrX = (double*)&X(0, p);
+            auto& l = landmarks[p];
+            if (!l.isTriangulated()) continue;  // wasn't triangulated
+            double* ptrX = (double*)&l.X;
 
-            for (const auto& [c, obs] : matches[p]) {
+            for (const auto& [c, obs] : l.obs) {
                 ceres::AutoDiffCostFunction<BAFunctor_AffinePts, 2, 3>* cost_function =
                     new ceres::AutoDiffCostFunction<BAFunctor_AffinePts, 2, 3>(
                         new BAFunctor_AffinePts(obs.pt, P[c], obs.confidence));

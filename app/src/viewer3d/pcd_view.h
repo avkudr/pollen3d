@@ -35,7 +35,7 @@ public:
     virtual ~PCDView() {}
 
     virtual void init(const p3d::Mat3Xf& pcd,
-                      const p3d::Mat3Xf& colors = {}) = 0;
+                      const std::vector<p3d::Vec3uc>& colors = {}) = 0;
     virtual void draw(std::shared_ptr<ShaderOpenGL> shader = nullptr) = 0;
 
     bool visible() const { return m_visible; }
