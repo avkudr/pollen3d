@@ -179,3 +179,13 @@ TEST(MISC, test_pointCloudCtnrCmds)
         EXPECT_EQ(ctnr[label].getVertices(), verts2);
     }
 }
+
+TEST(MISC, test_colorPackUnpack)
+{
+    Vec4uc color(200, 125, 100, 24);
+
+    uint32_t cf = utils::colorPack(color);
+    Vec4uc cv = utils::colorUnpack(cf);
+
+    EXPECT_EQ(cv, color);
+}

@@ -83,6 +83,22 @@ static T max(T a, T b)
     return a > b ? a : b;
 }
 
+static uint32_t colorPack(const Vec4uc &in)
+{
+    uint32_t out;
+    out = uint32_t(in(0)) << 0;
+    out |= uint32_t(in(1)) << 8;
+    out |= uint32_t(in(2)) << 16;
+    out |= uint32_t(in(3)) << 24;
+    return out;
+}
+
+static Vec4uc colorUnpack(uint32_t in)
+{
+    return Vec4uc(((in >> 0) & 0xFF), ((in >> 8) & 0xFF), ((in >> 16) & 0xFF),
+                  ((in >> 24) & 0xFF));
+}
+
 void saveFileToMatlab(std::string fileName, cv::Mat a, std::string varName);
 
 Vec reprojectionError(const Mat &W, const Mat &P, const Mat4X &X,

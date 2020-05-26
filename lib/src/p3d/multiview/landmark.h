@@ -60,8 +60,8 @@ struct LandmarksUtil {
 
     // P - a vector of camera matrices, some of them might not be used
     // by the given landmark;
-    static double reprojError(const Landmark& l, const std::vector<Mat34>& P);
-    static Vec reprojErrors(const std::vector<Landmark>& l, const std::vector<Mat34>& P);
+    static float reprojError(const Landmark& l, const std::vector<Mat34>& P);
+    static Vecf reprojErrors(const std::vector<Landmark>& l, const std::vector<Mat34>& P);
     static bool equalsApprox(const std::vector<Landmark>& lhs,
                              const std::vector<Landmark>& rhs);
 };

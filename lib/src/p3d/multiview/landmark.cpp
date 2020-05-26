@@ -8,7 +8,7 @@ int p3d::Observation::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        LOG_DBG("Reflecting: %s", classNameStatic());
+        LOG_DBG("Reflecting: %s (%i bytes)", classNameStatic(), sizeof(p3d::Observation));
 
         SERIALIZED_ADD_READ_WRITE(Observation);
 
@@ -30,8 +30,7 @@ int p3d::Landmark::initMeta()
 {
     static bool firstCall = true;
     if (firstCall) {
-        LOG_DBG("Reflecting: %s", classNameStatic());
-
+        LOG_DBG("Reflecting: %s (%i bytes)", classNameStatic(), sizeof(p3d::Landmark));
         SERIALIZED_ADD_READ_WRITE(Landmark);
 
         entt::meta<Landmark>()
@@ -88,32 +87,32 @@ void LandmarksUtil::from3DPtsMeasMat(const Mat3X &inX, const Mat &inW,
     }
 }
 
-double LandmarksUtil::reprojError(const Landmark &l, const std::vector<Mat34> &P)
+float LandmarksUtil::reprojError(const Landmark &l, const std::vector<Mat34> &P)
 {
     const int nbCams = l.obs.size();
     if (nbCams == 0) return std::numeric_limits<float>::max();
 
-    double meanErr = 0;
+    float meanErr = 0;
     for (const auto &[c, obs] : l.obs) {
         p3d_DbgAssert(c < P.size());
 
         const auto &Pc = P.at(c);
-        const double qwinv = 1.0 / (Pc.block<1, 3>(2, 0) * l.X + P[c](2, 3));
+        const float qwinv = 1.0 / (Pc.block<1, 3>(2, 0) * l.X + P[c](2, 3));
 
-        double qx = qwinv * (Pc.block<1, 3>(0, 0) * l.X + Pc(0, 3));
-        double qy = qwinv * (Pc.block<1, 3>(1, 0) * l.X + Pc(1, 3));
+        float qx = qwinv * (Pc.block<1, 3>(0, 0) * l.X + Pc(0, 3));
+        float qy = qwinv * (Pc.block<1, 3>(1, 0) * l.X + Pc(1, 3));
 
         meanErr += Vec2(obs.pt(0) - qx, obs.pt(1) - qy).norm();
     }
 
-    meanErr /= double(nbCams);
+    meanErr /= float(nbCams);
     return meanErr;
 }
 
-Vec LandmarksUtil::reprojErrors(const std::vector<Landmark> &landmarks,
-                                const std::vector<Mat34> &P)
+Vecf LandmarksUtil::reprojErrors(const std::vector<Landmark> &landmarks,
+                                 const std::vector<Mat34> &P)
 {
-    Vec errs;
+    Vecf errs;
     errs.setOnes(landmarks.size(), 1);
 
     for (int i = 0; i < landmarks.size(); ++i) {

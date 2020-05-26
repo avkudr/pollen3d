@@ -45,6 +45,7 @@ int registerTypes()
     SERIALIZE_TYPE_EIGEN(double, 4, -1, "Eigen__double4X"_hs);
 
     SERIALIZE_TYPE_EIGEN(unsigned char, 3, 1, "Eigen__uchar31"_hs);
+    SERIALIZE_TYPE_EIGEN(unsigned char, 4, 1, "Eigen__uchar41"_hs);
 
     return 0;
 }
