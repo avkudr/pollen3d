@@ -26,6 +26,10 @@ conan_cmake_run(
     BUILD missing
     BASIC_SETUP)
 
+# ----- Add ceres --------------------------------------------
+
+find_package(Ceres REQUIRED QUIET)
+
 # ----- Sources ----------------------------------------------
 
 set(P3D_LIB_NAME p3d)
@@ -51,11 +55,18 @@ function(add_p3d_example arg1)
     target_include_directories(${arg1} SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/)
     target_compile_definitions(${arg1} PRIVATE P3D_IMAGES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../_datasets")
 
+    if (Ceres_FOUND)
+        message("ceres-solver: found")
+        target_include_directories(${arg1} PRIVATE ${CERES_INCLUDE_DIRS})       
+    else()
+        message(FATAL_ERROR "ceres-solver: not found")
+    endif()
+
     # ----- add library
 
     target_include_directories(${arg1} PRIVATE ${P3D_INCLUDE_DIR})
     target_link_directories(${arg1} PRIVATE ${P3D_LIB_DIR} )
-    target_link_libraries(${arg1} PRIVATE p3d )
+    target_link_libraries(${arg1} PRIVATE p3d ${CERES_LIBRARIES})
 
     add_custom_command(TARGET ${arg1} POST_BUILD        # Adds a post-build event to MyTest
         COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."

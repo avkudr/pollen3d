@@ -16,6 +16,7 @@ gtest:shared=True
 opencv:shared=True
 opencv:with_flann=False
 opencv:with_gtk=True
+opencv:with_ximgproc=True
 
 [generators]
 cmake_find_package
