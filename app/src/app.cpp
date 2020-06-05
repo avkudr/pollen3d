@@ -544,8 +544,11 @@ void Application::_drawTab_Image()
 
         // ***** Feature extraction (widget)
 
-        if (m_widgetFeat)
-            m_widgetFeat->draw(m_projectData);
+        if (m_widgetFeat) m_widgetFeat->draw(m_projectData);
+
+        // ***** Matching (widget)
+
+        if (m_widgetMatching) m_widgetMatching->draw(m_projectData);
 
         ImGui::EndTabItem();
 
@@ -568,11 +571,6 @@ void Application::_drawTab_Stereo()
             bool disabled = false;
             ImagePair *imPair = m_projectData.imagePair(m_state.itemIdx());
             if (!imPair) disabled = true;
-
-            // ***** Matching (widget)
-
-            if (m_widgetMatching)
-                m_widgetMatching->draw(m_projectData);
 
             // ***** Epipolar geometry
 

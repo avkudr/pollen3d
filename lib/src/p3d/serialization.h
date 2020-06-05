@@ -184,8 +184,6 @@ static void _readMapS(cv::FileNode& node, P3D_ID_TYPE& id, std::map<Index, Type>
     auto func = entt::resolve<Type>().func("_read"_hs);
     auto alias = entt::resolve<Type>().alias();
 
-    std::cout << "reading: " << alias << std::endl;
-
     std::string name = "p" + std::to_string(id);
     std::map<Index, Type> temp;
     cv::FileNode n = node[name];
