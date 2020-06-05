@@ -49,9 +49,20 @@ public:
         m_pairs = imPairs;
     }
 
+    bool hasPair(const int imL, const int imR)
+    {
+        if (m_pairs.count(imL) == 0) return false;
+        return m_pairs.at(imL).count(imR) > 0;
+    }
+
     void clear();
     size_t nbImages() const { return m_images.size(); }
-    size_t nbImagePairs() const { return m_imagesPairs.size(); }
+    size_t nbImagePairs() const
+    {
+        int n = 0;
+        for (const auto &kv : m_pairs) { n += kv.second.size(); }
+        return n;
+    }
     bool empty() const { return nbImages() == 0; }
 
     std::string getProjectPath() const { return m_projectPath; }
@@ -83,10 +94,12 @@ public:
     Image *imagePairL(const std::size_t idx);
     Image *imagePairR(const std::size_t idx);
 
-    void getPairwiseMatches(const std::size_t idx, std::vector<Vec2> &ptsL,
-                            std::vector<Vec2> &ptsR);
-    void getEpipolarErrorsResidual(const std::size_t idx, Vec &errorsSquared);
-    void getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances);
+    void getPairwiseMatches(const std::size_t imL, const std::size_t imR,
+                            std::vector<Vec2> &ptsL, std::vector<Vec2> &ptsR);
+    void getEpipolarErrorsResidual(const std::size_t imL, const std::size_t imR,
+                                   Vec &errorsSquared);
+    void getEpipolarErrorsDistance(const std::size_t imL, const std::size_t imR,
+                                   Mat2X &distances);
 
     // ***** measurement matrix
 

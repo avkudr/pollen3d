@@ -21,10 +21,11 @@ enum P3D_API p3dNeighbor_ {
     p3dNeighbor_rectifyingTransformRight,
     p3dNeighbor_rectifiedImageLeft,
     p3dNeighbor_rectifiedImageRight,
-    p3dNeighbor_Theta1,
-    p3dNeighbor_Theta2,
+    p3dNeighbor_theta1,
+    p3dNeighbor_theta2,
     p3dNeighbor_idImL,
     p3dNeighbor_idImR,
+    p3dNeighbor_fundMat
 };
 
 class P3D_API Neighbor : public Serializable<Neighbor>
@@ -47,9 +48,9 @@ public:
 
     // ***** Matches
 
-    bool hasMatches() { return getNbMatches() > 0; }
+    bool hasMatches() const { return getNbMatches() > 0; }
     int nbMatches() const { return int(m_matches.size()); }
-    int getNbMatches() { return nbMatches(); }  // refactor delete
+    int getNbMatches() const { return nbMatches(); }  // refactor delete
     const std::vector<Match> &getMatches() const { return m_matches; }
     void getMatchesAsMap(std::map<int, int> &map) const;
     void setMatches(const std::vector<Match> &matches) { m_matches = matches; }
@@ -63,6 +64,10 @@ public:
     void setLeftImage(int imL) { m_imL = imL; }
     void setRightImage(int imR) { m_imR = imR; }
     bool isValid() { return m_imL >= 0 && m_imR >= 0 && m_imL != m_imR; }
+
+    bool hasF() const { return !m_F.isApprox(Mat3::Zero()); }
+    const Mat3 &getFundMat() const { return m_F; }
+    void setFundMat(const Mat3 &f) { m_F = f; }
 
     double getTheta1() const { return m_theta1; }
     double getTheta2() const { return m_theta2; }

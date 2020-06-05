@@ -371,37 +371,37 @@ void Application::_drawMenuBar(int width)
 
     // ***** Views
 
-    ImGui::SameLine();
-    ImGui::Dummy(ImVec2(20, buttonH));
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_IMAGE "", buttonSquare)) {
-        if (m_state.isTab(Tab_Image)) _resetAppState();
-        m_currentTabForce = Tab_Image;
-    }
-    ImGuiC::HoveredTooltip("Set current view: image");
+    if constexpr (false) {
+        ImGui::SameLine();
+        ImGui::Dummy(ImVec2(20, buttonH));
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_IMAGE "", buttonSquare)) {
+            if (m_state.isTab(Tab_Image)) _resetAppState();
+            m_currentTabForce = Tab_Image;
+        }
+        ImGuiC::HoveredTooltip("Set current view: image");
 
-    ImGui::SameLine();
-    if (ImGui::Button(ICON_FA_IMAGES "", buttonSquare)) {
-        if (m_state.isTab(Tab_Stereo)) _resetAppState();
-        m_currentTabForce = Tab_Stereo;
-    }
-    ImGuiC::HoveredTooltip("Set current view: image pairs");
-    ImGui::SameLine();
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_IMAGES "", buttonSquare)) {
+            if (m_state.isTab(Tab_Stereo)) _resetAppState();
+            m_currentTabForce = Tab_Stereo;
+        }
+        ImGuiC::HoveredTooltip("Set current view: image pairs");
+        ImGui::SameLine();
 
-    if (ImGui::Button(ICON_FA_LAYER_GROUP "", buttonSquare)) {
-        if (!m_state.isTab({Tab_Multiview, Tab_PointCloud}))
-            _resetAppState();
-        m_currentTabForce = Tab_Multiview;
-    }
-    ImGuiC::HoveredTooltip("Set current view: multiview");
-    ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_LAYER_GROUP "", buttonSquare)) {
+            if (!m_state.isTab({Tab_Multiview, Tab_PointCloud})) _resetAppState();
+            m_currentTabForce = Tab_Multiview;
+        }
+        ImGuiC::HoveredTooltip("Set current view: multiview");
+        ImGui::SameLine();
 
-    if (ImGui::Button(ICON_FA_CLOUD "", buttonSquare)) {
-        if (!m_state.isTab({Tab_Multiview, Tab_PointCloud}))
-            _resetAppState();
-        m_currentTabForce = Tab_PointCloud;
+        if (ImGui::Button(ICON_FA_CLOUD "", buttonSquare)) {
+            if (!m_state.isTab({Tab_Multiview, Tab_PointCloud})) _resetAppState();
+            m_currentTabForce = Tab_PointCloud;
+        }
+        ImGuiC::HoveredTooltip("Set current view: point cloud");
     }
-    ImGuiC::HoveredTooltip("Set current view: point cloud");
 
 #ifdef POLLEN3D_DEBUG
     ImGui::SameLine();
@@ -506,7 +506,7 @@ void Application::_drawControls()
         return;
 
     _drawTab_Image();
-    _drawTab_Stereo();
+    //_drawTab_Stereo();
     _drawTab_Multiview();
     _drawTab_PointCloud();
 

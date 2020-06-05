@@ -68,24 +68,24 @@ Image *Project::imagePairL(const std::size_t idx) { return imagePairImage(idx, t
 
 Image *Project::imagePairR(const std::size_t idx) { return imagePairImage(idx, false); }
 
-void Project::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &ptsL,
-                                 std::vector<Vec2> &ptsR)
+void Project::getPairwiseMatches(const std::size_t imL, const std::size_t imR,
+                                 std::vector<Vec2> &ptsL, std::vector<Vec2> &ptsR)
 {
     ptsL.clear();
     ptsR.clear();
 
-    ImagePair *imPair = imagePair(i);
-    if (!imPair) return;
-    Image *iL = imagePairL(i);
-    Image * iR = imagePairR(i);
+    if (!hasPair(imL, imR)) return;
+    const Neighbor &n = imagePairs()[imL][imR];
+    Image *iL = image(imL);
+    Image *iR = image(imR);
     if (!iL || !iR) return;
 
     if (!iL->hasFeatures() || !iR->hasFeatures()) return;
-    if (!imPair->hasMatches()) return;
+    if (!n.hasMatches()) return;
 
     auto ptsLraw = iL->getKeyPoints();
     auto ptsRraw = iR->getKeyPoints();
-    auto matches = imPair->getMatches();
+    const auto &matches = n.getMatches();
     ptsL.reserve(matches.size());
     ptsR.reserve(matches.size());
     for (int i = 0; i < matches.size(); ++i) {
@@ -100,13 +100,14 @@ void Project::getPairwiseMatches(const std::size_t i, std::vector<Vec2> &ptsL,
     }
 }
 
-void Project::getEpipolarErrorsResidual(const std::size_t idx, Vec &errorsSquared)
+void Project::getEpipolarErrorsResidual(const std::size_t imL, const std::size_t imR,
+                                        Vec &errorsSquared)
 {
-    if (idx >= m_imagesPairs.size()) return;
+    if (!hasPair(imL, imR)) return;
     std::vector<Vec2> ptsL, ptsR;
-    getPairwiseMatches(idx, ptsL, ptsR);
+    getPairwiseMatches(imL, imR, ptsL, ptsR);
     if (ptsL.empty() || ptsR.empty()) return;
-    const auto & F = imagePair(idx)->getFundMat();
+    const auto &F = imagePairs()[imL][imR].getFundMat();
 
     errorsSquared.setZero(ptsL.size(),1);
     for (int i = 0; i < ptsL.size(); ++i) {
@@ -122,13 +123,14 @@ void Project::getEpipolarErrorsResidual(const std::size_t idx, Vec &errorsSquare
 /*
  * see Equation 2.33, p53
  */
-void Project::getEpipolarErrorsDistance(const std::size_t idx, Mat2X &distances)
+void Project::getEpipolarErrorsDistance(const std::size_t imL, const std::size_t imR,
+                                        Mat2X &distances)
 {
-    if (idx >= m_imagesPairs.size()) return;
+    if (!hasPair(imL, imR)) return;
     std::vector<Vec2> ptsL, ptsR;
-    getPairwiseMatches(idx, ptsL, ptsR);
+    getPairwiseMatches(imL, imR, ptsL, ptsR);
     if (ptsL.empty() || ptsR.empty()) return;
-    const auto & F = imagePair(idx)->getFundMat();
+    const auto &F = imagePairs()[imL][imR].getFundMat();
 
     distances.setZero(2,ptsL.size());
     for (int i = 0; i < ptsL.size(); ++i) {

@@ -13,6 +13,12 @@ int Neighbor::initMeta()
         SERIALIZED_ADD_READ_WRITE(Neighbor);
 
         entt::meta<Neighbor>()
+            .data<&Neighbor::setFundMat, &Neighbor::getFundMat>(
+                P3D_ID_TYPE(p3dNeighbor_fundMat))
+            .data<&Neighbor::setTheta1, &Neighbor::getTheta1>(
+                P3D_ID_TYPE(p3dNeighbor_theta1))
+            .data<&Neighbor::setTheta2, &Neighbor::getTheta2>(
+                P3D_ID_TYPE(p3dNeighbor_theta2))
             .data<&Neighbor::setMatches, &Neighbor::getMatches>(
                 P3D_ID_TYPE(p3dNeighbor_matches))
             .data<&Neighbor::dispRange>(P3D_ID_TYPE(p3dNeighbor_dispRange))

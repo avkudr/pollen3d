@@ -69,24 +69,34 @@ TEST(MISC, images_Matching)
 
     data.settings()->matchingFilterCoeff = 0.2f;
 
-    // --- extract features from all images. {} = all
-    p3d::extractFeatures(data, {});
+    p3d::extractFeatures(data);
 
-    ASSERT_EQ(data.nbImages(), 2);
-    ASSERT_NE(data.image(0), nullptr);
-    ASSERT_NE(data.image(1), nullptr);
+    EXPECT_EQ(data.nbImages(), 2);
+    EXPECT_NE(data.image(0), nullptr);
+    EXPECT_NE(data.image(1), nullptr);
     EXPECT_GE(data.image(0)->getNbFeatures(), 100);
     EXPECT_GE(data.image(1)->getNbFeatures(), 100);
 
-    // --- extract matches ({} = for all pairs)
     p3d::matchFeatures(data);
     EXPECT_GE(data.imagePairs()[0][1].nbMatches(), 100);
+}
 
-    // p3d::findFundamentalMatrix(data, {});
+TEST(MISC, images_FundMat)
+{
+    p3d::Project data;
+    p3d::loadImages(data, {std::string(P3D_IMAGES_DIR) + "/brassica/Brassica01.jpg",
+                           std::string(P3D_IMAGES_DIR) + "/brassica/Brassica02.jpg"});
 
-    //    Vec errors;
-    //    data.getEpipolarErrorsResidual(0, errors);
-    //    Mat2X distances;
-    //    data.getEpipolarErrorsDistance(0, distances);
-    //    EXPECT_GE(0.5f, errors.mean());
+    data.settings()->matchingFilterCoeff = 0.2f;
+
+    p3d::extractFeatures(data);
+    p3d::matchFeatures(data);
+
+    p3d::findFundamentalMatrix(data);
+
+    Vec errors;
+    data.getEpipolarErrorsResidual(0, 1, errors);
+    Mat2X distances;
+    data.getEpipolarErrorsDistance(0, 1, distances);
+    EXPECT_GE(0.5f, errors.mean());
 }

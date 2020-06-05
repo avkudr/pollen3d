@@ -71,7 +71,7 @@ protected:
     void _drawMenuBar(int width);
     void _drawControls();
     void _drawTab_Image();
-    void _drawTab_Stereo();
+    void _drawTab_Stereo();  // delete (05/06/2020) :(
     void _drawTab_Multiview();
     void _drawTab_PointCloud();
     void _drawData();

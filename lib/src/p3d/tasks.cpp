@@ -68,6 +68,10 @@ void p3d::autocalibrateBatch(Project &data)
 {
     // **** prerequisites
 
+    p3d::cmder::undoOff();
+    p3d::findFundamentalMatrix(data);
+    p3d::cmder::undoOn();
+
     LOG_OK("Autocalibration: started...");
     p3d::findMeasurementMatrix(data);
     const auto &W = data.getMeasurementMatrix();
@@ -503,53 +507,61 @@ bool p3d::matchFeatures(Project &data)
     return true;
 }
 
-bool p3d::findFundamentalMatrix(Project &data, std::vector<int> imPairsIds)
+bool p3d::findFundamentalMatrix(Project &data)
 {
-    if (data.nbImagePairs() == 0) return false;
-    if (imPairsIds.empty())
-        for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
+    const int nbPairs = data.nbImagePairs();
+    if (nbPairs == 0) return false;
 
     p3d::task::name_ = "Epipolar geometry";
-    p3d::task::total_ = imPairsIds.size();
+    p3d::task::total_ = nbPairs;
     p3d::task::progress_ = 0;
 
     CommandGroup *groupCmd = new CommandGroup();
 
+    auto &imagePairs = data.imagePairs();
+
 #ifdef WITH_OPENMP
-    omp_set_num_threads(std::min(int(imPairsIds.size()), utils::nbAvailableThreads()));
+    omp_set_num_threads(std::min(int(imagePairs.size()), utils::nbAvailableThreads()));
 #pragma omp parallel for
 #endif
-    for (int idx = 0; idx < imPairsIds.size(); idx++) {
-        auto i = imPairsIds[idx];
-        std::vector<Vec2> ptsL, ptsR;
-        data.getPairwiseMatches(i, ptsL, ptsR);
-        if (ptsL.empty() || ptsR.empty()) {
-            LOG_OK("Pair %i has no matches", i);
-            continue;
-        }
+    for (auto i = 0; i < static_cast<int>(imagePairs.size()); ++i) {
+        auto it = imagePairs.begin();
+        std::advance(it, i);
 
-        Mat3 F = FundMatUtil::findAffineCeres(ptsL, ptsR);
-        auto angles = FundMatUtil::slopAngles(F);
-        double theta1 = angles.first;
-        double theta2 = angles.second;
+        const auto imL = (*it).first;
+        auto &pairs = (*it).second;
+        for (auto &kvR : pairs) {
+            const auto imR = kvR.first;
+            auto &neighbor = kvR.second;
+            std::vector<Vec2> ptsL, ptsR;
+            data.getPairwiseMatches(imL, imR, ptsL, ptsR);
+            if (ptsL.empty() || ptsR.empty()) {
+                LOG_OK("Pair %i-%i has no matches", imL, imR);
+                continue;
+            }
 
-        auto cmd1 = new CommandSetProperty{data.imagePair(i), p3dImagePair_fundMat, F};
-        auto cmd2 =
-            new CommandSetProperty{data.imagePair(i), p3dImagePair_Theta1, theta1};
-        auto cmd3 =
-            new CommandSetProperty{data.imagePair(i), p3dImagePair_Theta2, theta2};
+            Mat3 F = FundMatUtil::findAffineCeres(ptsL, ptsR);
+            auto angles = FundMatUtil::slopAngles(F);
+            double theta1 = angles.first;
+            double theta2 = angles.second;
+
+            auto cmd1 = new CommandSetProperty{&neighbor, p3dNeighbor_fundMat, F};
+            auto cmd2 = new CommandSetProperty{&neighbor, p3dNeighbor_theta1, theta1};
+            auto cmd3 = new CommandSetProperty{&neighbor, p3dNeighbor_theta2, theta2};
+
 #pragma omp critical
-        {
-            p3d::task::progress_++;
+            {
+                p3d::task::progress_++;
 
-            groupCmd->add(cmd1);
-            groupCmd->add(cmd2);
-            groupCmd->add(cmd3);
+                groupCmd->add(cmd1);
+                groupCmd->add(cmd2);
+                groupCmd->add(cmd3);
 
-            if (cmd1->isValid())
-                LOG_OK("Pair %i, estimated F (ceres)", i);
-            else
-                LOG_WARN("Pair %i, F didn't change", imPairsIds[i]);
+                if (cmd1->isValid())
+                    LOG_OK("Pair %i-%i, estimated F (ceres)", imL, imR);
+                else
+                    LOG_WARN("Pair %i-%i, F didn't change", imL, imR);
+            }
         }
     }
 
@@ -604,7 +616,7 @@ bool p3d::rectifyImagePairs(Project &data, std::vector<int> imPairsIds)
         }
 
         std::vector<Vec2> ptsL, ptsR;
-        data.getPairwiseMatches(i, ptsL, ptsR);
+        data.getPairwiseMatches(idx, idx + 1, ptsL, ptsR);
 
         if (imL->cvMat().empty()) {
             LOG_ERR("Pair %i, no left image", i);
