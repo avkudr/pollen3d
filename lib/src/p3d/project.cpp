@@ -37,7 +37,9 @@ int Project::initMeta()
             .data<&Project::setProjectPath, &Project::getProjectPath>(
                 P3D_ID_TYPE(p3dProject_projectPath))
             .data<&Project::setSettings, &Project::getSettings>(
-                P3D_ID_TYPE(p3dProject_projectSettings));
+                P3D_ID_TYPE(p3dProject_projectSettings))
+            .data<&Project::m_pairs>(P3D_ID_TYPE(68468468));
+
         firstCall = false;
     }
     return 0;
@@ -54,17 +56,6 @@ void Project::setImageList(const std::vector<Image> &imList)
     for (auto i = 0; i < m_images.size()-1; ++i) {
         m_imagesPairs.emplace_back(ImagePair(i,i+1));
     }
-}
-
-void Project::setImagePairs(const std::vector<ImagePair> &imPairs)
-{
-    if (m_images.size() - 1 != imPairs.size()) {
-        LOG_ERR("Can't load imagePairs: %i != %i", m_images.size() - 1,
-                imPairs.size());
-        return;
-    }
-    m_imagesPairs.clear();
-    m_imagesPairs = imPairs;
 }
 
 void Project::clear()

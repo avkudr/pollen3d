@@ -68,6 +68,8 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/bundle_params.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/landmark.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/multiview/landmark.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/neighbor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/neighbor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/dense_matching.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/dense_matching.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/stereo/fundmat.cpp

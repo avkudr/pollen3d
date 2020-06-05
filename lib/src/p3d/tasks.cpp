@@ -423,65 +423,76 @@ bool p3d::extractFeatures(Project &data, std::vector<int> imIds)
     return true;
 }
 
-bool p3d::matchFeatures(Project &data, std::vector<int> imPairsIds)
+bool p3d::matchFeatures(Project &data)
 {
-    if (data.nbImagePairs() == 0) return false;
-    if (imPairsIds.empty())
-        for (int i = 0; i < data.nbImagePairs(); ++i) imPairsIds.push_back(i);
+    if (data.nbImages() == 0) return false;
 
-    int nbPairs = imPairsIds.size();
+    const auto nbImgs = data.nbImages();
 
     p3d::task::name_ = "Matching";
-    p3d::task::total_ = nbPairs;
+    p3d::task::total_ = nbImgs;
     p3d::task::progress_ = 0;
 
     CommandGroup *groupCmd = new CommandGroup();
 
+    for (int imIdxL = 0; imIdxL < nbImgs - 1; ++imIdxL) {
 #ifdef WITH_OPENMP
-    omp_set_num_threads(
-        std::min(int(data.nbImagePairs()), utils::nbAvailableThreads()));
 #pragma omp parallel for
 #endif
-    for (int i = 0; i < nbPairs; i++) {
-        auto imPair = data.imagePair(imPairsIds[i]);
-        if (!imPair || !imPair->isValid()) continue;
+        for (int imIdxR = imIdxL + 1; imIdxR < nbImgs; ++imIdxR) {
+            auto imL = data.image(imIdxL);
+            auto imR = data.image(imIdxR);
+            if (imL == nullptr || imR == nullptr) continue;
+            if (!imL->hasFeatures() || !imR->hasFeatures()) {
+                LOG_ERR("Features must be extracted before matching");
+                continue;
+            }
 
-        auto imIdxL = imPair->imL();
-        auto imIdxR = imPair->imR();
-        auto imL = data.image(imIdxL);
-        auto imR = data.image(imIdxR);
+            MatchingPars pars;
+            pars.method = data.settings()->matchingMethod;
+            pars.filterCoeff = data.settings()->matchingFilterCoeff;
 
-        if (imR == nullptr || imR == nullptr) continue;
-        if (!imL->hasFeatures() || !imR->hasFeatures()) {
-            LOG_ERR("Features must be extracted before matching");
-            continue;
-        }
+            const auto &_descriptorsLeftImage = imL->getDescriptors();
+            const auto &_descriptorsRightImage = imR->getDescriptors();
 
-        MatchingPars pars = imPair->getMatchingPars();
+            std::vector<Match> matchesPair;
+            MatchingUtil::match(_descriptorsLeftImage, _descriptorsRightImage, pars,
+                                matchesPair);
 
-        const auto &_descriptorsLeftImage = imL->getDescriptors();
-        const auto &_descriptorsRightImage = imR->getDescriptors();
-        std::vector<Match> matchesPair;
-        MatchingUtil::match(_descriptorsLeftImage, _descriptorsRightImage, pars,
-                            matchesPair);
-
-        if (matchesPair.empty()) {
-            LOG_ERR("Pair %i, matching failed", imPairsIds[i]);
-            continue;
-        }
-
-        auto cmd = new CommandSetProperty{imPair, p3dImagePair_matches, matchesPair};
+            if (matchesPair.empty()) {
+                LOG_WARN("Pair %i-%i has no matches", imIdxL, imIdxR);
+                continue;
+            }
 
 #pragma omp critical
-        {
-            p3d::task::progress_++;
-            groupCmd->add(cmd);
-            LOG_OK("Pair %i, matched %i features", imPairsIds[i], matchesPair.size());
-            if (!cmd->isValid())
-                LOG_WARN("Pair %i, matches didn't change", imPairsIds[i]);
+            {
+                //                Neighbor *n = imL->neighbor(imIdxR);
+                //                if (n == nullptr) n = imL->createNeighbor(imIdxL,
+                //                imIdxR);
+
+                Neighbor n(imIdxL, imIdxR);
+                n.setMatches(matchesPair);
+                data.imagePairs()[imIdxL][imIdxR] = n;
+
+                LOG_INFO("Pair %i-%i: %i matches", imIdxL, imIdxR, matchesPair.size());
+            }
         }
+
+        p3d::task::progress_ = imIdxL;
     }
 
+    //    auto cmd = new CommandSetProperty{imPair, p3dImagePair_matches, matchesPair};
+
+    //    //#pragma omp critical
+    //    {
+    //        p3d::task::progress_++;
+    //        groupCmd->add(cmd);
+    //        LOG_OK("Pair %i, matched %i features", imPairsIds[i], matchesPair.size());
+    //        if (!cmd->isValid())
+    //            LOG_WARN("Pair %i, matches didn't change", imPairsIds[i]);
+    //    }
+
+    LOG_DBG_WARN("matching: no undo!");
     if (groupCmd->empty()) {
         delete groupCmd;
         return false;

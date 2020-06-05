@@ -23,7 +23,7 @@ enum P3D_API p3dProject_ {
     p3dProject_imagePairs,
     p3dProject_measMat,
     p3dProject_pointCloudCtnr,
-    p3dProject_autocalibPars,
+    p3dProject_autocalibPars
 };
 
 class P3D_API Project : public Serializable<Project>
@@ -38,8 +38,16 @@ public:
 
     const std::vector<Image> &getImageList() const { return m_images; }
     void setImageList(const std::vector<Image> &imList);
-    const std::vector<ImagePair> &getImagePairs() const { return m_imagesPairs; }
-    void setImagePairs(const std::vector<ImagePair> &imPairs);
+
+    std::map<int, std::map<int, Neighbor>> &imagePairs() { return m_pairs; }
+    const std::map<int, std::map<int, Neighbor>> &getImagePairs() const
+    {
+        return m_pairs;
+    }
+    void setImagePairs(const std::map<int, std::map<int, Neighbor>> &imPairs)
+    {
+        m_pairs = imPairs;
+    }
 
     void clear();
     size_t nbImages() const { return m_images.size(); }
@@ -144,5 +152,7 @@ private:
     AutocalibPars m_autocalibPars{};
     PointCloudContainer m_pointCloudCtnr{};
     ProjectSettings m_settings;
+
+    std::map<int, std::map<int, Neighbor>> m_pairs;
 };
 }  // namespace p3d

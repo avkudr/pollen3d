@@ -81,6 +81,10 @@ void P3D_API off();
 
 #ifdef POLLEN3D_DEBUG
 #define LOG_DBG(...) LOG_IMPL("* ", COLOR_DBG, __VA_ARGS__)
+#define LOG_DBG_WARN(...) LOG_IMPL("* ", COLOR_WARN, __VA_ARGS__)
 #else
 #define LOG_DBG(...) do {} while (0)
+#define LOG_DBG_WARN(...) \
+    do {                  \
+    } while (0)
 #endif

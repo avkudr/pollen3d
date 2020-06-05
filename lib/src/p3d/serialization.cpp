@@ -23,6 +23,7 @@ int registerTypes()
     SERIALIZE_TYPE_VEC(int,"vector_int"_hs);
     SERIALIZE_TYPE_VEC(std::string,"vector_std::string"_hs);
 
+    SERIALIZE_TYPE_EIGEN(float, 2, 1, "Eigen__float21"_hs);
     SERIALIZE_TYPE_EIGEN(float, 3, 3, "Eigen__float33"_hs);
     SERIALIZE_TYPE_EIGEN(float, 3, 4, "Eigen__float34"_hs);
     SERIALIZE_TYPE_EIGEN(float, 4, 1, "Eigen__float41"_hs);

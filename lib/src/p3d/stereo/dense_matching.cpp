@@ -301,14 +301,14 @@ void findMatchDFS(const std::map<int, std::map<int, Neighbor>> &neighbors, int c
         if (!n.isValid()) continue;
         if (visited.count(cam2) > 0) continue;
 
-        Vec3f q = n.Tl * Vec3f(x, y, 1);
+        Vec3f q = n.Tl() * Vec3f(x, y, 1);
 
         if (q(0) < 0) continue;
         if (q(1) < 0) continue;
-        if (q(0) >= n.disp.cols) continue;
-        if (q(1) >= n.disp.rows) continue;
+        if (q(0) >= n.disparity.cols) continue;
+        if (q(1) >= n.disparity.rows) continue;
 
-        const float &disp = n.disp.at<float>(q(1), q(0));
+        const float &disp = n.disparity.at<float>(q(1), q(0));
         if (disp == DenseMatchingUtil::NO_DISPARITY) continue;
         const float &newConfidence =
             (n.confidence.empty()) ? 1.0f : n.confidence.at<float>(q(1), q(0));
@@ -316,7 +316,7 @@ void findMatchDFS(const std::map<int, std::map<int, Neighbor>> &neighbors, int c
         if (newConfidence == 0.0f) continue;
 
         q(0) -= disp / 16.0;
-        q = n.Trinv * q;
+        q = n.Trinv() * q;
 
         if (q(0) < 0) continue;
         if (q(1) < 0) continue;
@@ -354,20 +354,20 @@ void findMatchBFS(const std::map<int, std::map<int, Neighbor>> &neighbors, int c
             if (!n.isValid()) continue;
             if (landmark.count(cam2) > 0) continue;
 
-            Vec3f q = n.Tl * Vec3f(x, y, 1);
+            Vec3f q = n.Tl() * Vec3f(x, y, 1);
 
             if (q(0) < 0) continue;
             if (q(1) < 0) continue;
-            if (q(0) >= n.disp.cols) continue;
-            if (q(1) >= n.disp.rows) continue;
+            if (q(0) >= n.disparity.cols) continue;
+            if (q(1) >= n.disparity.rows) continue;
 
-            const float &disp = n.disp.at<float>(q(1), q(0));
+            const float &disp = n.disparity.at<float>(q(1), q(0));
             if (disp == DenseMatchingUtil::NO_DISPARITY) continue;
             const float &newConfidence =
                 (n.confidence.empty()) ? 1.0f : n.confidence.at<float>(q(1), q(0));
 
             q(0) -= disp / 16.0;
-            q = n.Trinv * q;
+            q = n.Trinv() * q;
 
             if (q(0) < 0) continue;
             if (q(1) < 0) continue;

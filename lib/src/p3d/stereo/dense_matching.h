@@ -6,6 +6,7 @@
 #include "p3d/core.h"
 #include "p3d/multiview/landmark.h"
 #include "p3d/serialization.h"
+#include "p3d/stereo/neighbor.h"
 #include "p3d/utils.h"
 
 #include <map>
@@ -77,48 +78,6 @@ public:
     int bilateralD{9};
     int bilateralSigmaColor{180};
     int bilateralSigmaSpace{180};
-};
-
-class Neighbor
-{
-public:
-    cv::Size imLsize;
-    cv::Mat imLrect;
-    cv::Mat imRrect;
-    cv::Size imRsize{0, 0};
-    Mat3f Tl{Mat3f::Identity()};
-    Mat3f Tr{Mat3f::Identity()};
-    Mat3f Trinv{Mat3f::Identity()};
-    Mat3f R{Mat3f::Identity()};
-    Vec2f dispRange{0, 0};
-    cv::Mat disp;
-    cv::Mat confidence;
-
-    inline bool isValid() const { return !disp.empty(); }
-    inline bool isInversed() const { return m_isInversed; }
-
-    Neighbor inverse()
-    {
-        Neighbor ninv;
-        ninv.imLsize = imRsize;
-        ninv.imRsize = imLsize;
-        ninv.imLrect = imRrect.clone();
-        ninv.imRrect = imLrect.clone();
-        ninv.Tr = Tl;
-        ninv.Tl = Tr;
-        ninv.Trinv = utils::inverseTransform(ninv.Tr);
-        ninv.R = R.transpose();
-        ninv.disp = -1.0f * disp;
-        ninv.confidence = confidence.clone();
-        ninv.valid = valid;
-        ninv.m_isInversed = true;
-        ninv.dispRange = Vec2f{0, 0};
-        return ninv;
-    }
-
-private:
-    bool m_isInversed{false};
-    bool valid{true};
 };
 
 struct DenseMatchingUtil {

@@ -11,10 +11,10 @@ using namespace p3d;
 
 TEST(DENSE, test_neighborInverse)
 {
-    Neighbor n;
+    Neighbor n(0, 1);
     n.imLsize = cv::Size(15, 15);
     n.imRsize = cv::Size(16, 16);
-    n.disp = cv::Mat::ones(3, 3, CV_32FC1);
+    n.disparity = cv::Mat::ones(3, 3, CV_32FC1);
 
     // qn = Trinv * (Tl * q - (disp / 16, 0, 0))
     // q  = Tlinv * (Tr * qn + disp )
@@ -23,9 +23,9 @@ TEST(DENSE, test_neighborInverse)
 
     EXPECT_EQ(ninv.imLsize, n.imRsize);
     EXPECT_EQ(ninv.imRsize, n.imLsize);
-    EXPECT_TRUE(ninv.Trinv.isApprox(utils::inverseTransform(n.Tl)));
-    EXPECT_TRUE(ninv.Tl.isApprox(utils::inverseTransform(n.Tr)));
-    EXPECT_TRUE(utils::equalsCvMat(n.disp, -ninv.disp));
+    EXPECT_TRUE(ninv.Trinv().isApprox(utils::inverseTransform(n.Tl())));
+    EXPECT_TRUE(ninv.Tl().isApprox(utils::inverseTransform(n.Tr())));
+    EXPECT_TRUE(utils::equalsCvMat(n.disparity, -ninv.disparity));
 }
 
 TEST(DENSE, test_mergeDenseMaps)
@@ -48,11 +48,11 @@ TEST(DENSE, test_mergeDenseMaps)
     neighbors[1][3].imRsize = cv::Size(size, size);
     neighbors[2][3].imRsize = cv::Size(size, size);
 
-    neighbors[0][1].disp = cv::Mat::zeros(size, size, CV_32FC1);
-    neighbors[0][2].disp = cv::Mat::zeros(size, size, CV_32FC1);
-    neighbors[1][2].disp = cv::Mat::zeros(size, size, CV_32FC1);
-    neighbors[1][3].disp = cv::Mat::zeros(size, size, CV_32FC1);
-    neighbors[2][3].disp = cv::Mat::zeros(size, size, CV_32FC1);
+    neighbors[0][1].disparity = cv::Mat::zeros(size, size, CV_32FC1);
+    neighbors[0][2].disparity = cv::Mat::zeros(size, size, CV_32FC1);
+    neighbors[1][2].disparity = cv::Mat::zeros(size, size, CV_32FC1);
+    neighbors[1][3].disparity = cv::Mat::zeros(size, size, CV_32FC1);
+    neighbors[2][3].disparity = cv::Mat::zeros(size, size, CV_32FC1);
 
     neighbors[0][1].confidence = cv::Mat::ones(size, size, CV_32FC1);
     neighbors[0][2].confidence = cv::Mat::ones(size, size, CV_32FC1);
@@ -79,7 +79,7 @@ TEST(DENSE, test_mergeDenseMaps)
 
     // no disparity 0-1
     // but there is still another way => 0-2-1-3
-    neighbors[0][1].disp.at<float>(0, 0) = DenseMatchingUtil::NO_DISPARITY;
+    neighbors[0][1].disparity.at<float>(0, 0) = DenseMatchingUtil::NO_DISPARITY;
     neighbors[1][0] = neighbors[0][1].inverse();
 
     landmark = DenseMatchingUtil::findMatch(neighbors, 0, Vec2f(0.0, 0.0));
@@ -110,8 +110,8 @@ TEST(DENSE, test_mergeDenseMaps)
     EXPECT_FLOAT_EQ(landmark.at(3).confidence, 1.0f);
 
     // delete the 3rd disparity
-    neighbors[1][3].disp.at<float>(0, 0) = DenseMatchingUtil::NO_DISPARITY;
-    neighbors[2][3].disp.at<float>(0, 0) = DenseMatchingUtil::NO_DISPARITY;
+    neighbors[1][3].disparity.at<float>(0, 0) = DenseMatchingUtil::NO_DISPARITY;
+    neighbors[2][3].disparity.at<float>(0, 0) = DenseMatchingUtil::NO_DISPARITY;
     neighbors[3][1] = neighbors[1][3].inverse();
     neighbors[3][2] = neighbors[2][3].inverse();
     landmark = DenseMatchingUtil::findMatch(neighbors, 0, Vec2f(0.0, 0.0));

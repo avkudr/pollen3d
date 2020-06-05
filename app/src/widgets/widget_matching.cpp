@@ -102,8 +102,8 @@ void WidgetMatching::drawImpl(Project& data)
 
     if (disabled) ImGuiC::PopDisabled();
 
-    auto f = [&](const std::vector<int> & imgs = {}) {
-        bool success = p3d::matchFeatures(data, imgs);
+    auto f = [&](const std::vector<int>& imgs = {}) {
+        bool success = p3d::matchFeatures(data);
         if (success && m_appState) {
             m_appState->setSection(Section_Matches);
             m_appState->setTextureNeedsUpdate(true);

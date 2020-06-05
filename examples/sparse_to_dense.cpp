@@ -170,7 +170,7 @@ int main()
                       << std::endl;
 
             neighbor.dispRange = range1;
-            neighbor.disp = disp1;
+            neighbor.disparity = disp1;
             neighbor.confidence = confidence;
 
 #pragma omp critical

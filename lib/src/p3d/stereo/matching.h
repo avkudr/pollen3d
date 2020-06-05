@@ -37,11 +37,6 @@ public:
     }
 };
 
-enum P3D_API p3dMatching_ {
-    p3dMatching_method = 0,
-    p3dMatching_filterCoeff = 1
-};
-
 enum P3D_API MatchingMethod_ {
     MatchingMethod_FLANNBASED = 0,
     MatchingMethod_BRUTEFORCE = 1,
@@ -51,6 +46,12 @@ enum P3D_API MatchingMethod_ {
     MatchingMethod_BRUTEFORCE_SL2 = 5
 };
 
+enum P3D_API p3dMatching_ {
+    p3dMatching_method = 0,
+    p3dMatching_filterCoeff = 1
+};
+
+// TO DELETE
 class P3D_API MatchingPars : public Serializable<MatchingPars>
 {
 public:

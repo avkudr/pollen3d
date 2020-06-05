@@ -13,17 +13,18 @@
 #include "p3d/image/feature_extraction.h"
 #include "p3d/logger.h"
 #include "p3d/serialization.h"
+#include "p3d/stereo/neighbor.h"
 #include "p3d/utils.h"
 
 namespace p3d
 {
 enum P3D_API p3dImage_ {
-    p3dImage_path        = 0,
+    p3dImage_path = 0,
     p3dImage_descriptors = 1,
-    p3dImage_keypoints   = 2,
-    p3dImage_camera      = 3,
+    p3dImage_keypoints = 2,
+    p3dImage_camera = 3,
     p3dImage_translation = 4,
-    p3dImage_featExtractionPars
+    p3dImage_featExtractionPars,
 };
 
 class P3D_API Image : public Serializable<Image>
@@ -78,7 +79,7 @@ public:
 
     FeatExtractionPars *      featExtractionPars();
     const FeatExtractionPars &getFeatExtractionPars() const;
-    void                      setFeatExtractionPars(const FeatExtractionPars &featExtractionPars);
+    void setFeatExtractionPars(const FeatExtractionPars &featExtractionPars);
 
 private:
     std::string  EMPTY_PATH{"<not found>"};

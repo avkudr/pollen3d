@@ -13,6 +13,7 @@ namespace impl
 std::string mapName(const char* className);
 std::string vecName(const char* className);
 
+// .data<&ClassA::float2>(P3D_ID_TYPE(2)).prop(P3D_NOT_STORED)
 #define P3D_NOT_STORED std::make_pair("stored"_hs, false)
 
 #define SERIALIZE_TYPE(x, name)                 \
@@ -39,11 +40,16 @@ std::string vecName(const char* className);
         .func<&p3d::impl::_readVecS<x>>("_read"_hs)                  \
         .func<&p3d::impl::_writeVecS<x>>("_write"_hs)
 
-#define SERIALIZE_TYPE_MAPS(x)                                       \
-    entt::meta<std::map<int, x>>()                                   \
-        .alias(p3d::alias(p3d::impl::mapName(x::classNameStatic()))) \
-        .func<&p3d::impl::_readMapS<int, x>>("_read"_hs)             \
-        .func<&p3d::impl::_writeMapS<int, x>>("_write"_hs)
+#define SERIALIZE_TYPE_MAPS(x)                                                     \
+    entt::meta<std::map<int, x>>()                                                 \
+        .alias(p3d::alias(p3d::impl::mapName(x::classNameStatic())))               \
+        .func<&p3d::impl::_readMapS<int, x>>("_read"_hs)                           \
+        .func<&p3d::impl::_writeMapS<int, x>>("_write"_hs);                        \
+    entt::meta<std::map<int, std::map<int, x>>>()                                  \
+        .alias(p3d::alias(                                                         \
+            p3d::impl::mapName(p3d::impl::mapName(x::classNameStatic()).c_str()))) \
+        .func<&p3d::impl::_readMapS<int, std::map<int, x>>>("_read"_hs)            \
+        .func<&p3d::impl::_writeMapS<int, std::map<int, x>>>("_write"_hs)
 
 #define SERIALIZE_TYPE_EIGEN(Scalar, x, y, name)                   \
     entt::meta<Eigen::Matrix<Scalar, x, y>>()                      \
@@ -157,11 +163,16 @@ static void _readVecS(cv::FileNode& node, P3D_ID_TYPE& id, std::vector<Type>& ou
 template <typename Index, typename Type>
 static void _writeMapS(cv::FileStorage& fs, P3D_ID_TYPE& id, std::map<Index, Type>& f)
 {
+    auto func = entt::resolve<Type>().func("_write"_hs);
+    auto alias = entt::resolve<Type>().alias();
+
+    p3d_Assert(func);
+
     fs << "p" + std::to_string(id) << "[";
     for (auto& kv : f) {
         fs << "{";
         fs << "id" << kv.first;
-        kv.second.write(fs);
+        func.invoke(kv.second, std::ref(fs), alias, kv.second);
         fs << "}";
     }
     fs << "]";
@@ -170,6 +181,11 @@ static void _writeMapS(cv::FileStorage& fs, P3D_ID_TYPE& id, std::map<Index, Typ
 template <typename Index, typename Type>
 static void _readMapS(cv::FileNode& node, P3D_ID_TYPE& id, std::map<Index, Type>& out)
 {
+    auto func = entt::resolve<Type>().func("_read"_hs);
+    auto alias = entt::resolve<Type>().alias();
+
+    std::cout << "reading: " << alias << std::endl;
+
     std::string name = "p" + std::to_string(id);
     std::map<Index, Type> temp;
     cv::FileNode n = node[name];
@@ -183,7 +199,12 @@ static void _readMapS(cv::FileNode& node, P3D_ID_TYPE& id, std::map<Index, Type>
         Index i;
         Type t;
         i = (Index)(*it)["id"];
-        t.read(*it);
+
+        entt::meta_any old(t);
+        entt::meta_any any(old);
+        func.invoke(old, *it, alias, *any);
+        t = any.cast<Type>();
+
         temp.insert({i, t});
     }
     out = temp;

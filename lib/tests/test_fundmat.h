@@ -61,32 +61,32 @@ TEST(FUNDMAT, fundmat_testData)
     EXPECT_GE(2.0, distances.mean());
 }
 
-// TEST(FUNDMAT, fundmat_testImages)
-//{
-//    Project data;
-//    p3d::loadImages(
-//        &data, {"../../_datasets/brassica/Brassica01.jpg",
-//                "../../_datasets/brassica/Brassica02.jpg"});
+TEST(MISC, images_Matching)
+{
+    p3d::Project data;
+    p3d::loadImages(data, {std::string(P3D_IMAGES_DIR) + "/brassica/Brassica01.jpg",
+                           std::string(P3D_IMAGES_DIR) + "/brassica/Brassica02.jpg"});
 
-//    data.imagePair(0)->matchingPars()->filterCoeff = 0.2f;
+    data.settings()->matchingFilterCoeff = 0.2f;
 
-//    // --- extract features from all images. {} = all
-//    p3d::extractFeatures(data, {});
+    // --- extract features from all images. {} = all
+    p3d::extractFeatures(data, {});
 
-//    ASSERT_EQ(data.nbImages(), 2);
-//    ASSERT_NE(data.image(0), nullptr);
-//    ASSERT_NE(data.image(1), nullptr);
-//    EXPECT_GE(data.image(0)->getNbFeatures(), 100);
-//    EXPECT_GE(data.image(1)->getNbFeatures(), 100);
+    ASSERT_EQ(data.nbImages(), 2);
+    ASSERT_NE(data.image(0), nullptr);
+    ASSERT_NE(data.image(1), nullptr);
+    EXPECT_GE(data.image(0)->getNbFeatures(), 100);
+    EXPECT_GE(data.image(1)->getNbFeatures(), 100);
 
-//    // --- extract matches ({} = for all pairs)
-//    p3d::matchFeatures(data, {});
+    // --- extract matches ({} = for all pairs)
+    p3d::matchFeatures(data);
+    EXPECT_GE(data.imagePairs()[0][1].nbMatches(), 100);
 
-//    p3d::findFundamentalMatrix(data, {});
+    // p3d::findFundamentalMatrix(data, {});
 
-//    Vec errors;
-//    data.getEpipolarErrorsResidual(0, errors);
-//    Mat2X distances;
-//    data.getEpipolarErrorsDistance(0, distances);
-//    EXPECT_GE(0.5f, errors.mean());
-//}
+    //    Vec errors;
+    //    data.getEpipolarErrorsResidual(0, errors);
+    //    Mat2X distances;
+    //    data.getEpipolarErrorsDistance(0, distances);
+    //    EXPECT_GE(0.5f, errors.mean());
+}

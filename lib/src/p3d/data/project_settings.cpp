@@ -14,7 +14,11 @@ int ProjectSettings::initMeta()
             .data<&ProjectSettings::sharedFeatExtractionPars>(
                 P3D_ID_TYPE(p3dSetting_sharedFeatExtractionPars))
             .data<&ProjectSettings::sharedMatchingPars>(
-                P3D_ID_TYPE(p3dSetting_sharedMatchingPars));
+                P3D_ID_TYPE(p3dSetting_sharedMatchingPars))
+            .data<&ProjectSettings::matchingMethod>(
+                P3D_ID_TYPE(p3dSetting_matchingMethod))
+            .data<&ProjectSettings::matchingFilterCoeff>(
+                P3D_ID_TYPE(p3dSetting_matchingFilterCoeff));
     }
     return firstCall;
 }

@@ -41,7 +41,7 @@ bool P3D_API extractFeatures(Project &data, std::vector<int> imIds = {});
 
 // ***** Pairs
 
-bool P3D_API matchFeatures(Project &data, std::vector<int> imPairsIds = {});
+bool P3D_API matchFeatures(Project &data);
 bool P3D_API findFundamentalMatrix(Project &data, std::vector<int> imPairsIds = {});
 bool P3D_API rectifyImagePairs(Project &data, std::vector<int> imPairsIds = {});
 bool P3D_API findDisparityMap(Project &data, std::vector<int> imPairsIds = {});

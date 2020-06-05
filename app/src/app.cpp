@@ -1095,6 +1095,28 @@ void Application::_drawProperties()
             drawProperty_matrix(im->getTranslation(), "t",
                                 "Camera translation (extrinsic parameters)");
         }
+
+        ImGui::Columns(1);
+
+        auto &pairs = m_projectData.imagePairs();
+        if (ImGui::TreeNode("Pairs")) {
+            if (pairs.count(m_state.itemIdx()) > 0) {
+                for (const auto &[cam, pair] : pairs[m_state.itemIdx()]) {
+                    auto im = m_projectData.image(cam);
+                    if (!im) continue;
+
+                    std::string entry =
+                        im->name() + " (" + std::to_string(pair.nbMatches()) + ")";
+                    if (ImGui::TreeNode(entry.c_str())) {
+                        ImGui::Text("some useful info");
+                        ImGui::TreePop();
+                    }
+                }
+            }
+
+            ImGui::TreePop();
+        }
+
         return;
     }
 
