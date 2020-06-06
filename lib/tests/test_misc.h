@@ -31,7 +31,7 @@ TEST(MISC, test_matchesToTable)
                  1,  2, -1, -1,  4,  8;
 
     Mati table;
-    utils::matchesMapsToTable(matchesMaps, table);
+    // utils::matchesMapsToTable(matchesMaps, table);
 
     EXPECT_EQ(table.rows(),4);
     EXPECT_EQ(table.cols(),6);

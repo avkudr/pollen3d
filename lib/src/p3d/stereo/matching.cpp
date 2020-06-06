@@ -1,7 +1,11 @@
 #include "matching.h"
 
+#include <stack>
+
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
+
+#include <openMVG/tracks/tracks.hpp>
 
 using namespace p3d;
 
@@ -94,5 +98,44 @@ void MatchingUtil::match(const cv::Mat &descL, const cv::Mat &descR,
         }
     } catch (...) {
         matches.clear();
+    }
+}
+
+void MatchingUtil::matchesMapsToTable(PairWiseMatchesMap &&matchesMaps, Tracks &tracks)
+{
+    // Create some tracks for image (A,B,C)
+    // {A,B,C} imageId will be {0,1,2}
+    // For those image link some features id depicted below
+    // A    B    C
+    // 0 -> 0 -> 0
+    // 1 -> 1 -> 6
+    // 2 -> 3
+
+    // Result:
+    // 0, {(0,0) (1,0) (2,0)}
+    // 1, {(0,1) (1,1) (2,6)}
+    // 2, {(0,2) (1,3)}
+
+    openMVG::tracks::TracksBuilder trackBuilder;
+    trackBuilder.Build(matchesMaps);
+
+    // map < TrackId, vector <Image,PointId> >
+    using STLMAPTracks = std::map<uint32_t, std::map<uint32_t, uint32_t>>;
+
+    trackBuilder.ExportToSTL(tracks);
+
+    LOG_INFO("Nb tracks: %i", tracks.size());
+
+    {  // stats
+        std::map<int, int> stats;
+        for (const auto &track : tracks) {
+            const auto nb = track.second.size();
+            if (stats.count(nb) == 0)
+                stats[nb] = 1;
+            else
+                stats[nb]++;
+        }
+        LOG_INFO("Stats. Total of %i matches", tracks.size());
+        for (const auto &kv : stats) LOG_INFO(" - in %i imgs: %i", kv.first, kv.second);
     }
 }

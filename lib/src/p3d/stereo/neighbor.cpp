@@ -35,6 +35,15 @@ int Neighbor::initMeta()
     return 0;
 }
 
+std::vector<std::pair<uint32_t, uint32_t> > Neighbor::getMatchesAsVecOfPairs() const
+{
+    std::vector<std::pair<uint32_t, uint32_t> > out;
+    out.reserve(m_matches.size());
+    for (const auto &m : m_matches) out.emplace_back(std::make_pair(m.iPtL, m.iPtR));
+
+    return out;
+}
+
 void Neighbor::setTheta1(double a)
 {
     utils::wrapHalfPI(a);

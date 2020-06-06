@@ -47,6 +47,9 @@ set(CMAKE_MODULE_PATH
 # ----- Sources ----------------------------------------------
 
 set(SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/openMVG/tracks/flat_pair_map.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/openMVG/tracks/tracks.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/openMVG/tracks/union_find.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/core.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/core.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/p3d/logger.cpp

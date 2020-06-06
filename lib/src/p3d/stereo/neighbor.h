@@ -52,6 +52,7 @@ public:
     int nbMatches() const { return int(m_matches.size()); }
     int getNbMatches() const { return nbMatches(); }  // refactor delete
     const std::vector<Match> &getMatches() const { return m_matches; }
+    std::vector<std::pair<uint32_t, uint32_t>> getMatchesAsVecOfPairs() const;
     void getMatchesAsMap(std::map<int, int> &map) const;
     void setMatches(const std::vector<Match> &matches) { m_matches = matches; }
     void deleteMatches() { m_matches.clear(); }

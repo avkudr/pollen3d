@@ -8,6 +8,11 @@ namespace p3d
 {
 // ***** Match
 
+using IndexPair = std::pair<uint32_t, uint32_t>;
+using PairWiseMatchesMap = std::map<IndexPair, std::vector<IndexPair>>;
+// Tracks = < TrackId, { <Img,Pt>,<Img,Pt>,<Img,Pt> ...} >
+using Tracks = std::map<uint32_t, std::map<uint32_t, uint32_t>>;
+
 enum P3D_API p3dMatch_ {
     p3dMatch_iPtL = 100,
     p3dMatch_iPtR = 101,
@@ -65,5 +70,7 @@ public:
 struct P3D_API MatchingUtil {
     static void match(const cv::Mat& descL, const cv::Mat& descR,
                       const MatchingPars& pars, std::vector<Match>& matches);
+
+    static void matchesMapsToTable(PairWiseMatchesMap&& matchesMaps, Tracks& tracks);
 };
 }  // namespace p3d

@@ -184,7 +184,6 @@ int nbAvailableThreads();
 std::pair<Vec2, Vec2> lineIntersectBox(const Vec3 &line, double w,
                                        double h /*, double x = 0.0, double y = 0.0*/);
 
-void matchesMapsToTable(std::vector<std::map<int, int>> matchesMaps, Mati &table);
 void findFullSubMeasurementMatrix(const Mat &W, Mat &Wfsub, std::vector<int> camIds = {},
                                   std::vector<int> *selectedCols = nullptr);
 std::vector<std::vector<int>> generateBatches(int nbCams, int batchSize);

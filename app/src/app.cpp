@@ -559,6 +559,7 @@ void Application::_drawTab_Image()
 
 void Application::_drawTab_Stereo()
 {
+    /*
     ImGuiTabItemFlags flags = ImGuiTabItemFlags_NoCloseButton;
     if (m_currentTabForce == Tab_Stereo) {
         flags |= ImGuiTabItemFlags_SetSelected;
@@ -650,6 +651,7 @@ void Application::_drawTab_Stereo()
         if (!m_state.isTab(Tab_Stereo)) _resetAppState();
         m_state.setTab(Tab_Stereo);
     }
+    */
 }
 
 void Application::_drawTab_Multiview()
@@ -1582,6 +1584,7 @@ void Application::_showEpilines(const ImVec2 &pos, const ImVec2 &size,
                                 const ImVec4 &col, float lineWidth,
                                 int skipEvery)
 {
+    /*
     std::vector<Vec2> ptsL, ptsR;
     m_projectData.getPairwiseMatches(m_state.itemIdx(), ptsL, ptsR);
 
@@ -1691,12 +1694,14 @@ void Application::_showEpilines(const ImVec2 &pos, const ImVec2 &size,
     }
 
     if (!wasHoveredThisFrame) hoveredLine = -1;
+    */
 }
 
 void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size,
                                const ImVec4 &col, float lineWidth,
                                int skipEvery)
 {
+    /*
     std::vector<Vec2> ptsL, ptsR;
     m_projectData.getPairwiseMatches(m_state.itemIdx(), ptsL, ptsR);
 
@@ -1786,4 +1791,5 @@ void Application::_showMatches(const ImVec2 &pos, const ImVec2 &size,
     }
 
     if (!wasHoveredThisFrame) hoveredLine = -1;
+    */
 }

@@ -66,14 +66,14 @@ void setName(const std::string &str)
 
 void p3d::autocalibrateBatch(Project &data)
 {
+    LOG_OK("Autocalibration: started...");
     // **** prerequisites
 
     p3d::cmder::undoOff();
     p3d::findFundamentalMatrix(data);
+    p3d::findMeasurementMatrix(data);
     p3d::cmder::undoOn();
 
-    LOG_OK("Autocalibration: started...");
-    p3d::findMeasurementMatrix(data);
     const auto &W = data.getMeasurementMatrix();
     if (W.rows() == 0 || W.cols() == 0) {
         p3d_Error("measurement matrix is empty.\nno matches?");
@@ -786,37 +786,39 @@ void p3d::findMeasurementMatrix(Project &data)
     auto nbPairs = data.nbImagePairs();
     if (nbPairs == 0) p3d_Error("project has no image pairs");
 
-    Mati table;
-    std::vector<std::map<int, int>> matchesMaps;
-    matchesMaps.resize(nbPairs);
-    for (auto i = 0; i < nbPairs; i++) {
-        auto imPair = data.imagePair(i);
-        if (!imPair) continue;
-        imPair->getMatchesAsMap(matchesMaps[i]);
-    }
+    // map<pait<imL,imR>, std::vector<pair<uint32_t, uint32_t>>>
+    PairWiseMatchesMap matchesMaps;
 
-    utils::matchesMapsToTable(matchesMaps, table);
-
-    auto nbLandmarks = table.cols();
-    Wfull.setZero(3 * nbIm, nbLandmarks);
-    for (int i = 0; i < nbIm; ++i) {
-        auto image = data.image(i);
-        if (!image) continue;
-        auto kpts = image->getKeyPoints();
-        for (int p = 0; p < nbLandmarks; ++p) {
-            auto ptIdx = table(i, p);
-            if (ptIdx < 0) continue;
-            if (ptIdx >= kpts.size()) {
-                p3d_Error(
-                    "measurement matrix: wrong feature indices\nfeatures were "
-                    "reestimated afrer matches?");
-            }
-            const double x = static_cast<double>(kpts[ptIdx].pt.x);
-            const double y = static_cast<double>(kpts[ptIdx].pt.y);
-            Wfull.block(3 * i, p, 3, 1) << x, y, 1.0;
+    for (const auto &kvL : data.imagePairs()) {
+        for (const auto &kvR : kvL.second) {
+            const auto &n = kvR.second;
+            const auto imL = kvL.first;
+            const auto imR = kvR.first;
+            auto m = n.getMatchesAsVecOfPairs();
+            matchesMaps[{imL, imR}] = std::move(m);
         }
     }
-    //data.setMeasurementMatrixFull(Wfull);
+
+    Tracks tracks;
+    MatchingUtil::matchesMapsToTable(std::move(matchesMaps), tracks);
+
+    auto nbTracks = tracks.size();
+    Wfull.setZero(3 * nbIm, nbTracks);
+
+    int col = 0;
+    for (const auto &kv : tracks) {
+        for (const auto &kvImagePoint : kv.second) {
+            const auto &c = kvImagePoint.first;
+            const auto &pId = kvImagePoint.second;
+
+            const auto &image = data.getImage(c);
+            const auto &pt = image.getKeyPoints()[pId].pt;
+            Wfull.block(3 * c, col, 3, 1) << pt.x, pt.y, 1.0;
+        }
+        ++col;
+    }
+
+    // data.setMeasurementMatrixFull(Wfull);
     p3d::cmder::executeCommand(
         new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMat), Wfull});
     LOG_OK("measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
