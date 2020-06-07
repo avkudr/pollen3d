@@ -25,6 +25,7 @@ enum P3D_API p3dImage_ {
     p3dImage_camera = 3,
     p3dImage_translation = 4,
     p3dImage_featExtractionPars,
+    p3dImage_rotation,
 };
 
 class P3D_API Image : public Serializable<Image>
@@ -70,6 +71,20 @@ public:
 
     // ***** camera parameters
 
+    Mat34 getCameraMatrix() const
+    {
+        Mat34 P;
+        P.setZero();
+        const Mat2 A = getCamera().getA();
+        const Mat23 R = getRotationAsMatrix().topRows(2);
+
+        P.setZero();
+        P.topLeftCorner(2, 3) = A * R;
+        P.topRightCorner(2, 1) = getTranslation();
+        P(2, 3) = 1.0;
+        return P;
+    }
+
     bool hasCamera() { return !m_camera.getA().isApprox(Mat2::Identity()); }
     void setCamera(const AffineCamera &c) { m_camera = c; }
     const AffineCamera &getCamera() const { return m_camera; }
@@ -77,7 +92,18 @@ public:
     void setTranslation(const Vec2 &t) { m_t = t; }
     Vec2 getTranslation() const { return m_t; }
 
-    FeatExtractionPars *      featExtractionPars();
+    void setRotation(const Vec3 &rvec) { m_rvec = rvec; }
+    Vec3 getRotation() const { return m_rvec; }
+    Vec3 setRotationFromMatrix(const Mat3 &R)
+    {
+        utils::EulerZYXfromR(R, m_rvec[0], m_rvec[1], m_rvec[2]);
+    }
+    Mat3 getRotationAsMatrix() const
+    {
+        return utils::RfromEulerZYX(m_rvec[0], m_rvec[1], m_rvec[2]);
+    }
+
+    FeatExtractionPars *featExtractionPars();
     const FeatExtractionPars &getFeatExtractionPars() const;
     void setFeatExtractionPars(const FeatExtractionPars &featExtractionPars);
 
@@ -87,6 +113,7 @@ private:
     cv::Mat      _imageCV{};
     AffineCamera m_camera{};
     Vec2 m_t{0, 0};
+    Vec3 m_rvec{0, 0, 0};
 
     std::vector<cv::KeyPoint> _kpts{};
     cv::Mat                   _desc{};

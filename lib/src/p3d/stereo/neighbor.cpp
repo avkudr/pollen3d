@@ -66,6 +66,4 @@ void Neighbor::readAdditional(const cv::FileNode &node)
 {
     node["im_p" + std::to_string(int(p3dNeighbor_dispMap))] >> disparity;
     node["im_p" + std::to_string(int(p3dNeighbor_confidenceMap))] >> confidence;
-
-    LOG_ERR("Regenerate rectified images");
 }

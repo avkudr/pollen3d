@@ -115,3 +115,18 @@ TEST(MISC, images_MeasurementMat)
     p3d::matchFeatures(data);
     p3d::findMeasurementMatrix(data);
 }
+
+TEST(MISC, images_Autocalib)
+{
+    p3d::Project data;
+    p3d::loadImages(data, {std::string(P3D_IMAGES_DIR) + "/brassica/Brassica01.jpg",
+                           std::string(P3D_IMAGES_DIR) + "/brassica/Brassica02.jpg",
+                           std::string(P3D_IMAGES_DIR) + "/brassica/Brassica03.jpg",
+                           std::string(P3D_IMAGES_DIR) + "/brassica/Brassica04.jpg"});
+
+    data.settings()->matchingFilterCoeff = 0.3f;
+
+    p3d::extractFeatures(data);
+    p3d::matchFeatures(data);
+    p3d::autocalibrateBatch(data);
+}

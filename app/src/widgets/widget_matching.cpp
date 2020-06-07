@@ -13,7 +13,7 @@ using namespace p3d;
 
 void WidgetMatching::drawImpl(Project& data)
 {
-    bool disabled = data.imagePairs().size() == 0;
+    bool disabled = false;  // data.imagePairs().size() == 0;
     if (disabled) ImGuiC::PushDisabled();
 
     bool runAll{false};

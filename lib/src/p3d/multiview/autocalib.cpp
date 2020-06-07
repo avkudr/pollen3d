@@ -293,6 +293,23 @@ std::vector<Mat34> AutoCalibrator::getCameraMatrices() const
     return Parray;
 }
 
+std::vector<Mat3> AutoCalibrator::getRotations() const
+{
+    const auto &nbCams = m_pars.nbCams();
+
+    std::vector<Mat3> Rarray(nbCams);
+    for (auto i = 0; i < nbCams; i++) {
+        double t1 = paramResult(i, p3dBundleIdx_Theta1);
+        double rho = paramResult(i, p3dBundleIdx_Rho);
+        double t2 = paramResult(i, p3dBundleIdx_Theta2);
+
+        Rarray[i] = utils::RfromEulerZYZt(t1, rho, t2);
+        if (i != 0) Rarray[i] = Rarray[i] * Rarray[i - 1];
+    }
+
+    return Rarray;
+}
+
 Mat2 AutoCalibrator::getCalibrationMatrix() const
 {
     return getCalibrationMatrixFromParamTable(paramResult);

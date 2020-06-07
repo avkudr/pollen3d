@@ -101,7 +101,8 @@ void p3d::autocalibrateBatch(Project &data)
 
     int batchIdx = 0;
 
-    for (const auto &batch : batches) {
+    for (auto batchId = 0; batchId < batches.size(); ++batchId) {
+        const auto &batch = batches[batchId];
         for (auto i : batch) calibrated.insert(i);
 
         const int nbCams = batch.size();
@@ -123,16 +124,16 @@ void p3d::autocalibrateBatch(Project &data)
         Mat2X slopes;
         slopes.setZero(2, nbCams);
         for (auto i = 0; i < nbCams - 1; ++i) {
-            auto imPair = data.imagePair(batch[i]);
-            if (imPair->imL() != batch[i]) {
-                p3d_Error("pair doesn't correspond to the index");
-            }
-            if (imPair->imR() != batch[i + 1]) {
-                p3d_Error("pair doesn't correspond to the index");
+            const auto &imL = batch[i];
+            const auto &imR = batch[i + 1];
+            if (!data.hasPair(imL, imR)) {
+                LOG_WARN("batch has a non-existing pair: %i, %i", batch[i], batch[i + 1]);
+                continue;
             }
 
-            slopes(0, i + 1) = data.imagePair(batch[i])->getTheta1();
-            slopes(1, i + 1) = data.imagePair(batch[i])->getTheta2();
+            const auto &n = data.imagePairs()[imL][imR];
+            slopes(0, i + 1) = n.getTheta1();  // from fundamental matrix
+            slopes(1, i + 1) = n.getTheta2();
         }
 
         // **** autocalibration
@@ -144,22 +145,19 @@ void p3d::autocalibrateBatch(Project &data)
 
         autocalib.run();
 
-        auto tvec = autocalib.getTranslations();
+        std::vector<Vec2> ta = autocalib.getTranslations();
+        std::vector<Mat3> Ra = autocalib.getRotations();
 
         Vec2 t0 = data.getCameraTranslations()[batch[0]];
-        bool batchesNeedAlign = (t0.norm() > 1e-2);
+        Mat3 R0 = data.getCamerasRotations()[batch[0]];
+
+        bool batchesNeedAlign = (t0.norm() > 1e-2) && batchId != 0;
         if (batchesNeedAlign) {
-            auto P = autocalib.getCameraMatrices();
-            Vec2 t0p = P[0].topRightCorner(2, 1);
-            auto rotRad = autocalib.getRotationAngles();
-            Mat3 R = Mat3::Identity();
-            for (auto i = 0; i < rotRad.rows(); ++i) {
-                double t1 = rotRad(i, 0);
-                double rho = rotRad(i, 1);
-                double t2 = rotRad(i, 2);
-                R = utils::RfromEulerZYZt_inv(t1, rho, t2) * R;
-                tvec[i] =
-                    R.topLeftCorner(2, 2) * (t0 - t0p) + R.topRightCorner(2, 1) + tvec[i];
+            Vec2 t0a = ta[0];
+            for (auto i = 0; i < Ra.size(); ++i) {
+                const Mat3 R = Ra[i] * R0;
+                ta[i] = R.block<2, 2>(0, 0) * (t0 - t0a) + R.topRightCorner(2, 1) + ta[i];
+                Ra[i] = R;
             }
         }
 
@@ -167,15 +165,8 @@ void p3d::autocalibrateBatch(Project &data)
             const auto i = batch[n];
             AffineCamera c;
             data.image(i)->setCamera(c);
-            data.image(i)->setTranslation(tvec[n]);
-        }
-
-        auto rotRad = autocalib.getRotationAngles();
-        for (auto n = 0; n < nbCams - 1; ++n) {
-            const auto i = batch[n];
-            data.imagePair(i)->setTheta1(rotRad(n + 1, 0));
-            data.imagePair(i)->setRho(rotRad(n + 1, 1));
-            data.imagePair(i)->setTheta2(rotRad(n + 1, 2));
+            data.image(i)->setTranslation(ta[n]);
+            data.image(i)->setRotationFromMatrix(Ra[n]);
         }
 
         // ***** triangulate missing
@@ -243,8 +234,10 @@ void p3d::autocalibrateBatch(Project &data)
             }
 
             data.setCamerasIntrinsics(bundleData.cam);
-            data.setCameraRotationsAbsolute(bundleData.R, calibVec.back() + 1);
+            data.setCameraRotationsAbsolute(bundleData.R);
             data.setCameraTranslations(bundleData.t);
+
+            LandmarksUtil::toMat4X(landmarks, X);
 
             LOG_OK("Bundle adjustement: done");
         }
@@ -463,8 +456,8 @@ bool p3d::matchFeatures(Project &data)
             MatchingUtil::match(_descriptorsLeftImage, _descriptorsRightImage, pars,
                                 matchesPair);
 
-            if (matchesPair.empty()) {
-                LOG_WARN("Pair %i-%i has no matches", imIdxL, imIdxR);
+            if (matchesPair.size() < 10) {
+                // LOG_WARN("Pair %i-%i has no matches", imIdxL, imIdxR);
                 continue;
             }
 
@@ -822,114 +815,6 @@ void p3d::findMeasurementMatrix(Project &data)
     p3d::cmder::executeCommand(
         new CommandSetProperty{&data, P3D_ID_TYPE(p3dProject_measMat), Wfull});
     LOG_OK("measurement matrix: %ix%i", Wfull.rows(), Wfull.cols());
-}
-
-bool p3d::autocalibrate(Project &data, std::vector<int> camIds)
-{
-    if (camIds.empty()) {
-        for (int i = 0; i < data.nbImages(); i++) camIds.emplace_back(i);
-    }
-
-    int nbImgs = camIds.size();
-    if (nbImgs < 3) {
-        LOG_ERR("autocalibration needs at least 3 images");
-        return false;
-    }
-
-    auto W = data.getMeasurementMatrix();
-    if (W.cols() == 0 || W.rows() == 0) {
-        LOG_ERR("Meas mat should be estimated before autocalibration");
-        return false;
-    }
-
-    std::vector<int> selectedCols;
-    Mat Wfsub;
-    utils::findFullSubMeasurementMatrix(W,Wfsub,camIds,&selectedCols);
-    if (Wfsub.cols() == 0 || Wfsub.rows() == 0) {
-        LOG_ERR("findFullSubMeasurementMatrix failed");
-        return false;
-    }
-
-    Mat2X slopes;
-    slopes.setZero(2, nbImgs);
-    for (auto i = 0; i < nbImgs - 1; ++i) {
-        auto imPair = data.imagePair(camIds[i]);
-        if (imPair->imL() != camIds[i]) {
-            LOG_ERR("Pair doesn't correspond to the index");
-            return -1;
-        }
-        if (imPair->imR() != camIds[i+1]) {
-            LOG_ERR("Pair doesn't correspond to the index");
-            return -1;
-        }
-
-        slopes(0, i + 1) = data.imagePair(camIds[i])->getTheta1();
-        slopes(1, i + 1) = data.imagePair(camIds[i])->getTheta2();
-    }
-
-    AutoCalibrator autocalib(nbImgs);
-
-    autocalib.setMaxTime(60);
-
-    autocalib.setMeasurementMatrix(Wfsub);
-    autocalib.setSlopeAngles(slopes);
-    autocalib.run();
-
-    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
-    std::cout << "Calibration     :\n"
-              << autocalib.getCalibrationMatrix().format(CleanFmt) << std::endl;
-    std::cout << "Camera matrices :\n"
-              << utils::concatenateMat(autocalib.getCameraMatrices()).format(CleanFmt) << std::endl;
-
-    AffineCamera c(autocalib.getCalibrationMatrix());
-
-    auto tvec = autocalib.getTranslations();
-    auto ti = data.getImage(camIds[0]).getTranslation();
-    bool correctForTranslation1stCam = (ti.norm() > 1e-2);
-    if (correctForTranslation1stCam) {
-        std::vector<Vec2> x;
-        auto P = autocalib.getCameraMatrices();
-        for (int i = 0; i < P.size(); i++) x.push_back(tvec[i]);
-        Vec4 X = utils::triangulate(x,P);
-        X /= X.w();
-        X(0) -= tvec[0](0) - ti(0);
-        X(1) -= tvec[0](1) - ti(1);
-        for (int i = 0; i < P.size(); i++) {
-            Vec3 q = P[i] * X;
-            q = q / q(2);
-            tvec[i](0) = q(0);
-            tvec[i](1) = q(1);
-        }
-    }
-
-    for (auto n = 0; n < nbImgs; ++n) {
-        const auto i = camIds[n];
-        AffineCamera c;
-        data.image(i)->setCamera(c);
-        data.image(i)->setTranslation(tvec[n]);
-    }
-
-    auto rotRad = autocalib.getRotationAngles();
-    // first line of rotRad is [0,0,0]
-    for (auto n = 0; n < nbImgs - 1; ++n) {
-        const auto i = camIds[n];
-        data.imagePair(i)->setTheta1(rotRad(n + 1, 0));
-        data.imagePair(i)->setRho(rotRad(n + 1, 1));
-        data.imagePair(i)->setTheta2(rotRad(n + 1, 2));
-    }
-
-    auto rot = utils::rad2deg(rotRad);
-
-    LOG_OK("Angles: [theta rho theta']");
-    std::stringstream ss;
-    ss << rot.format(CleanFmt);
-    auto rows = utils::split(ss.str(), "\n");
-    for (auto i = 0; i < rot.rows(); ++i) {
-        LOG_OK("Pair %i: %s", i, rows[i].c_str());
-    }
-
-    std::cout << "Rotation angles :\n"
-              << rot.format(CleanFmt) << std::endl;
 }
 
 void p3d::triangulateSparse(Project &data)

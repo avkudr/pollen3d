@@ -118,6 +118,7 @@ void MatchingUtil::matchesMapsToTable(PairWiseMatchesMap &&matchesMaps, Tracks &
 
     openMVG::tracks::TracksBuilder trackBuilder;
     trackBuilder.Build(matchesMaps);
+    trackBuilder.Filter();
 
     // map < TrackId, vector <Image,PointId> >
     using STLMAPTracks = std::map<uint32_t, std::map<uint32_t, uint32_t>>;

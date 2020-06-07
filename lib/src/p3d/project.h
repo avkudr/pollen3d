@@ -116,13 +116,13 @@ public:
 
     void getCamerasExtrinsics(std::vector<Mat3> *R, std::vector<Vec2> *t) const;
     void getCamerasExtrinsics(std::vector<Vec3> *Rvec, std::vector<Vec2> *t) const;
-    void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t, int N = 0);
+    void setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t);
 
-    void getCamerasRotations(std::vector<Mat3> *R) const;
+    void getCamerasRotations(std::vector<Mat3> *R) const;  // delete 07/06/2020
     std::vector<Mat3> getCamerasRotations() const;
 
     std::vector<Vec3> getCameraRotationsAbsolute() const;
-    void setCameraRotationsAbsolute(const std::vector<Vec3> & abs, int N = 0);
+    void setCameraRotationsAbsolute(const std::vector<Vec3> &abs);
 
     std::vector<Vec3> getCameraRotationsRelative() const;
     MatX3 getCameraRotationsRelativeMat() const;

@@ -18,6 +18,8 @@ int Image::initMeta()
             .data<&Image::setCamera, &Image::getCamera>(P3D_ID_TYPE(p3dImage_camera))
             .data<&Image::setTranslation, &Image::getTranslation>(
                 P3D_ID_TYPE(p3dImage_translation))
+            .data<&Image::setRotation, &Image::getRotation>(
+                P3D_ID_TYPE(p3dImage_rotation))
             .data<&Image::setFeatExtractionPars, &Image::getFeatExtractionPars>(
                 P3D_ID_TYPE(p3dImage_featExtractionPars));
 

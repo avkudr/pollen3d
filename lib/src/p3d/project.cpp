@@ -177,62 +177,31 @@ void Project::getCamerasRotations(std::vector<Mat3> *R) const
 
 std::vector<Mat3> Project::getCamerasRotations() const
 {
+    const int nbImgs = static_cast<int>(nbImages());
     std::vector<Mat3> R;
-    if (nbImages() == 0) return R;
+    if (nbImgs == 0) return R;
 
-    R.resize(nbImages());
-    R[0] = Mat3::Identity();
+    R.resize(nbImgs);
 
-    for (auto i = 0; i < static_cast<int>(nbImages()) - 1; i++) {
-        double t1 = m_imagesPairs[i].getTheta1();
-        double rho = m_imagesPairs[i].getRho();
-        double t2 = m_imagesPairs[i].getTheta2();
-
-        R[i + 1] = utils::RfromEulerZYZt_inv(t1, rho, t2);
-        if (i != 0) R[i + 1] = R[i + 1] * R[i];
-    }
+    for (auto i = 0; i < nbImgs; i++) { R[i] = m_images[i].getRotationAsMatrix(); }
     return R;
 }
 
 std::vector<Vec3> Project::getCameraRotationsAbsolute() const
 {
-    std::vector<Mat3> R;
-    getCamerasRotations(&R);
     std::vector<Vec3> vec;
-    vec.resize(R.size());
+    vec.resize(nbImages());
 
-    for (auto i = 0; i < static_cast<int>(R.size()); i++) {
-        double a,b,c;
-        utils::EulerZYXfromR(R[i], a, b, c);
-        vec[i] << a, b, c;
-    }
+    for (auto i = 0; i < static_cast<int>(vec.size()); i++)
+        vec[i] = m_images[i].getRotation();
+
     return vec;
 }
 
-void Project::setCameraRotationsAbsolute(const std::vector<Vec3> &abs, int N)
+void Project::setCameraRotationsAbsolute(const std::vector<Vec3> &abs)
 {
     if (nbImages() != abs.size()) return;
-    if (N == 0) N = abs.size();
-
-    std::vector<Mat3> Rarray(N);
-    for (auto i = 0; i < N; i++) {
-        const auto &a = abs[i][0];
-        const auto &b = abs[i][1];
-        const auto &c = abs[i][2];
-        Rarray[i] = utils::RfromEulerZYX(a,b,c);
-    }
-
-    for (auto i = 0; i < N - 1; i++){
-        Mat3 dR = Rarray[i+1] * Rarray[i].transpose();
-
-        double t1, rho, t2;
-        utils::EulerZYZtfromRinv(dR,t1,rho,t2);
-        utils::wrapHalfPI(t1);
-        utils::wrapHalfPI(t2);
-        m_imagesPairs[i].setTheta1(t1);
-        m_imagesPairs[i].setRho(rho);
-        m_imagesPairs[i].setTheta2(t2);
-    }
+    for (auto i = 0; i < abs.size(); i++) m_images[i].setRotation(abs[i]);
 }
 
 void Project::getCamerasExtrinsics(std::vector<Mat3> *R, std::vector<Vec2> *t) const
@@ -249,15 +218,13 @@ void Project::getCamerasExtrinsics(std::vector<Vec3> *Rvec, std::vector<Vec2> *t
     if (t) *t = getCameraTranslations();
 }
 
-void Project::setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t, int N)
+void Project::setCamerasExtrinsics(std::vector<Vec3> &Rvec, std::vector<Vec2> &t)
 {
     if (t.size() != Rvec.size()) return;
     if (nbImages() != Rvec.size()) return;
 
-   if (N == 0) N = Rvec.size();
-
-   setCameraRotationsAbsolute(Rvec,N);
-   setCameraTranslations(t);
+    setCameraRotationsAbsolute(Rvec);
+    setCameraTranslations(t);
 }
 
 std::vector<Vec3> Project::getCameraRotationsRelative() const
@@ -325,22 +292,8 @@ void Project::setCameraTranslations(const std::vector<Vec2> &t)
 std::vector<Mat34> Project::getCameraMatrices() const
 {
     if (nbImages() == 0) return {};
-
     std::vector<Mat34> Ps(nbImages());
-    std::vector<Mat3> R(nbImages());
-
-    getCamerasRotations(&R);
-
-    for (auto i = 0; i < nbImages(); i++){
-        Mat2 A = m_images[i].getCamera().getA();
-        Mat23 M = A * R[i].topRows(2);
-
-        Ps[i].setZero();
-        Ps[i].topLeftCorner(2,3)  = M;
-        Ps[i].topRightCorner(2,1) = m_images[i].getTranslation();
-        Ps[i](2,3) = 1.0;
-    }
-
+    for (auto i = 0; i < nbImages(); i++) { Ps[i] = m_images[i].getCameraMatrix(); }
     return Ps;
 }
 

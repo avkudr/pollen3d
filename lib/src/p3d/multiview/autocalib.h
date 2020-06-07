@@ -136,6 +136,8 @@ public:
      */
     std::vector<Mat34> getCameraMatrices() const;
     std::vector<Vec2> getTranslations() const { return m_tm; }
+    std::vector<Mat3> getRotations() const;
+
     Mat2 getCalibrationMatrix() const;
 
     // clang-format off
@@ -150,6 +152,7 @@ public:
      * [t1_c, rho_c, t2_c] // ->camera c
      */
     MatX3 getRotationAngles() const;
+
     // clang-format on
 
     /*! @brief Get the minimum found after the optimization */
