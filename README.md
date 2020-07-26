@@ -35,3 +35,13 @@ cmake --build . --config Release
 ```
 
 ## References
+
+If you use pollen3d in your research activities, please cite [this paper](https://tel.archives-ouvertes.fr/tel-01930234/document)
+```
+@phdthesis{kudryavtsev20173d,
+  title={3D Reconstruction in Scanning Electron Microscope: from image acquisition to dense point cloud},
+  author={Kudryavtsev, Andrey},
+  year={2017},
+  school={University of Bourgogne Franche-Comt{\'e}}
+}
+```
