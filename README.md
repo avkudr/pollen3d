@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-pollen3d is available for Windows, MacOS, and Linux.
+pollen3d is a software for 3D reconstruction from images coming from Scanning Electron Microscope. It is available for Windows, MacOS, and Linux.
 
 ## Overview
 
