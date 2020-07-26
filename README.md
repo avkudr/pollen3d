@@ -4,6 +4,10 @@
 
 pollen3d is available for Windows, MacOS, and Linux.
 
+## Overview
+
+![](doc/capture_reconstruction.gif)
+
 ## Install
 
 * install [cmake](https://cmake.org/download/)
