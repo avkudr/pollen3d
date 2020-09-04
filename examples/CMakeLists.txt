@@ -54,7 +54,7 @@ function(add_p3d_example arg1)
     # ----- add library
 
     target_include_directories(${arg1} PRIVATE ${P3D_INCLUDE_DIR})
-    target_link_directories(${arg1} PRIVATE ${P3D_LIB_DIR} )
+    link_directories(${arg1} PRIVATE ${P3D_LIB_DIR} )
     target_link_libraries(${arg1} PRIVATE p3d )
 
     add_custom_command(TARGET ${arg1} POST_BUILD        # Adds a post-build event to MyTest
